@@ -665,6 +665,8 @@
         const synapses = [];
         const corticalFolds = document.querySelectorAll('.cortical-fold');
         const backgroundParticles = [];
+        const displayedAssets = new Set(); // Track currently displayed assets
+        const activeCards = []; // Track active card positions
 
         // Create subtle background particles
         function createBackgroundParticles() {
@@ -976,37 +978,60 @@
                 "Fixed Income"
             ];
 
+            // Get available messages (not already displayed)
+            const availableMessages = messages.filter(msg => !displayedAssets.has(msg));
+            if (availableMessages.length === 0) {
+                displayedAssets.clear();
+            }
+
+            const selectedMessage = availableMessages[Math.floor(Math.random() * availableMessages.length)];
+            displayedAssets.add(selectedMessage);
+
             // Create floating message card
             const floatingCard = document.createElement('div');
             floatingCard.className = 'floating-message';
-            floatingCard.textContent = messages[Math.floor(Math.random() * messages.length)];
+            floatingCard.textContent = selectedMessage;
 
-            // Position randomly on screen (avoiding edges and title)
+            // Position randomly on screen (avoiding edges, title, and other cards)
             const cardWidth = 320;
             const cardHeight = 80;
             const titleElement = document.querySelector('div[style*="position: absolute; top: 50%"]');
             const titleRect = titleElement ? titleElement.getBoundingClientRect() : { left: window.innerWidth/2 - 200, right: window.innerWidth/2 + 200, top: window.innerHeight/2 - 100, bottom: window.innerHeight/2 + 100 };
 
             let x, y, attempts = 0;
-            do {
+            let positionValid = false;
+
+            while (!positionValid && attempts < 100) {
                 x = Math.random() * (window.innerWidth - cardWidth - 40) + 20;
                 y = Math.random() * (window.innerHeight - cardHeight - 40) + 20;
                 attempts++;
-            } while (
-                attempts < 50 && 
-                (x + cardWidth > titleRect.left - 20 && x < titleRect.right + 20 && 
-                 y + cardHeight > titleRect.top - 20 && y < titleRect.bottom + 20)
-            );
+
+                // Check if position overlaps with title
+                const overlapsTitle = (x + cardWidth > titleRect.left - 20 && x < titleRect.right + 20 && 
+                                     y + cardHeight > titleRect.top - 20 && y < titleRect.bottom + 20);
+
+                // Check if position overlaps with existing cards
+                let overlapsCard = false;
+                for (let c of activeCards) {
+                    if (!(x + cardWidth + 40 < c.x || x > c.x + c.width + 40 ||
+                          y + cardHeight + 40 < c.y || y > c.y + c.height + 40)) {
+                        overlapsCard = true;
+                        break;
+                    }
+                }
+
+                positionValid = !overlapsTitle && !overlapsCard;
+            }
 
             floatingCard.style.left = x + 'px';
             floatingCard.style.top = y + 'px';
 
+            // Track this card
+            const cardInfo = { x, y, width: cardWidth, height: cardHeight };
+            activeCards.push(cardInfo);
+
             floatingMessages.appendChild(floatingCard);
-
-            // Force reflow to ensure element is in DOM
             floatingCard.offsetHeight;
-
-            // Show and animate the card
             floatingCard.classList.add('show');
 
             // Keep the card visible for 8 seconds, then remove it
@@ -1016,6 +1041,8 @@
                     if (floatingCard.parentNode) {
                         floatingCard.parentNode.removeChild(floatingCard);
                     }
+                    displayedAssets.delete(selectedMessage);
+                    activeCards.splice(activeCards.indexOf(cardInfo), 1);
                 }, 600);
             }, 8000);
         }
@@ -1065,34 +1092,59 @@
 
         // Create and display asset cards randomly on screen (using floating-message style)
         function showRandomAssetCard() {
-            const asset = assetTypes[Math.floor(Math.random() * assetTypes.length)];
+            // Get available asset types (not already displayed)
+            const availableAssets = assetTypes.filter(asset => !displayedAssets.has(asset));
+            if (availableAssets.length === 0) {
+                displayedAssets.clear();
+            }
+
+            const asset = availableAssets[Math.floor(Math.random() * availableAssets.length)];
+            displayedAssets.add(asset);
             
-            // Create floating asset card using the same floating-message styling
+            // Create floating asset card
             const card = document.createElement('div');
             card.className = 'floating-message';
             card.textContent = asset;
             
             floatingMessages.appendChild(card);
 
-            // Position randomly on screen (avoiding edges and title)
+            // Position randomly on screen (avoiding edges, title, and other cards)
             const cardWidth = 320;
             const cardHeight = 80;
             const titleElement = document.querySelector('.title');
             const titleRect = titleElement.getBoundingClientRect();
 
             let x, y, attempts = 0;
-            do {
+            let positionValid = false;
+
+            while (!positionValid && attempts < 100) {
                 x = Math.random() * (window.innerWidth - cardWidth - 40) + 20;
                 y = Math.random() * (window.innerHeight - cardHeight - 40) + 20;
                 attempts++;
-            } while (
-                attempts < 50 &&
-                (x + cardWidth > titleRect.left - 20 && x < titleRect.right + 20 && 
-                 y + cardHeight > titleRect.top - 20 && y < titleRect.bottom + 20)
-            );
+
+                // Check if position overlaps with title
+                const overlapsTitle = (x + cardWidth > titleRect.left - 20 && x < titleRect.right + 20 && 
+                                     y + cardHeight > titleRect.top - 20 && y < titleRect.bottom + 20);
+
+                // Check if position overlaps with existing cards
+                let overlapsCard = false;
+                for (let c of activeCards) {
+                    if (!(x + cardWidth + 40 < c.x || x > c.x + c.width + 40 ||
+                          y + cardHeight + 40 < c.y || y > c.y + c.height + 40)) {
+                        overlapsCard = true;
+                        break;
+                    }
+                }
+
+                positionValid = !overlapsTitle && !overlapsCard;
+            }
 
             card.style.left = x + 'px';
             card.style.top = y + 'px';
+
+            // Track this card
+            const cardInfo = { x, y, width: cardWidth, height: cardHeight };
+            activeCards.push(cardInfo);
 
             // Show with animation
             setTimeout(() => {
@@ -1106,6 +1158,8 @@
                     if (card.parentNode) {
                         card.parentNode.removeChild(card);
                     }
+                    displayedAssets.delete(asset);
+                    activeCards.splice(activeCards.indexOf(cardInfo), 1);
                 }, 600);
             }, 8000);
 
