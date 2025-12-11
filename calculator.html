@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fee Impact Calculator - Only Human</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #0f1117;
+      color: #e5e7eb;
+      font-family: 'Inter', sans-serif;
+      line-height: 1.6;
+      padding: 40px 20px;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    h2 {
+      font-size: 2.5rem;
+      margin-bottom: 15px;
+      text-align: center;
+      background: linear-gradient(135deg, #604de4, #4c6ef5);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #9ca3af;
+      margin-bottom: 10px;
+      font-size: 1.1rem;
+    }
+
+    .disclaimer-badge {
+      text-align: center;
+      color: #ff9800;
+      margin-bottom: 40px;
+      font-size: 0.9rem;
+    }
+
+    .scenario {
+      background: rgba(96, 77, 228, 0.1);
+      border: 2px solid rgba(96, 77, 228, 0.3);
+      border-radius: 12px;
+      padding: 30px;
+      margin-bottom: 40px;
+    }
+
+    .scenario.optimized {
+      background: rgba(76, 110, 245, 0.1);
+      border-color: rgba(76, 110, 245, 0.3);
+    }
+
+    .scenario h3 {
+      font-size: 1.5rem;
+      margin-bottom: 20px;
+      color: #d1d5db;
+    }
+
+    .allocation-label {
+      font-size: 0.9rem;
+      color: #9ca3af;
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+
+    .allocation-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 25px;
+    }
+
+    .allocation-item {
+      background: rgba(96, 77, 228, 0.2);
+      padding: 14px;
+      border-radius: 8px;
+      border: 1px solid rgba(96, 77, 228, 0.4);
+    }
+
+    .scenario.optimized .allocation-item {
+      background: rgba(76, 110, 245, 0.2);
+      border-color: rgba(76, 110, 245, 0.4);
+    }
+
+    .allocation-name {
+      font-size: 0.8rem;
+      color: #9ca3af;
+      margin-bottom: 6px;
+    }
+
+    .allocation-percentage {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #e5e7eb;
+      margin-bottom: 8px;
+    }
+
+    .allocation-fee {
+      font-size: 0.75rem;
+      color: #9ca3af;
+    }
+
+    .allocation-fee strong {
+      color: #ff6b6b;
+    }
+
+    .scenario.optimized .allocation-fee strong {
+      color: #4ade80;
+    }
+
+    .blended-cost {
+      margin-top: 12px;
+      padding: 10px 12px;
+      background: rgba(255, 107, 107, 0.1);
+      border-radius: 6px;
+      font-size: 0.85rem;
+      color: #ff6b6b;
+    }
+
+    .scenario.optimized .blended-cost {
+      background: rgba(74, 222, 128, 0.1);
+      color: #4ade80;
+    }
+
+    .trajectory-label {
+      font-size: 0.9rem;
+      color: #d1d5db;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    .trajectory-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .trajectory-item {
+      text-align: center;
+    }
+
+    .trajectory-year {
+      font-size: 0.7rem;
+      color: #9ca3af;
+      margin-bottom: 4px;
+    }
+
+    .trajectory-value {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #4c6ef5;
+    }
+
+    .scenario.optimized .trajectory-value {
+      color: #4ade80;
+    }
+
+    .trajectory-final {
+      border: 2px solid rgba(255, 107, 107, 0.5);
+      border-radius: 6px;
+      padding: 8px;
+    }
+
+    .scenario.optimized .trajectory-final {
+      border-color: rgba(74, 222, 128, 0.5);
+    }
+
+    .trajectory-final .trajectory-value {
+      font-size: 1.3rem;
+      color: #ff6b6b;
+    }
+
+    .scenario.optimized .trajectory-final .trajectory-value {
+      color: #4ade80;
+    }
+
+    .results {
+      background: linear-gradient(135deg, rgba(76, 110, 245, 0.15), rgba(74, 222, 128, 0.1));
+      border: 2px solid rgba(76, 110, 245, 0.3);
+      border-radius: 12px;
+      padding: 30px;
+    }
+
+    .results h3 {
+      font-size: 1.8rem;
+      margin-bottom: 15px;
+      color: #d1d5db;
+    }
+
+    .savings-amount {
+      background: linear-gradient(135deg, #4ade80, #4c6ef5);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .results-content {
+      max-width: 900px;
+    }
+
+    .results-text {
+      padding: 16px;
+      background: rgba(76, 110, 245, 0.1);
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+
+    .results-text p {
+      font-size: 0.9rem;
+      line-height: 1.8;
+      color: #d1d5db;
+      margin-bottom: 12px;
+    }
+
+    .results-text p:last-child {
+      margin-bottom: 0;
+    }
+
+    .full-disclaimer {
+      padding: 16px;
+      background: rgba(76, 110, 245, 0.08);
+      border-left: 3px solid #4c6ef5;
+      border-radius: 4px;
+      margin-top: 20px;
+    }
+
+    .full-disclaimer div {
+      font-size: 0.8rem;
+      color: #d1d5db;
+      line-height: 1.8;
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-bottom: 30px;
+      color: #4c6ef5;
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .back-link:hover {
+      color: #4ade80;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="index.html" class="back-link">← Back to Home</a>
+
+    <h2>Fee Impact Over 20 Years</h2>
+    <p class="subtitle">A simplified illustration of how fees compound</p>
+    <p class="disclaimer-badge"><strong>Disclaimer:</strong> This is NOT investment advice — see bottom of page for full text</p>
+
+    <!-- Scenario 1: Traditional IFA Path -->
+    <div class="scenario">
+      <h3>Scenario 1: Traditional Path</h3>
+      
+      <!-- Asset Allocation -->
+      <div class="allocation-label">Asset Allocation & Fees</div>
+      <div class="allocation-grid">
+        <!-- IFA -->
+        <div class="allocation-item">
+          <div class="allocation-name">Through IFA</div>
+          <div class="allocation-percentage">100%</div>
+          <div class="allocation-fee">IFA Fee: <strong>0.5%</strong></div>
+        </div>
+        <!-- Asset Manager -->
+        <div class="allocation-item">
+          <div class="allocation-name">Asset Manager</div>
+          <div class="allocation-percentage">100%</div>
+          <div class="allocation-fee">Mgmt Fee: <strong>0.75%</strong></div>
+        </div>
+        <!-- Online Broker -->
+        <div class="allocation-item">
+          <div class="allocation-name">Online Broker</div>
+          <div class="allocation-percentage">0%</div>
+          <div class="allocation-fee">Platform Fee: <strong style="color: #4ade80;">0.05%</strong></div>
+        </div>
+      </div>
+      <div class="blended-cost"><strong>Blended Annual Cost: 1.25%</strong></div>
+
+      <div class="trajectory-label">Wealth Trajectory (6% annual growth)</div>
+      <div class="trajectory-grid">
+        <div class="trajectory-item">
+          <div class="trajectory-year">Start</div>
+          <div class="trajectory-value">$1.0M</div>
+        </div>
+        <div class="trajectory-item">
+          <div class="trajectory-year">5 Years</div>
+          <div class="trajectory-value" id="scenario1-5yr">$1.26M</div>
+        </div>
+        <div class="trajectory-item">
+          <div class="trajectory-year">10 Years</div>
+          <div class="trajectory-value" id="scenario1-10yr">$1.54M</div>
+        </div>
+        <div class="trajectory-item">
+          <div class="trajectory-year">15 Years</div>
+          <div class="trajectory-value" id="scenario1-15yr">$1.90M</div>
+        </div>
+        <div class="trajectory-item trajectory-final">
+          <div class="trajectory-year"><strong>20 Years</strong></div>
+          <div class="trajectory-value" id="scenario1-20yr">$2.31M</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scenario 2: Optimized Path -->
+    <div class="scenario optimized">
+      <h3>Scenario 2: Optimized Path (Simple &amp; Low-Cost)</h3>
+      
+      <!-- Asset Allocation -->
+      <div class="allocation-label">Asset Allocation & Fees</div>
+      <div class="allocation-grid">
+        <!-- IFA -->
+        <div class="allocation-item">
+          <div class="allocation-name">Through IFA</div>
+          <div class="allocation-percentage">0%</div>
+          <div class="allocation-fee">IFA Fee: <strong>0.5%</strong></div>
+        </div>
+        <!-- Asset Manager (for Alternatives) -->
+        <div class="allocation-item">
+          <div class="allocation-name">Asset Manager (Alternatives)</div>
+          <div class="allocation-percentage">20%</div>
+          <div class="allocation-fee">Mgmt Fee: <strong>0.5%</strong></div>
+        </div>
+        <!-- Online Broker -->
+        <div class="allocation-item">
+          <div class="allocation-name">Online Broker (Vanilla)</div>
+          <div class="allocation-percentage">80%</div>
+          <div class="allocation-fee">Platform Fee: <strong style="color: #4ade80;">0.05%</strong></div>
+        </div>
+      </div>
+      <div class="blended-cost"><strong>Blended Annual Cost: 0.19%</strong></div>
+
+      <div class="trajectory-label">Wealth Trajectory (6% annual growth)</div>
+      <div class="trajectory-grid">
+        <div class="trajectory-item">
+          <div class="trajectory-year">Start</div>
+          <div class="trajectory-value">$1.0M</div>
+        </div>
+        <div class="trajectory-item">
+          <div class="trajectory-year">5 Years</div>
+          <div class="trajectory-value" id="scenario2-5yr">$1.30M</div>
+        </div>
+        <div class="trajectory-item">
+          <div class="trajectory-year">10 Years</div>
+          <div class="trajectory-value" id="scenario2-10yr">$1.68M</div>
+        </div>
+        <div class="trajectory-item">
+          <div class="trajectory-year">15 Years</div>
+          <div class="trajectory-value" id="scenario2-15yr">$2.17M</div>
+        </div>
+        <div class="trajectory-item trajectory-final">
+          <div class="trajectory-year"><strong>20 Years</strong></div>
+          <div class="trajectory-value" id="scenario2-20yr">$2.81M</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- The Savings -->
+    <div class="results">
+      <h3>20-Year Difference: <span class="savings-amount" id="total-savings">$500K</span></h3>
+      
+      <div class="results-content">
+        <div class="results-text">
+          <p><strong>The Point:</strong> Even modest fee differences—0.5% vs 0.19%—compound into massive wealth differences over decades. This illustration is deliberately simple: it assumes flat 6% growth and ignores TERs, tax structures, and alpha generation.</p>
+          <p><strong>The Reality:</strong> Active asset managers often carry hidden costs. Exotic fund TERs frequently run 1-3% annually—far higher than passive ETFs (0.05-0.3%). Some skilled advisors and managers generate returns exceeding their fees, creating net value. Others don't. This illustration doesn't solve that question.</p>
+          <p><strong>For Whom This Matters Most:</strong> Investors who believe (a) passive index investing wins, (b) they can pick securities as well as any manager, or (c) they want to minimize fee drag. If you value professional guidance and believe your advisor generates alpha, the calculus changes entirely—and may justify the cost. There's no one-size-fits-all answer.</p>
+        </div>
+
+        <div class="full-disclaimer">
+          <div>
+            <strong>Full Disclaimer:</strong> This calculator is a teaching tool and does NOT constitute investment advice. This simplified illustration assumes a flat 6% annual growth rate and deliberately excludes many critical factors: (1) Total Expense Ratios (TERs) of active funds, which often run 1-3% annually for exotic assets versus 0.05-0.3% for passive ETFs, (2) Tax-efficient investment structures and instruments that may reduce effective fees, (3) The potential for skilled advisors or asset managers to generate alpha (returns exceeding their fees), (4) Individual risk profiles, time horizons, and personal circumstances. Some investors benefit significantly from professional financial guidance and may generate returns that exceed advisory fees. This illustration simply demonstrates that fee drag compounds meaningfully over decades—particularly relevant for investors who believe passive investing is sufficient or that they can select investments as effectively as professional managers. Always consult with a qualified financial advisor regarding your specific situation before making investment decisions.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function calculateFeeImpact() {
+      const initialAssets = 1000000; // Fixed at $1M for clarity
+      const annualGrowth = 0.06;
+      
+      // Scenario 1: Traditional IFA + Asset Manager (100% allocation, 1.25% blended fee)
+      const scenario1Fee = 0.0125; // 0.5% IFA + 0.75% Asset Manager
+      
+      // Scenario 2: Optimized (80% Broker at 0.05% + 20% Bank at 0.5% = 0.19% blended)
+      const scenario2BrokerFee = 0.0005; // 0.05%
+      const scenario2BankFee = 0.005; // 0.5%
+      const scenario2Fee = (0.80 * scenario2BrokerFee) + (0.20 * scenario2BankFee); // 0.19%
+
+      function calculateWealth(initialAmount, annualFee, years) {
+        let wealth = initialAmount;
+        for (let year = 0; year < years; year++) {
+          const feeAmount = wealth * annualFee;
+          wealth -= feeAmount;
+          wealth *= (1 + annualGrowth);
+        }
+        return wealth;
+      }
+
+      function formatCurrency(num) {
+        return new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'USD',
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0
+        }).format(num);
+      }
+
+      // Calculate for each milestone
+      const milestones = [5, 10, 15, 20];
+      const results1 = {};
+      const results2 = {};
+
+      milestones.forEach(years => {
+        results1[years] = calculateWealth(initialAssets, scenario1Fee, years);
+        results2[years] = calculateWealth(initialAssets, scenario2Fee, years);
+      });
+
+      // Update DOM with results
+      document.getElementById('scenario1-5yr').textContent = formatCurrency(results1[5]);
+      document.getElementById('scenario1-10yr').textContent = formatCurrency(results1[10]);
+      document.getElementById('scenario1-15yr').textContent = formatCurrency(results1[15]);
+      document.getElementById('scenario1-20yr').textContent = formatCurrency(results1[20]);
+
+      document.getElementById('scenario2-5yr').textContent = formatCurrency(results2[5]);
+      document.getElementById('scenario2-10yr').textContent = formatCurrency(results2[10]);
+      document.getElementById('scenario2-15yr').textContent = formatCurrency(results2[15]);
+      document.getElementById('scenario2-20yr').textContent = formatCurrency(results2[20]);
+
+      const totalSavings = results2[20] - results1[20];
+      document.getElementById('total-savings').textContent = formatCurrency(totalSavings);
+    }
+
+    // Calculate on page load
+    calculateFeeImpact();
+  </script>
+</body>
+</html>
