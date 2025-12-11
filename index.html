@@ -984,8 +984,8 @@
             // Position randomly on screen (avoiding edges and title)
             const cardWidth = 320;
             const cardHeight = 80;
-            const titleElement = document.querySelector('.title');
-            const titleRect = titleElement.getBoundingClientRect();
+            const titleElement = document.querySelector('div[style*="position: absolute; top: 50%"]');
+            const titleRect = titleElement ? titleElement.getBoundingClientRect() : { left: window.innerWidth/2 - 200, right: window.innerWidth/2 + 200, top: window.innerHeight/2 - 100, bottom: window.innerHeight/2 + 100 };
 
             let x, y, attempts = 0;
             do {
@@ -993,7 +993,7 @@
                 y = Math.random() * (window.innerHeight - cardHeight - 40) + 20;
                 attempts++;
             } while (
-                attempts < 50 && // Prevent infinite loop
+                attempts < 50 && 
                 (x + cardWidth > titleRect.left - 20 && x < titleRect.right + 20 && 
                  y + cardHeight > titleRect.top - 20 && y < titleRect.bottom + 20)
             );
@@ -1003,10 +1003,11 @@
 
             floatingMessages.appendChild(floatingCard);
 
+            // Force reflow to ensure element is in DOM
+            floatingCard.offsetHeight;
+
             // Show and animate the card
-            setTimeout(() => {
-                floatingCard.classList.add('show');
-            }, 100);
+            floatingCard.classList.add('show');
 
             // Keep the card visible for 8 seconds, then remove it
             setTimeout(() => {
