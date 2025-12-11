@@ -203,14 +203,14 @@
             z-index: 20;
             opacity: 0;
             transform: translateY(30px) scale(0.85) rotateX(10deg);
-            transition: all 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
             backdrop-filter: blur(25px) saturate(200%);
             -webkit-backdrop-filter: blur(25px) saturate(200%);
-            animation: float 8s ease-in-out infinite;
         }
         .floating-message.show {
             opacity: 1;
             transform: translateY(0) scale(1) rotateX(0deg);
+            animation: float 8s ease-in-out infinite;
         }
         .floating-message::before {
             content: '';
@@ -1006,7 +1006,7 @@
             // Show and animate the card
             setTimeout(() => {
                 floatingCard.classList.add('show');
-            }, 200); // Slower fade in
+            }, 100);
 
             // Keep the card visible for 8 seconds, then remove it
             setTimeout(() => {
@@ -1015,13 +1015,13 @@
                     if (floatingCard.parentNode) {
                         floatingCard.parentNode.removeChild(floatingCard);
                     }
-                }, 600); // Fade out
-            }, 8000); // 8 seconds display time
+                }, 600);
+            }, 8000);
         }
 
         // Start random thought bubble display
         function startRandomThoughtBubbles() {
-            const interval = 10000 + Math.random() * 8000; // 10-18 seconds between bubbles
+            const interval = 8000 + Math.random() * 7000; // 8-15 seconds
             setTimeout(() => {
                 showRandomThoughtBubble();
                 startRandomThoughtBubbles();
