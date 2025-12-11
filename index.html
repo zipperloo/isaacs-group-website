@@ -1022,7 +1022,7 @@
 
         // Start random thought bubble display
         function startRandomThoughtBubbles() {
-            const interval = 8000 + Math.random() * 7000; // 8-15 seconds
+            const interval = 3000 + Math.random() * 5000; // 3-8 seconds
             setTimeout(() => {
                 showRandomThoughtBubble();
                 startRandomThoughtBubbles();
@@ -1109,8 +1109,8 @@
                 }, 600);
             }, 8000);
 
-            // Schedule next asset card (15-25 seconds)
-            const nextDelay = 15000 + Math.random() * 10000;
+            // Schedule next asset card (5-12 seconds)
+            const nextDelay = 5000 + Math.random() * 7000;
             setTimeout(showRandomAssetCard, nextDelay);
         }
 
@@ -1124,7 +1124,7 @@
         createBackgroundParticles();
         
         // Start showing random asset cards
-        setTimeout(showRandomAssetCard, 3000);
+        setTimeout(showRandomAssetCard, 1000);
 
         // Mouse interaction for subtle parallax and subtle breathing movement
         document.addEventListener('mousemove', (e) => {
