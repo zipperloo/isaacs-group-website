@@ -958,17 +958,6 @@
 
         // Random thought bubble display - single card system
         function showRandomThoughtBubble() {
-            // Remove any existing floating messages
-            const existingMessages = document.querySelectorAll('.floating-message, .large-event-bubble');
-            existingMessages.forEach(msg => {
-                msg.classList.remove('show');
-                setTimeout(() => {
-                    if (msg.parentNode) {
-                        msg.parentNode.removeChild(msg);
-                    }
-                }, 1500); // Slower fade out
-            });
-
             const messages = [
                 "JUSTICE: Human courts protect what algorithms cannot judge - the nuance of mercy and fairness.",
                 "VERIFICATION: Only human verification ensures consciousness, not computational mimicry.",
@@ -1019,20 +1008,20 @@
                 floatingCard.classList.add('show');
             }, 200); // Slower fade in
 
-            // Keep the card visible for 20 seconds, then remove it
+            // Keep the card visible for 8 seconds, then remove it
             setTimeout(() => {
                 floatingCard.classList.remove('show');
                 setTimeout(() => {
                     if (floatingCard.parentNode) {
                         floatingCard.parentNode.removeChild(floatingCard);
                     }
-                }, 1500); // Slower fade out
-            }, 20000); // 20 seconds
+                }, 600); // Fade out
+            }, 8000); // 8 seconds display time
         }
 
         // Start random thought bubble display
         function startRandomThoughtBubbles() {
-            const interval = 8000 + Math.random() * 7000; // 8-15 seconds
+            const interval = 10000 + Math.random() * 8000; // 10-18 seconds between bubbles
             setTimeout(() => {
                 showRandomThoughtBubble();
                 startRandomThoughtBubbles();
