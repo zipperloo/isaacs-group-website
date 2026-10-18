@@ -105,12 +105,13 @@
         [[1362, 680], [1380, 655], [1420, 655], [1445, 662], [1470, 668], [1475, 690], [1462, 705], [1455, 730], [1490, 738], [1495, 750], [1470, 752], [1440, 760], [1440, 790], [1420, 810], [1395, 805], [1385, 770], [1370, 745], [1360, 720]],
         [[1488, 742], [1500, 722], [1505, 700], [1530, 697], [1545, 705], [1575, 722], [1585, 740], [1560, 748], [1555, 775], [1580, 785], [1612, 800], [1600, 812], [1585, 830], [1570, 835], [1555, 812], [1540, 790], [1520, 780], [1505, 765]]
     ];
-    const FISH_COLOURS = [[196, 186, 120], [120, 150, 190], [205, 150, 112], [170, 180, 190]];
+    // Mostly dark blue silhouettes like the distant fish painted in the tank, a few muted warm ones
+    const FISH_COLOURS = [[28, 70, 120], [22, 58, 104], [36, 84, 132], [30, 66, 110], [150, 130, 70], [150, 100, 70]];
 
     // The laptop on the terrace desk shows the Medik8 home page (Crystal Retinal slide).
     // The four corners of the screen panel, measured from the picture: top-left, top-right,
     // bottom-right, bottom-left. The screen is slightly rotated and seen in perspective.
-    const LAPTOP = [[841, 534.5], [918, 536.3], [914, 579.5], [836, 577]];
+    const LAPTOP = [[838.5, 534], [920.5, 536], [916.5, 580], [833.5, 577.3]];
     const laptopImg = new Image();
     laptopImg.src = 'assets/laptop-screen.jpg';
 
@@ -1090,28 +1091,32 @@
     const fish = [];
     let nextFish = 1;
 
-    function spawnFish(t) {
+    function spawnFish(t, anywhere) {
         const ltr = Math.random() < 0.5;
-        const school = Math.random() < 0.25;
-        const n = school ? 3 + Math.floor(Math.random() * 3) : 1;
-        const y = 630 + Math.random() * 140;
-        const col = school ? [178, 188, 196] : FISH_COLOURS[Math.floor(Math.random() * FISH_COLOURS.length)];
-        const speed = (school ? 14 : 6 + Math.random() * 7) * (ltr ? 1 : -1);
+        const school = Math.random() < 0.3;
+        const n = school ? 3 + Math.floor(Math.random() * 4) : 1;
+        const y = 625 + Math.random() * 150;
+        const col = school ? [32, 76, 124] : FISH_COLOURS[Math.floor(Math.random() * FISH_COLOURS.length)];
+        const speed = (school ? 12 : 5 + Math.random() * 7) * (ltr ? 1 : -1);
+        const startX = anywhere ? 1290 + Math.random() * 340 : (ltr ? 1250 : 1680);
         for (let i = 0; i < n; i++) {
             fish.push({
-                x: (ltr ? 1250 : 1680) - (ltr ? 1 : -1) * i * (6 + Math.random() * 4),
-                y: y + (Math.random() - 0.5) * (school ? 8 : 0),
+                x: startX - (ltr ? 1 : -1) * i * (5 + Math.random() * 4),
+                y: y + (Math.random() - 0.5) * (school ? 9 : 0),
                 vx: speed * (0.95 + Math.random() * 0.1),
-                size: school ? 1.6 : 2.2 + Math.random() * 1.6,
+                size: school ? 3 : 3.8 + Math.random() * 2.4,
                 col, seed: Math.random() * 50, born: t
             });
         }
     }
 
+    // A few fish are already swimming when the page opens
+    for (let i = 0; i < 5; i++) spawnFish(0, true);
+
     function updateFish(t, dt) {
         if (t >= nextFish) {
-            if (fish.length < 9) spawnFish(t);
-            nextFish = t + 2 + Math.random() * 5;
+            if (fish.length < 14) spawnFish(t);
+            nextFish = t + 1.5 + Math.random() * 3;
         }
         for (let i = fish.length - 1; i >= 0; i--) {
             const f = fish[i];
@@ -1127,6 +1132,8 @@
         ctx.save();
         ctx.clip(fishClip, 'evenodd');
         ctx.globalCompositeOperation = 'source-over';
+        // Soft, out-of-focus fish in the background of the tank
+        ctx.filter = `blur(${(0.8 * k).toFixed(2)}px)`;
         fish.forEach(f => {
             const dir = f.vx > 0 ? 1 : -1;
             const wag = Math.sin(t * 9 + f.seed) * 0.35;
@@ -1135,7 +1142,7 @@
             ctx.translate(f.x, f.y);
             ctx.scale(dir, 1);
             // Faded, as if seen through deep water
-            ctx.globalAlpha = 0.42;
+            ctx.globalAlpha = 0.7;
             ctx.fillStyle = rgb(f.col);
             ctx.beginPath();
             ctx.ellipse(0, 0, s, s * 0.42, 0, 0, 6.283);

@@ -63,7 +63,7 @@ Note: YouTube's terms don't allow hiding the player for audio-only use, and a co
 
 ## Laptop screen
 
-The laptop on the terrace desk shows a screenshot of the medik8.com home page on its Crystal Retinal slide ("Gift An Icon"). It was captured on 18 October 2026, so it won't update when Medik8 changes their site. The image is darkened, desaturated and slightly softened so it sits naturally in the scene. To refresh it, replace `assets/laptop-screen.jpg` with a new 292×167 image.
+The laptop on the terrace desk shows a screenshot of the medik8.com home page on its Crystal Retinal slide ("Gift An Icon"). It was captured on 18 October 2026, so it won't update when Medik8 changes their site. The image is darkened, desaturated and slightly softened so it sits naturally in the scene. To refresh it, replace `assets/laptop-screen.jpg` with a new 384×202 image.
 
 ## Contact form
 
