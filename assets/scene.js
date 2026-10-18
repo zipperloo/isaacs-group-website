@@ -25,6 +25,12 @@
     const ui = document.getElementById('ui');
     const ctx = canvas.getContext('2d');
     const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // Phones and tablets get a lighter render: lower canvas resolution, 30 frames a second,
+    // no live blur, and nothing drawn outside the part of the picture on screen
+    const LITE = matchMedia('(pointer: coarse)').matches || innerWidth <= 900;
+    // The part of the picture currently on screen, in image coordinates (with a margin)
+    const view = { x0: 0, x1: IMG_W, y0: 0, y1: IMG_H };
+    const inView = (x0, x1) => x1 >= view.x0 && x0 <= view.x1;
 
     // Bright lights detected in the skyline and far shore: x, y, r, g, b
     const CITY_LIGHTS = [[330,338,255,255,255],[325,336,255,255,255],[584,337,255,255,254],[301,283,254,255,255],[419,329,253,255,255],[319,336,253,255,255],[480,312,253,255,254],[467,335,255,255,243],[442,331,253,255,248],[569,301,251,255,248],[195,344,255,255,231],[388,333,255,255,223],[247,339,255,255,222],[767,333,253,255,227],[379,335,252,255,228],[229,342,255,255,219],[480,305,255,255,218],[844,340,248,255,238],[471,329,253,255,220],[589,336,253,255,219],[722,340,254,255,209],[237,344,255,255,206],[754,335,253,255,209],[760,335,253,255,195],[187,344,255,253,206],[362,332,254,255,173],[652,340,255,252,194],[550,337,250,254,184],[376,331,252,251,206],[322,332,253,253,183],[429,324,255,251,190],[412,333,252,250,204],[659,335,255,248,211],[613,337,252,251,178],[546,341,255,255,115],[618,335,254,251,146],[630,342,255,248,153],[484,332,255,241,193],[448,335,252,247,142],[838,340,255,249,112],[407,338,255,246,128],[302,308,248,239,201],[203,341,255,237,173],[487,328,255,235,186],[702,345,255,246,51],[657,341,255,232,181],[573,311,233,230,222],[344,345,247,227,189],[784,340,255,232,94],[448,330,255,227,128],[569,323,255,222,143],[476,337,233,222,204],[368,333,250,229,80],[665,341,255,219,158],[599,342,255,230,37],[257,340,254,217,157],[454,332,255,221,108],[413,343,240,216,176],[500,337,255,216,128],[211,341,255,214,136],[262,336,255,218,84],[446,345,242,215,150],[272,333,252,209,167],[611,342,255,220,41],[576,317,255,215,86],[358,336,240,207,150],[767,317,236,207,159],[247,344,254,205,119],[505,337,255,204,118],[672,341,248,202,154],[516,343,255,208,67],[621,341,254,205,78],[402,332,255,198,133],[493,333,255,198,128],[460,336,255,200,97],[687,317,225,200,174],[521,340,255,199,85],[425,333,255,195,111],[614,312,255,199,71],[512,337,246,201,74],[580,314,242,201,77],[394,333,255,192,110],[782,346,247,196,93],[450,341,238,194,126],[793,338,254,192,90],[527,340,255,190,83],[750,342,254,190,82],[766,346,255,187,96],[176,345,231,186,171],[430,347,221,191,118],[623,313,250,186,75],[389,341,199,189,189],[756,322,255,182,90],[366,338,230,188,104],[587,316,227,194,46],[274,339,248,181,110],[219,292,252,182,87],[607,334,255,181,83],[348,338,255,178,103],[825,330,255,177,109],[330,347,246,178,114],[590,342,246,188,7],[854,305,230,176,167],[755,346,255,177,58],[762,301,225,179,124],[381,344,234,178,106],[769,288,231,175,140],[592,315,236,185,23],[614,307,215,184,81],[641,346,139,193,208],[1336,351,255,255,255],[1432,347,254,255,255],[1378,348,253,255,249],[1330,350,255,255,230],[1409,347,254,255,229],[1509,351,255,254,214],[1486,350,250,250,223],[1464,349,249,250,155],[1420,350,255,240,174],[1442,350,255,228,95],[1346,346,255,216,158],[1515,351,251,208,168],[1312,352,251,205,188],[1495,350,255,201,128]];
@@ -193,7 +199,7 @@
     };
 
     function drawSprite(s, x, y, size, alpha) {
-        if (alpha <= 0.002) return;
+        if (alpha <= 0.002 || x + size < view.x0 || x - size > view.x1) return;
         ctx.globalAlpha = Math.min(1, alpha);
         ctx.drawImage(s, x - size / 2, y - size / 2, size, size);
     }
@@ -246,7 +252,7 @@
             transform: `translate3d(${(-overflowX * pan.focal).toFixed(2)}px, ${(-overflowY * pan.focalY).toFixed(2)}px, 0)`
         });
 
-        const newK = Math.min(2, Math.max(1, (w * (devicePixelRatio || 1)) / IMG_W));
+        const newK = Math.min(LITE ? 1.3 : 2, Math.max(1, (w * (devicePixelRatio || 1)) / IMG_W));
         if (Math.abs(newK - k) > 0.05) {
             k = newK;
             canvas.width = Math.round(IMG_W * k);
@@ -295,6 +301,7 @@
     }
 
     function drawDistort(r, t) {
+        if (!inView(r.bx, r.bx + r.bw)) return;
         const w = r.wctx;
         w.globalCompositeOperation = 'source-over';
         w.clearRect(0, 0, r.work.width, r.work.height);
@@ -627,6 +634,7 @@
 
     // Sky searchlights and the coloured wash on the snow (drawn with 'lighter')
     function drawPartyLights(t) {
+        if (!inView(1440, IMG_W)) return;
         const pulse = beatPulse(t);
 
         ctx.save();
@@ -814,7 +822,7 @@
         ctx.translate(o.x, o.y);
         ctx.globalAlpha = 0.95;
         // Soften the edges a touch so the figure sits in the painting
-        ctx.filter = `blur(${(0.35 * k).toFixed(2)}px)`;
+        if (!LITE) ctx.filter = `blur(${(0.35 * k).toFixed(2)}px)`;
 
         // Legs: tapered trousers, knees slightly bent, then boots
         [-1, 1].forEach(side => {
@@ -945,7 +953,7 @@
         ctx.save();
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
-        ctx.filter = `blur(${(0.35 * k).toFixed(2)}px)`;
+        if (!LITE) ctx.filter = `blur(${(0.35 * k).toFixed(2)}px)`;
         CROWD_ARMS.forEach(([lx, rx, sy, col], i) => {
             const s = crowdState[i];
             // Ease the arm up and down slowly rather than snapping
@@ -1151,7 +1159,7 @@
         ctx.clip(fishClip, 'evenodd');
         ctx.globalCompositeOperation = 'source-over';
         // Soft, out-of-focus fish in the background of the tank
-        ctx.filter = `blur(${(0.8 * k).toFixed(2)}px)`;
+        if (!LITE) ctx.filter = `blur(${(0.8 * k).toFixed(2)}px)`;
         fish.forEach(f => {
             const dir = f.vx > 0 ? 1 : -1;
             const wag = Math.sin(t * 9 + f.seed) * 0.35;
@@ -1829,14 +1837,20 @@
 
     let start = 0;
     let last = 0;
+    let lastDraw = 0;
 
     function frame(now) {
         // The first frame can be stamped fractionally before start; never let time run negative
         const t = Math.max(0, (now - start) / 1000);
+        applyParallax(t);
+
+        // The picture itself moves every frame (so swipes stay smooth); on phones the effects
+        // are updated and redrawn 30 times a second, plenty for slow ambient motion
+        if (LITE && now - lastDraw < 30) { requestAnimationFrame(frame); return; }
+        lastDraw = now;
         const dt = Math.min(0.05, Math.max(0, (now - last) / 1000));
         last = now;
 
-        applyParallax(t);
         updateBubbles(t, dt);
         updateSteam(t);
         updateCityEvents(t);
@@ -1852,19 +1866,25 @@
         updateFish(t, dt);
         updateOryx(t, dt);
 
+        // Work out which part of the picture is on screen
+        const m = 40;
+        view.x0 = (overflowX * pan.focal) / stageScale - m;
+        view.x1 = view.x0 + innerWidth / stageScale + 2 * m;
+
         ctx.setTransform(k, 0, 0, k, 0, 0);
         ctx.clearRect(0, 0, IMG_W, IMG_H);
         regions.forEach(r => drawDistort(r, t));
-        drawBoat(t);
-        drawFish(t);
-        drawAquarium(t);
-        drawMonkeys(t);
-        drawOryx(t);
-        drawSteam(t);
-        drawGecko(t);
-        drawParty(t);
-        DANCERS.forEach((d, i) => drawDancer(d, i, t));
-        drawCrowd(t);
+        if (inView(1380, 1520)) drawBoat(t);
+        if (inView(1250, IMG_W)) { drawFish(t); drawAquarium(t); }
+        if (inView(1240, 1300)) drawMonkeys(t);
+        if (inView(140, 260)) drawOryx(t);
+        if (inView(430, 490)) drawSteam(t);
+        if (inView(0, 70)) drawGecko(t);
+        if (inView(1440, IMG_W)) {
+            drawParty(t);
+            DANCERS.forEach((d, i) => drawDancer(d, i, t));
+            drawCrowd(t);
+        }
         drawLights(t);
 
         // Effects ease in once the entrance has settled
