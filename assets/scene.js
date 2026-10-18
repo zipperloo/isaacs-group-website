@@ -33,8 +33,8 @@
 
     // Water, as polygons; ripple amplitude (px) grows towards the viewer
     const WATER = [
-        { poly: [[612, 404], [700, 401], [760, 409], [860, 403], [940, 400], [940, 468], [840, 470], [760, 466], [700, 452], [640, 445], [612, 430]], amp: [0.6, 1.6], freq: 0.85, speed: 1.9 },
-        { poly: [[1345, 352], [1520, 350], [1515, 420], [1440, 440], [1392, 470], [1385, 528], [1240, 530], [1240, 446], [1300, 440], [1362, 420]], amp: [0.7, 2.0], freq: 0.8, speed: 1.7 }
+        { poly: [[612, 404], [700, 401], [760, 409], [860, 403], [940, 400], [940, 468], [840, 470], [760, 466], [700, 452], [640, 445], [612, 430]], amp: [1.0, 2.6], freq: 0.6, speed: 2.2 },
+        { poly: [[1345, 352], [1520, 350], [1515, 420], [1440, 440], [1392, 470], [1385, 528], [1240, 530], [1240, 446], [1300, 440], [1362, 420]], amp: [1.2, 3.0], freq: 0.55, speed: 2.0 }
     ];
 
     // Heat haze over the flames
@@ -61,6 +61,19 @@
         [1648, 216, 18, 0.22, 12], [1622, 212, 10, 0.2, 13]
     ];
 
+    // Après-ski party, in the spirit of La Folie Douce: everything moves to one beat
+    const PARTY = {
+        bpm: 124,
+        dancer: [1505, 249],                 // feet, left of the fire pit against the pale mountains
+        dj: [1645, 237],                     // waist, silhouetted against the lit chalet window
+        booth: [1633, 236, 24, 10],          // x, y, width, height
+        festoon: [[1604, 198], [1499, 212]], // chalet eave to a pole by the dancer
+        pole: [1499, 212, 248],
+        beams: [[1641, 197, 0], [1613, 199, 2.3]],
+        wash: [1585, 248],
+        skyTop: 131                          // underside of the room's ceiling
+    };
+
     // Porch lights on the Thai huts that switch on and off: x, y, reflection y on the water (or 0)
     const HUT_LIGHTS = [[1012, 423, 0], [1046, 377, 0], [1168, 392, 0], [1192, 430, 0], [1262, 420, 452], [1293, 412, 455]];
 
@@ -76,6 +89,8 @@
     // cropped here on most screens, so the route runs up the strip of wall that stays visible.
     // It appears from behind the potted plant's leaves and climbs out of the top of the frame.
     const GECKO_PATH = [[49, 292], [48, 240], [50, 160], [48.5, 80], [49, -20]];
+    const GECKO_WALL_EDGE = 56;   // the wall's right-hand edge
+    let geckoShift = 0;           // set in layout() to keep the gecko on the visible strip of wall
 
     // Sky region a distant plane can cross (the left-hand window)
     const PLANE_SKY = { left: 60, right: 930, top: 20, bottom: 90 };
@@ -152,6 +167,12 @@
         const vh = innerHeight;
         const focalX = vw <= 768 ? 0.42 : 0.44;
         const s = Math.max((vw + 2 * MARGIN) / IMG_W, (vh + 2 * MARGIN) / IMG_H);
+
+        // How much of the far-left wall is on screen. The slow breathing zoom can push the
+        // edge a little further off screen at its peak, so allow for most of that.
+        const visibleLeft = -((vw - IMG_W * s) * focalX) / s + IMG_W * 0.0075 + PARALLAX_X / s;
+        const geckoX = Math.max(GECKO_PATH[0][0] - 10, visibleLeft + 5);
+        geckoShift = geckoX <= GECKO_WALL_EDGE - 3 ? geckoX - GECKO_PATH[0][0] : null;
         const w = IMG_W * s;
         const h = IMG_H * s;
         Object.assign(stage.style, {
@@ -375,7 +396,7 @@
         ctx.globalCompositeOperation = 'source-over';
         CITY_LIGHTS.forEach(([x, y], i) => {
             const d = cityDim(i, t);
-            if (d > 0) drawSprite(SPRITES.dim, x, y, 5, 0.75 * d);
+            if (d > 0) drawSprite(SPRITES.dim, x, y, 5, 0.95 * d);
         });
         ctx.globalCompositeOperation = 'lighter';
         CITY_LIGHTS.forEach(([x, y, r, , b], i) => {
@@ -393,7 +414,7 @@
         // Faint stars in the clearest gaps of the sky
         STARS.forEach(([x, y], i) => {
             const n = noise(t * (0.35 + hash(i + 3) * 0.5) + i * 3.1);
-            drawSprite(SPRITES.white, x, y, 3, 0.18 + 0.55 * n * n);
+            drawSprite(SPRITES.white, x, y, 4, 0.3 + 0.7 * n * n);
         });
 
         // Navigation lights on the space station
@@ -415,6 +436,7 @@
         });
 
         drawEmbers(t);
+        drawPartyLights(t);
         drawHutLights(t);
         drawPlane(t);
         drawLanterns(t);
@@ -435,7 +457,7 @@
             if (!cityEvents[i] || t > cityEvents[i].end) {
                 const roll = Math.random();
                 const type = roll < 0.55 ? 'dim' : roll < 0.85 ? 'flare' : 'flicker';
-                const dur = type === 'dim' ? 3 + Math.random() * 11 : type === 'flare' ? 0.8 + Math.random() * 1.7 : 0.6 + Math.random() * 0.6;
+                const dur = type === 'dim' ? 3 + Math.random() * 8 : type === 'flare' ? 1.2 + Math.random() * 2 : 0.6 + Math.random() * 0.6;
                 cityEvents[i] = { type, start: t, end: t + dur };
             }
             nextCityEvent += 0.4 - Math.log(1 - Math.random()) * 1.1;   // irregular gaps, usually 0.5-2.5s
@@ -487,9 +509,302 @@
         });
     }
 
+    /* ---------- après-ski party ---------- */
+
+    const PARTY_COLOURS = [[255, 70, 200], [150, 90, 255], [60, 210, 255], [255, 175, 70]];
+    const PARTY_SPRITES = PARTY_COLOURS.map(c => sprite(...c));
+
+    function beat(t) { return t * PARTY.bpm / 60; }
+    function beatPulse(t) { return Math.exp(-(beat(t) % 1) * 5); }   // 1 on the beat, decaying
+
+    // Slowly cycling party colour: returns two sprites and the mix between them
+    function partyColour(t, offset) {
+        const c = (((t * 0.12 + offset) % PARTY_COLOURS.length) + PARTY_COLOURS.length) % PARTY_COLOURS.length;
+        const i = Math.floor(c);
+        return [PARTY_SPRITES[i], PARTY_SPRITES[(i + 1) % PARTY_SPRITES.length], c - i, PARTY_COLOURS[i]];
+    }
+
+    function drawMixed(t, offset, x, y, size, alpha) {
+        const [a, b, f] = partyColour(t, offset);
+        drawSprite(a, x, y, size, alpha * (1 - f));
+        drawSprite(b, x, y, size, alpha * f);
+    }
+
+    // Champagne sprays from the dancer's bottle every so often
+    const spray = [];
+    let nextSpray = 9;
+    let sprayUntil = 0;
+    const bottleTip = { x: 0, y: 0 };
+
+    function updateParty(t, dt) {
+        if (t >= nextSpray) {
+            sprayUntil = t + 0.7;
+            nextSpray = t + 18 + Math.random() * 20;
+        }
+        if (t < sprayUntil) {
+            for (let i = 0; i < 3; i++) {
+                spray.push({
+                    x: bottleTip.x, y: bottleTip.y,
+                    vx: -8 + Math.random() * 30, vy: -(38 + Math.random() * 30),
+                    born: t, life: 1.1 + Math.random() * 0.8, r: 0.35 + Math.random() * 0.45
+                });
+            }
+        }
+        for (let i = spray.length - 1; i >= 0; i--) {
+            const p = spray[i];
+            p.vy += 85 * dt;
+            p.vx *= 1 - 0.8 * dt;
+            p.x += p.vx * dt;
+            p.y += p.vy * dt;
+            if (t - p.born > p.life) spray.splice(i, 1);
+        }
+    }
+
+    // Sky searchlights and the coloured wash on the snow (drawn with 'lighter')
+    function drawPartyLights(t) {
+        const pulse = beatPulse(t);
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(1440, PARTY.skyTop, 232, 200 - PARTY.skyTop);
+        ctx.clip();
+        PARTY.beams.forEach(([x, y, seed]) => {
+            const ang = -Math.PI / 2 + Math.sin(t * 0.32 + seed) * 0.95;
+            const len = 90;
+            const [, , , col] = partyColour(t, seed);
+            const tx = x + Math.cos(ang) * len;
+            const ty = y + Math.sin(ang) * len;
+            const nx = -Math.sin(ang) * 7;
+            const ny = Math.cos(ang) * 7;
+            const grad = ctx.createLinearGradient(x, y, tx, ty);
+            grad.addColorStop(0, `rgba(${col[0]},${col[1]},${col[2]},${(0.16 + 0.06 * pulse).toFixed(3)})`);
+            grad.addColorStop(1, `rgba(${col[0]},${col[1]},${col[2]},0)`);
+            ctx.globalAlpha = 1;
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.moveTo(x - nx * 0.08, y - ny * 0.08);
+            ctx.lineTo(x + nx * 0.08, y + ny * 0.08);
+            ctx.lineTo(tx + nx, ty + ny);
+            ctx.lineTo(tx - nx, ty - ny);
+            ctx.closePath();
+            ctx.fill();
+        });
+        ctx.restore();
+
+        // Coloured light pooling on the snow, pumping with the beat
+        ctx.save();
+        ctx.translate(PARTY.wash[0], PARTY.wash[1]);
+        ctx.scale(1, 0.3);
+        drawMixed(t, 1.3, 0, 0, 120, 0.1 + 0.14 * pulse);
+        ctx.restore();
+
+        // Festoon lights chasing along a sagging string
+        const [[x0, y0], [x1, y1]] = PARTY.festoon;
+        const n = 12;
+        for (let i = 0; i <= n; i++) {
+            const f = i / n;
+            const x = x0 + (x1 - x0) * f;
+            const y = y0 + (y1 - y0) * f + Math.sin(f * Math.PI) * 6;
+            const chase = Math.exp(-(((beat(t) * 2 - i) % 4 + 4) % 4) * 1.6);
+            const col = PARTY_SPRITES[i % PARTY_SPRITES.length];
+            drawSprite(col, x, y, 4.5, 0.35 + 0.65 * chase);
+            drawSprite(SPRITES.warm, x, y, 1.6, 0.6 + 0.4 * chase);
+        }
+
+        // DJ booth: LED strip and laptop glow
+        const [bx, by, bw, bh] = PARTY.booth;
+        for (let i = 0; i < 6; i++) {
+            const on = ((Math.floor(beat(t) * 2) + i) % 6) < 2 ? 1 : 0.25;
+            drawMixed(t, i * 0.6, bx + 2.5 + i * (bw - 5) / 5, by + bh - 2.5, 3.5, 0.8 * on);
+        }
+        drawSprite(SPRITES.white, PARTY.dj[0] - 3, by - 1.5, 6, 0.35);
+
+        // Champagne spray catching the light
+        spray.forEach(p => {
+            const life = (t - p.born) / p.life;
+            drawSprite(SPRITES.warm, p.x, p.y, 1.6 + p.r * 2, 0.75 * (1 - life) * (0.6 + 0.4 * hash(Math.floor(t * 20) + p.born)));
+        });
+    }
+
+    // People: drawn as silhouettes, rim-lit by the fire and the party lights
+    function drawParty(t) {
+        const b = beat(t);
+        const p = b % 1;
+        const dip = (1 - Math.cos(p * Math.PI * 2)) / 2;   // knees bend on every beat
+        const sway = Math.sin(b * Math.PI);                 // hips swing across two beats
+
+        ctx.save();
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        /* Dancer */
+        const [dx, dy] = PARTY.dancer;
+        ctx.translate(dx, dy);
+        const hipY = -16 + dip * 1.4;
+        const hipX = sway * 0.9;
+        const shY = -26.5 + dip * 1.1;
+        const shX = hipX * 0.4;
+
+        // Legs
+        ctx.globalAlpha = 0.97;
+        ctx.strokeStyle = 'rgb(24,22,30)';
+        ctx.lineWidth = 2.2;
+        [[-1, -2.3], [1, 2.3]].forEach(([side, foot]) => {
+            ctx.beginPath();
+            ctx.moveTo(hipX + side * 1.3, hipY);
+            ctx.lineTo(hipX * 0.5 + side * (1.8 + dip * 0.6), hipY / 2 + 0.5);
+            ctx.lineTo(foot, 0);
+            ctx.stroke();
+        });
+
+        // Torso (a ski jacket)
+        ctx.fillStyle = 'rgb(36,54,80)';
+        ctx.beginPath();
+        ctx.moveTo(shX - 4, shY);
+        ctx.lineTo(shX + 4, shY);
+        ctx.lineTo(hipX + 3, hipY + 0.5);
+        ctx.lineTo(hipX - 3, hipY + 0.5);
+        ctx.closePath();
+        ctx.fill();
+
+        // Arms: bottle arm held high and pumping, the other waving
+        const pump = Math.sin(p * Math.PI * 2) * 1.6;
+        const handR = { x: shX + 5.5, y: shY - 11 + pump };
+        ctx.strokeStyle = 'rgb(36,54,80)';
+        ctx.lineWidth = 1.7;
+        ctx.beginPath();
+        ctx.moveTo(shX + 3.5, shY + 0.5);
+        ctx.lineTo(shX + 6.5, shY - 5 + pump * 0.5);
+        ctx.lineTo(handR.x, handR.y);
+        ctx.stroke();
+        const wave = Math.sin(b * Math.PI * 0.5);
+        ctx.beginPath();
+        ctx.moveTo(shX - 3.5, shY + 0.5);
+        ctx.lineTo(shX - 6.5, shY - 3 - wave * 2);
+        ctx.lineTo(shX - 7 - wave * 2, shY - 9 - wave * 2.5);
+        ctx.stroke();
+
+        // Champagne bottle, tipped back towards the crowd
+        const tipX = handR.x + 2.2;
+        const tipY = handR.y - 4.5;
+        ctx.strokeStyle = 'rgb(28,58,36)';
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.moveTo(handR.x - 0.6, handR.y + 1.2);
+        ctx.lineTo(tipX, tipY);
+        ctx.stroke();
+        ctx.fillStyle = 'rgb(214,180,96)';
+        ctx.fillRect(tipX - 0.6, tipY - 0.6, 1.2, 1.2);
+        // Remember where the bottle is, in image coordinates, for the spray
+        bottleTip.x = dx + tipX;
+        bottleTip.y = dy + tipY;
+
+        // Head and a red bobble hat
+        const headY = shY - 3.4;
+        ctx.fillStyle = 'rgb(40,30,26)';
+        ctx.beginPath();
+        ctx.arc(shX + sway * 0.3, headY, 2.4, 0, 6.283);
+        ctx.fill();
+        ctx.fillStyle = 'rgb(150,36,40)';
+        ctx.beginPath();
+        ctx.arc(shX + sway * 0.3, headY - 1, 2.45, Math.PI, 0);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(shX + sway * 0.3, headY - 3.7, 0.9, 0, 6.283);
+        ctx.fill();
+
+        // Warm rim light from the fire pit on the right
+        ctx.globalAlpha = 0.45;
+        ctx.strokeStyle = 'rgb(255,160,80)';
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(shX + 4, shY + 0.5);
+        ctx.lineTo(hipX + 3, hipY + 0.5);
+        ctx.moveTo(hipX + 1.4, hipY + 1);
+        ctx.lineTo(2.6, 0);
+        ctx.stroke();
+        ctx.setTransform(k, 0, 0, k, 0, 0);
+
+        /* Pole for the festoon lights */
+        ctx.globalAlpha = 0.9;
+        ctx.strokeStyle = 'rgb(30,26,26)';
+        ctx.lineWidth = 0.9;
+        ctx.beginPath();
+        ctx.moveTo(PARTY.pole[0], PARTY.pole[1]);
+        ctx.lineTo(PARTY.pole[0], PARTY.pole[2]);
+        ctx.stroke();
+        // and the string itself
+        const [[x0, y0], [x1, y1]] = PARTY.festoon;
+        ctx.globalAlpha = 0.55;
+        ctx.lineWidth = 0.35;
+        ctx.beginPath();
+        ctx.moveTo(x0, y0);
+        ctx.quadraticCurveTo((x0 + x1) / 2, (y0 + y1) / 2 + 12, x1, y1);
+        ctx.stroke();
+
+        /* DJ, behind the booth */
+        const [jx, jy] = PARTY.dj;
+        const nod = Math.max(0, Math.cos(p * Math.PI * 2)) * 0.9;
+        const fistUp = (Math.floor(b) % 16) >= 12;          // a fist pump every few bars
+        ctx.globalAlpha = 0.97;
+        ctx.fillStyle = 'rgb(22,18,26)';
+        ctx.strokeStyle = 'rgb(22,18,26)';
+        // Torso and head
+        ctx.beginPath();
+        ctx.moveTo(jx - 4, jy - 9.5 + nod * 0.4);
+        ctx.lineTo(jx + 4, jy - 9.5 + nod * 0.4);
+        ctx.lineTo(jx + 3.4, jy + 1);
+        ctx.lineTo(jx - 3.4, jy + 1);
+        ctx.closePath();
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(jx, jy - 12.6 + nod, 2.4, 0, 6.283);
+        ctx.fill();
+        // Headphones
+        ctx.lineWidth = 0.6;
+        ctx.beginPath();
+        ctx.arc(jx, jy - 12.6 + nod, 3, Math.PI * 1.05, Math.PI * 1.95);
+        ctx.stroke();
+        // Arms: one on the decks, one working the mixer or punching the air
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(jx - 3.4, jy - 8);
+        ctx.lineTo(jx - 6, jy - 2.5);
+        ctx.lineTo(jx - 4 + Math.sin(t * 3) * 0.6, jy - 0.5);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(jx + 3.4, jy - 8);
+        if (fistUp) {
+            ctx.lineTo(jx + 6, jy - 13);
+            ctx.lineTo(jx + 6.5, jy - 18.5 + Math.sin(p * Math.PI * 2) * 1.2);
+        } else {
+            ctx.lineTo(jx + 6, jy - 2.5);
+            ctx.lineTo(jx + 3.5, jy - 0.5);
+        }
+        ctx.stroke();
+
+        // Booth
+        const [bx, by, bw, bh] = PARTY.booth;
+        ctx.fillStyle = 'rgb(16,14,20)';
+        ctx.fillRect(bx, by, bw, bh);
+        // Laptop
+        ctx.fillStyle = 'rgb(205,220,240)';
+        ctx.globalAlpha = 0.8;
+        ctx.beginPath();
+        ctx.moveTo(jx - 5.5, by);
+        ctx.lineTo(jx - 1.5, by);
+        ctx.lineTo(jx - 2.2, by - 2.6);
+        ctx.lineTo(jx - 6.2, by - 2.6);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.restore();
+    }
+
     /* ---------- hut porch lights ---------- */
 
-    const hutState = HUT_LIGHTS.map((_, i) => ({ on: hash(i + 400) > 0.5, since: -10, next: 4 + hash(i + 500) * 20 }));
+    const hutState = HUT_LIGHTS.map((_, i) => ({ on: hash(i + 400) > 0.5, since: -10, next: 2 + hash(i + 500) * 8 }));
 
     function updateHutLights(t) {
         hutState.forEach(s => {
@@ -497,7 +812,7 @@
                 s.on = !s.on;
                 s.since = t;
                 // Lights stay on longer than they stay off
-                s.next = t + (s.on ? 12 + Math.random() * 45 : 6 + Math.random() * 30);
+                s.next = t + (s.on ? 6 + Math.random() * 18 : 3 + Math.random() * 9);
             }
         });
     }
@@ -507,13 +822,19 @@
             const s = hutState[i];
             const ramp = Math.min(1, (t - s.since) / 0.8);
             const level = s.on ? ramp : 1 - ramp;
+            // When off, darken the light painted into the picture so the change reads clearly
+            if (level < 1) {
+                ctx.globalCompositeOperation = 'source-over';
+                drawSprite(SPRITES.dim, x, y, 9, 0.75 * (1 - level));
+                ctx.globalCompositeOperation = 'lighter';
+            }
             if (level <= 0) return;
             const a = level * (0.85 + 0.15 * noise(t * 3 + i * 9));
-            drawSprite(SPRITES.warm, x, y, 10, 0.75 * a);
-            drawSprite(SPRITES.fire, x, y, 26, 0.18 * a);
+            drawSprite(SPRITES.warm, x, y, 14, a);
+            drawSprite(SPRITES.fire, x, y, 40, 0.35 * a);
             if (ry) {
                 // A soft reflection, stretched down the water
-                ctx.globalAlpha = 0.22 * a;
+                ctx.globalAlpha = 0.4 * a;
                 ctx.drawImage(SPRITES.warm, x - 2.5, ry - 10, 5, 22);
             }
         });
@@ -521,14 +842,14 @@
 
     /* ---------- bridge lanterns ---------- */
 
-    const lanternGusts = BRIDGE_LANTERNS.map((_, i) => ({ start: -10, end: -10, next: 10 + i * 9 + hash(i + 700) * 20 }));
+    const lanternGusts = BRIDGE_LANTERNS.map((_, i) => ({ start: -10, end: -10, next: 4 + i * 3 + hash(i + 700) * 6 }));
 
     function updateLanterns(t) {
         lanternGusts.forEach(g => {
             if (t >= g.next) {
                 g.start = t;
                 g.end = t + 0.5 + Math.random() * 1.2;
-                g.next = t + 15 + Math.random() * 30;
+                g.next = t + 6 + Math.random() * 12;
             }
         });
     }
@@ -557,14 +878,14 @@
     const wakeRings = [];
     const bilgeDrops = [];
     const nextWake = BOAT_WAKE.map((_, i) => 1 + i * 1.3);
-    let bilgeStart = 8;
+    let bilgeStart = 5;
     let bilgeEnd = 0;
     let nextDrop = 0;
 
     function updateBoat(t, dt) {
         BOAT_WAKE.forEach(([x, y], i) => {
             if (t >= nextWake[i]) {
-                wakeRings.push({ x, y, born: t, life: 3.2, max: 13 });
+                wakeRings.push({ x, y, born: t, life: 3.2, max: 20 });
                 nextWake[i] = t + 2.2 + Math.random() * 1.8;
             }
         });
@@ -572,7 +893,7 @@
         // Every so often the bilge pump runs for a few seconds
         if (t >= bilgeStart) {
             bilgeEnd = t + 3 + Math.random() * 3;
-            bilgeStart = t + 14 + Math.random() * 12;
+            bilgeStart = t + 9 + Math.random() * 8;
         }
         if (t < bilgeEnd && t >= nextDrop) {
             bilgeDrops.push({ x: BILGE[0], y: BILGE[1], vx: 3 + Math.random() * 2, vy: Math.random() * 2 });
@@ -601,7 +922,7 @@
         wakeRings.forEach(r => {
             const life = (t - r.born) / r.life;
             const rx = 1.5 + life * r.max;
-            ctx.globalAlpha = 0.4 * (1 - life);
+            ctx.globalAlpha = 0.75 * (1 - life);
             ctx.beginPath();
             ctx.ellipse(r.x, r.y, rx, rx * 0.22, 0, 0, Math.PI);
             ctx.stroke();
@@ -616,7 +937,7 @@
 
     /* ---------- gecko ---------- */
 
-    const gecko = { active: false, next: 20 };
+    const gecko = { active: false, next: 8 };
     const geckoSegs = GECKO_PATH.slice(1).map((p, i) => Math.hypot(p[0] - GECKO_PATH[i][0], p[1] - GECKO_PATH[i][1]));
     const geckoLength = geckoSegs.reduce((a, b) => a + b, 0);
 
@@ -627,7 +948,7 @@
                 const [x0, y0] = GECKO_PATH[i];
                 const [x1, y1] = GECKO_PATH[i + 1];
                 const f = Math.min(1, s / geckoSegs[i]);
-                return { x: x0 + (x1 - x0) * f, y: y0 + (y1 - y0) * f, heading: Math.atan2(y1 - y0, x1 - x0) };
+                return { x: x0 + (x1 - x0) * f + geckoShift, y: y0 + (y1 - y0) * f, heading: Math.atan2(y1 - y0, x1 - x0) };
             }
             s -= geckoSegs[i];
         }
@@ -637,6 +958,8 @@
         const g = gecko;
         if (!g.active) {
             if (t >= g.next) {
+                // Only climb when some of the wall is actually on screen
+                if (geckoShift === null) { g.next = t + 10; return; }
                 Object.assign(g, { active: true, s: 0, side: 0, sideAim: 0, moving: true, until: t + 1, phase: 0, fade: 0, turn: 0 });
             }
             return;
@@ -663,7 +986,7 @@
         g.fade = Math.min(1, g.s / 20);
         if (g.s >= geckoLength) {
             g.active = false;
-            g.next = t + 50 + Math.random() * 60;
+            g.next = t + 30 + Math.random() * 30;
         }
     }
 
@@ -676,7 +999,7 @@
         ctx.save();
         ctx.translate(g.x, g.y);
         ctx.rotate(g.heading + Math.PI / 2);   // the drawing below faces "up"
-        ctx.scale(0.85, 0.85);
+        ctx.scale(1.1, 1.1);
         ctx.globalCompositeOperation = 'source-over';
         ctx.globalAlpha = 0.85 * g.fade;
         ctx.fillStyle = 'rgb(196,178,150)';   // a pale house gecko, lit by the lamps
@@ -722,7 +1045,7 @@
 
     /* ---------- distant plane ---------- */
 
-    const plane = { active: false, next: 35 };
+    const plane = { active: false, next: 15 };
 
     function updatePlane(t) {
         const p = plane;
@@ -739,7 +1062,7 @@
         }
         if (p.active && t - p.born > p.dur) {
             p.active = false;
-            p.next = t + 70 + Math.random() * 80;
+            p.next = t + 40 + Math.random() * 40;
         }
     }
 
@@ -751,7 +1074,7 @@
         const y = p.y0 + p.drift * k01;
         const edge = Math.min(1, k01 / 0.05, (1 - k01) / 0.05);
         const c = (t - p.born) % 1.3;
-        drawSprite(SPRITES.white, x, y, 2.6, 0.45 * edge);
+        drawSprite(SPRITES.white, x, y, 3.5, 0.7 * edge);
         if (c < 0.06 || (c > 0.18 && c < 0.24)) drawSprite(SPRITES.white, x, y, 5, 0.9 * edge);
         drawSprite(SPRITES.red, x + 1, y + 0.4, 3, (c > 0.6 && c < 0.9 ? 0.7 : 0.15) * edge);
     }
@@ -792,8 +1115,9 @@
     let last = 0;
 
     function frame(now) {
-        const t = (now - start) / 1000;
-        const dt = Math.min(0.05, (now - last) / 1000);
+        // The first frame can be stamped fractionally before start; never let time run negative
+        const t = Math.max(0, (now - start) / 1000);
+        const dt = Math.min(0.05, Math.max(0, (now - last) / 1000));
         last = now;
 
         applyParallax(t);
@@ -806,6 +1130,7 @@
         updateBoat(t, dt);
         updateGecko(t, dt);
         updatePlane(t);
+        updateParty(t, dt);
 
         ctx.setTransform(k, 0, 0, k, 0, 0);
         ctx.clearRect(0, 0, IMG_W, IMG_H);
@@ -814,6 +1139,7 @@
         drawAquarium(t);
         drawSteam(t);
         drawGecko(t);
+        drawParty(t);
         drawLights(t);
 
         // Effects ease in once the entrance has settled
