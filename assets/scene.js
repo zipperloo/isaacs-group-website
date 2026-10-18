@@ -1357,7 +1357,7 @@
         const side = -Math.sin(o.phi);                      // how side-on it is, and which way it faces
         const dir = side >= 0 ? 1 : -1;
         const ls = 0.3 + 0.7 * Math.abs(side);              // body foreshortens as it turns
-        const h = 4 * depth;
+        const h = 6.5 * depth;
         const bodyR = h * 0.8 * ls;
         const step = o.walking ? Math.sin(o.gait) : 0;
 
@@ -1369,7 +1369,7 @@
         // Legs, dark lower half like the real thing
         ctx.globalAlpha = 0.75;
         ctx.strokeStyle = 'rgb(70,52,44)';
-        ctx.lineWidth = 0.5;
+        ctx.lineWidth = 0.75;
         [[-0.6, step], [-0.35, -step], [0.45, -step], [0.7, step]].forEach(([f, s]) => {
             ctx.beginPath();
             ctx.moveTo(f * bodyR, -h * 0.62);
@@ -1378,7 +1378,7 @@
         });
 
         // Pale body, warmed by the evening light
-        ctx.fillStyle = 'rgb(214,190,160)';
+        ctx.fillStyle = 'rgb(232,222,204)';   // the oryx's bright white coat
         ctx.beginPath();
         ctx.ellipse(0, -h * 0.78, Math.max(bodyR, h * 0.32), h * 0.27, 0, 0, 6.283);
         ctx.fill();
@@ -1386,7 +1386,7 @@
         // Neck and head, lowered to graze
         const hx = dir * (bodyR + h * 0.25 * ls);
         const hy = -h * (1.15 - 0.75 * o.head);
-        ctx.strokeStyle = 'rgb(214,190,160)';
+        ctx.strokeStyle = 'rgb(232,222,204)';
         ctx.lineWidth = h * 0.18;
         ctx.beginPath();
         ctx.moveTo(dir * bodyR * 0.75, -h * 0.85);
@@ -1397,13 +1397,18 @@
         ctx.arc(hx, hy, h * 0.13, 0, 6.283);
         ctx.fill();
 
-        // Long, straight, swept-back horns
-        ctx.strokeStyle = 'rgb(60,48,44)';
-        ctx.lineWidth = 0.3;
-        ctx.beginPath();
-        ctx.moveTo(hx, hy - h * 0.08);
-        ctx.lineTo(hx - dir * h * 0.35 * ls, hy - h * (0.95 - 0.25 * o.head));
-        ctx.stroke();
+        // Long, straight, swept-back horns: the oryx's signature, so drawn clearly as a pair
+        ctx.strokeStyle = 'rgb(40,32,30)';
+        ctx.lineWidth = 0.42;
+        const hornLen = h * 1.0;
+        const hornAng = -Math.PI / 2 - dir * (0.5 + 0.85 * o.head);   // tilts back, lying along the back when grazing
+        [-0.45, 0.45].forEach(off => {
+            const bx = hx + off * 0.5 * ls;
+            ctx.beginPath();
+            ctx.moveTo(bx, hy - h * 0.06);
+            ctx.lineTo(bx + Math.cos(hornAng) * hornLen * ls, hy - h * 0.06 + Math.sin(hornAng) * hornLen);
+            ctx.stroke();
+        });
 
         // Tail flick now and then
         const flick = Math.sin(t * 0.7) > 0.95 ? Math.sin(t * 25) * 0.3 : 0;
