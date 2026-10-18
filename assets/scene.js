@@ -74,6 +74,39 @@
         skyTop: 131                          // underside of the room's ceiling
     };
 
+    // More party-goers: x, y (feet), jacket, trousers, hat (or null), dance style
+    const DANCERS = [
+        [1476, 254, [214, 210, 200], [30, 28, 36], [40, 40, 48], 'jump'],
+        [1489, 252, [196, 160, 40], [26, 26, 34], null, 'sway']
+    ];
+    // People painted into the crowd who throw their hands up now and then:
+    // shoulder x (left, right), shoulder y, sleeve colour
+    const CROWD_ARMS = [
+        [1541, 1553, 221, [22, 24, 42]],
+        [1560, 1574, 220, [188, 62, 22]],
+        [1596, 1606, 221, [44, 22, 24]],
+        [1611, 1625, 220, [26, 36, 60]]
+    ];
+
+    // A family of monkeys in the palm crowns on the outcrop beside the Thai huts:
+    // x, y (where they sit), height, kind
+    const MONKEYS = [
+        [1278, 267.5, 7, 'adult'],
+        [1283.5, 269, 4, 'baby'],
+        [1252, 251.5, 6.5, 'adult'],
+        [1289, 293, 5, 'hanging']
+    ];
+
+    // Tropical fish swim behind the divers, so the divers are cut out of the fish layer
+    const DIVER_SHAPES = [
+        [[1362, 680], [1380, 655], [1420, 655], [1445, 662], [1470, 668], [1475, 690], [1462, 705], [1455, 730], [1490, 738], [1495, 750], [1470, 752], [1440, 760], [1440, 790], [1420, 810], [1395, 805], [1385, 770], [1370, 745], [1360, 720]],
+        [[1488, 742], [1500, 722], [1505, 700], [1530, 697], [1545, 705], [1575, 722], [1585, 740], [1560, 748], [1555, 775], [1580, 785], [1612, 800], [1600, 812], [1585, 830], [1570, 835], [1555, 812], [1540, 790], [1520, 780], [1505, 765]]
+    ];
+    const FISH_COLOURS = [[196, 186, 120], [120, 150, 190], [205, 150, 112], [170, 180, 190]];
+
+    // An Arabian oryx wandering a slow loop on the dunes: centre, radius across, radius in depth
+    const ORYX_LOOP = { cx: 196, cy: 360, rx: 34, ry: 4.5 };
+
     // Porch lights on the Thai huts that switch on and off: x, y, reflection y on the water (or 0)
     const HUT_LIGHTS = [[1012, 423, 0], [1046, 377, 0], [1168, 392, 0], [1192, 430, 0], [1262, 420, 452], [1293, 412, 455]];
 
@@ -802,6 +835,401 @@
         ctx.restore();
     }
 
+    /* ---------- more party-goers ---------- */
+
+    function rgb(c) { return `rgb(${c[0]},${c[1]},${c[2]})`; }
+
+    function drawDancer([x, y, jacket, trousers, hat, style], i, t) {
+        const b = beat(t) + i * 0.37;
+        const p = b % 1;
+        const dip = (1 - Math.cos(p * Math.PI * 2)) / 2;
+        const sway = Math.sin(b * Math.PI);
+        // 'jump' bounces right off the ground on the beat; 'sway' rocks side to side
+        const lift = style === 'jump' ? Math.max(0, Math.sin(p * Math.PI)) * 2.2 : 0;
+        const hipX = style === 'sway' ? sway * 1.6 : sway * 0.5;
+        const hipY = -15 + (style === 'jump' ? 0 : dip * 1.2) - lift;
+        const shX = hipX * (style === 'sway' ? 0.2 : 0.5);
+        const shY = hipY - 10;
+
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.globalAlpha = 0.97;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        ctx.strokeStyle = rgb(trousers);
+        ctx.lineWidth = 2.1;
+        [-1, 1].forEach(side => {
+            ctx.beginPath();
+            ctx.moveTo(hipX + side * 1.2, hipY);
+            ctx.lineTo(hipX * 0.5 + side * (1.6 + dip * 0.5), hipY / 2 - lift * 0.5);
+            ctx.lineTo(side * 2.1, -lift);
+            ctx.stroke();
+        });
+
+        ctx.fillStyle = rgb(jacket);
+        ctx.beginPath();
+        ctx.moveTo(shX - 3.8, shY);
+        ctx.lineTo(shX + 3.8, shY);
+        ctx.lineTo(hipX + 2.9, hipY + 0.5);
+        ctx.lineTo(hipX - 2.9, hipY + 0.5);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.strokeStyle = rgb(jacket);
+        ctx.lineWidth = 1.6;
+        if (style === 'jump') {
+            // Both arms punching up on the beat
+            const up = 8 + Math.sin(p * Math.PI) * 2;
+            [-1, 1].forEach(side => {
+                ctx.beginPath();
+                ctx.moveTo(shX + side * 3.3, shY + 0.5);
+                ctx.lineTo(shX + side * 4.8, shY - up * 0.55);
+                ctx.lineTo(shX + side * 3.8, shY - up);
+                ctx.stroke();
+            });
+        } else {
+            // Arms out, waving slowly over two bars
+            const w = Math.sin(b * Math.PI * 0.5);
+            [-1, 1].forEach(side => {
+                ctx.beginPath();
+                ctx.moveTo(shX + side * 3.3, shY + 0.5);
+                ctx.lineTo(shX + side * 6.5, shY - 1.5 - side * w * 2);
+                ctx.lineTo(shX + side * 9, shY - 4 - side * w * 3);
+                ctx.stroke();
+            });
+        }
+
+        const hx = shX + sway * 0.3;
+        ctx.fillStyle = 'rgb(48,34,28)';
+        ctx.beginPath();
+        ctx.arc(hx, shY - 3.3, 2.3, 0, 6.283);
+        ctx.fill();
+        if (hat) {
+            ctx.fillStyle = rgb(hat);
+            ctx.beginPath();
+            ctx.arc(hx, shY - 4.2, 2.35, Math.PI, 0);
+            ctx.fill();
+        }
+        ctx.restore();
+    }
+
+    // Painted crowd members throw their hands up: each one for a couple of bars at a time
+    const crowdState = CROWD_ARMS.map((_, i) => ({ start: -10, end: -10, next: 3 + i * 2.5 + hash(i + 900) * 4 }));
+
+    function updateCrowd(t) {
+        crowdState.forEach(s => {
+            if (t >= s.next) {
+                s.start = t;
+                s.end = t + 3 + Math.random() * 5;
+                s.next = s.end + 2 + Math.random() * 8;
+            }
+        });
+    }
+
+    function drawCrowd(t) {
+        const p = beat(t) % 1;
+        ctx.save();
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.lineWidth = 1.7;
+        CROWD_ARMS.forEach(([lx, rx, sy, col], i) => {
+            const s = crowdState[i];
+            const raise = Math.max(0, Math.min(1, (t - s.start) / 0.4, (s.end - t) / 0.4));
+            if (raise <= 0) return;
+            const pump = Math.sin((p + i * 0.25) * Math.PI * 2) * 1.2;
+            ctx.strokeStyle = rgb(col);
+            ctx.globalAlpha = 0.95;
+            // Mostly one hand up; some people put both up
+            const sides = i % 2 ? [[rx, 1]] : [[lx, -1], [rx, 1]];
+            sides.forEach(([x, side]) => {
+                const reach = raise * (9 + pump);
+                ctx.beginPath();
+                ctx.moveTo(x, sy + 1);
+                ctx.lineTo(x + side * 2, sy - reach * 0.5);
+                ctx.lineTo(x + side * 1, sy - reach);
+                ctx.stroke();
+            });
+        });
+        ctx.restore();
+    }
+
+    /* ---------- monkeys ---------- */
+
+    const monkeyState = MONKEYS.map((_, i) => ({ look: 0, lookAim: 0, nextLook: 1 + i * 1.7, scratch: -10, nextScratch: 5 + i * 4, shift: 0, shiftAim: 0 }));
+
+    function updateMonkeys(t, dt) {
+        monkeyState.forEach((s, i) => {
+            if (t >= s.nextLook) {
+                s.lookAim = (Math.random() - 0.5) * 2;
+                s.nextLook = t + 1.5 + Math.random() * 5;
+                // Now and then a monkey shuffles along its frond
+                if (Math.random() < 0.25 && MONKEYS[i][3] !== 'hanging') s.shiftAim = (Math.random() - 0.5) * 2.5;
+            }
+            if (t >= s.nextScratch) {
+                s.scratch = t;
+                s.nextScratch = t + 6 + Math.random() * 12;
+            }
+            s.look += (s.lookAim - s.look) * Math.min(1, dt * 6);
+            s.shift += (s.shiftAim - s.shift) * Math.min(1, dt * 1.5);
+        });
+    }
+
+    function drawMonkeys(t) {
+        ctx.save();
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        const fur = 'rgb(44,34,28)';
+        MONKEYS.forEach(([mx, my, h, kind], i) => {
+            const s = monkeyState[i];
+            const tail = Math.sin(t * 0.9 + i * 2) * h * 0.12;
+            ctx.save();
+            ctx.globalAlpha = 0.95;
+            ctx.fillStyle = fur;
+            ctx.strokeStyle = fur;
+
+            if (kind === 'hanging') {
+                // Hangs from a frond tip by its arms, swinging gently
+                const swing = Math.sin(t * 1.3) * 0.18 + s.look * 0.05;
+                ctx.translate(mx, my);
+                ctx.rotate(swing);
+                ctx.lineWidth = h * 0.13;
+                ctx.beginPath();
+                ctx.moveTo(-h * 0.12, 0);
+                ctx.lineTo(-h * 0.14, h * 0.45);
+                ctx.moveTo(h * 0.12, 0);
+                ctx.lineTo(h * 0.14, h * 0.45);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(s.look * h * 0.05, h * 0.55, h * 0.18, 0, 6.283);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.ellipse(0, h * 0.95, h * 0.2, h * 0.33, 0, 0, 6.283);
+                ctx.fill();
+                ctx.lineWidth = h * 0.12;
+                ctx.beginPath();
+                ctx.moveTo(-h * 0.1, h * 1.2);
+                ctx.lineTo(-h * 0.16 + Math.sin(t * 2) * h * 0.06, h * 1.55);
+                ctx.moveTo(h * 0.1, h * 1.2);
+                ctx.lineTo(h * 0.16 - Math.sin(t * 2) * h * 0.06, h * 1.55);
+                ctx.stroke();
+                ctx.lineWidth = h * 0.07;
+                ctx.beginPath();
+                ctx.moveTo(0, h * 1.25);
+                ctx.quadraticCurveTo(h * 0.4, h * 1.7, h * 0.25 + tail, h * 2.1);
+                ctx.stroke();
+                ctx.restore();
+                return;
+            }
+
+            ctx.translate(mx + s.shift, my);
+            // Tail hanging down over the frond
+            ctx.lineWidth = h * 0.08;
+            ctx.beginPath();
+            ctx.moveTo(-h * 0.15, -h * 0.05);
+            ctx.quadraticCurveTo(-h * 0.35, h * 0.6, -h * 0.25 + tail, h * 1.2);
+            ctx.stroke();
+            // Body, hunched
+            ctx.beginPath();
+            ctx.ellipse(0, -h * 0.35, h * 0.27, h * 0.37, 0.12, 0, 6.283);
+            ctx.fill();
+            // Haunches
+            ctx.beginPath();
+            ctx.ellipse(h * 0.08, -h * 0.08, h * 0.3, h * 0.14, 0, 0, 6.283);
+            ctx.fill();
+            // Head turns to look around
+            const hx = h * 0.1 + s.look * h * 0.07;
+            ctx.beginPath();
+            ctx.arc(hx, -h * 0.8, h * 0.2, 0, 6.283);
+            ctx.fill();
+            // A slightly paler face, turned the way it is looking
+            if (kind === 'adult') {
+                ctx.fillStyle = 'rgb(120,96,80)';
+                ctx.globalAlpha = 0.55;
+                ctx.beginPath();
+                ctx.arc(hx + s.look * h * 0.06, -h * 0.78, h * 0.1, 0, 6.283);
+                ctx.fill();
+                ctx.globalAlpha = 0.95;
+                ctx.fillStyle = fur;
+            }
+            // Arm: resting on the knee, or scratching its head now and then
+            const sc = t - s.scratch;
+            ctx.lineWidth = h * 0.11;
+            ctx.beginPath();
+            ctx.moveTo(h * 0.15, -h * 0.55);
+            if (sc < 1.6) {
+                const wob = Math.sin(sc * 18) * h * 0.04;
+                ctx.lineTo(h * 0.35, -h * 0.8);
+                ctx.lineTo(h * 0.2 + wob, -h * 0.98);
+            } else {
+                ctx.lineTo(h * 0.3, -h * 0.3);
+                ctx.lineTo(h * 0.28, -h * 0.12);
+            }
+            ctx.stroke();
+            ctx.restore();
+        });
+        ctx.restore();
+    }
+
+    /* ---------- tropical fish ---------- */
+
+    const fishClip = new Path2D();
+    TANK.forEach(([x, y], i) => (i ? fishClip.lineTo(x, y) : fishClip.moveTo(x, y)));
+    fishClip.closePath();
+    DIVER_SHAPES.forEach(poly => poly.forEach(([x, y], i) => (i ? fishClip.lineTo(x, y) : fishClip.moveTo(x, y))));
+
+    const fish = [];
+    let nextFish = 1;
+
+    function spawnFish(t) {
+        const ltr = Math.random() < 0.5;
+        const school = Math.random() < 0.25;
+        const n = school ? 3 + Math.floor(Math.random() * 3) : 1;
+        const y = 630 + Math.random() * 140;
+        const col = school ? [178, 188, 196] : FISH_COLOURS[Math.floor(Math.random() * FISH_COLOURS.length)];
+        const speed = (school ? 14 : 6 + Math.random() * 7) * (ltr ? 1 : -1);
+        for (let i = 0; i < n; i++) {
+            fish.push({
+                x: (ltr ? 1250 : 1680) - (ltr ? 1 : -1) * i * (6 + Math.random() * 4),
+                y: y + (Math.random() - 0.5) * (school ? 8 : 0),
+                vx: speed * (0.95 + Math.random() * 0.1),
+                size: school ? 1.6 : 2.2 + Math.random() * 1.6,
+                col, seed: Math.random() * 50, born: t
+            });
+        }
+    }
+
+    function updateFish(t, dt) {
+        if (t >= nextFish) {
+            if (fish.length < 9) spawnFish(t);
+            nextFish = t + 2 + Math.random() * 5;
+        }
+        for (let i = fish.length - 1; i >= 0; i--) {
+            const f = fish[i];
+            // Fish cruise, pause and dart rather than moving at a constant speed
+            const pace = 0.6 + 0.8 * noise(t * 0.4 + f.seed);
+            f.x += f.vx * pace * dt;
+            f.y += Math.sin(t * 0.6 + f.seed) * 2 * dt;
+            if (f.x < 1240 || f.x > 1690) fish.splice(i, 1);
+        }
+    }
+
+    function drawFish(t) {
+        ctx.save();
+        ctx.clip(fishClip, 'evenodd');
+        ctx.globalCompositeOperation = 'source-over';
+        fish.forEach(f => {
+            const dir = f.vx > 0 ? 1 : -1;
+            const wag = Math.sin(t * 9 + f.seed) * 0.35;
+            const s = f.size;
+            ctx.save();
+            ctx.translate(f.x, f.y);
+            ctx.scale(dir, 1);
+            // Faded, as if seen through deep water
+            ctx.globalAlpha = 0.42;
+            ctx.fillStyle = rgb(f.col);
+            ctx.beginPath();
+            ctx.ellipse(0, 0, s, s * 0.42, 0, 0, 6.283);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(-s * 0.8, 0);
+            ctx.lineTo(-s * 1.55, -s * (0.45 + wag * 0.3));
+            ctx.lineTo(-s * 1.55, s * (0.45 - wag * 0.3));
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        });
+        ctx.restore();
+    }
+
+    /* ---------- oryx ---------- */
+
+    // It walks round the loop in one direction only, in short bouts with long pauses to graze,
+    // so it turns gradually and never snaps from facing one way to the other.
+    const oryx = { phi: Math.PI * 0.7, walking: false, until: 4, gait: 0, head: 0 };
+
+    function updateOryx(t, dt) {
+        const o = oryx;
+        if (t >= o.until) {
+            o.walking = !o.walking;
+            o.until = t + (o.walking ? 5 + Math.random() * 9 : 7 + Math.random() * 16);
+        }
+        if (o.walking) {
+            o.phi += (1.1 / ORYX_LOOP.rx) * dt;   // about 1px a second
+            o.gait += dt * 5;
+        }
+        // Head comes up to walk and goes down to graze
+        o.head += ((o.walking ? 0 : 1) - o.head) * Math.min(1, dt * 1.2);
+    }
+
+    function drawOryx(t) {
+        const o = oryx;
+        const { cx, cy, rx, ry } = ORYX_LOOP;
+        const x = cx + Math.cos(o.phi) * rx;
+        const y = cy + Math.sin(o.phi) * ry;
+        const depth = 0.9 + 0.1 * (Math.sin(o.phi) + 1);   // a touch larger on the near side
+        const side = -Math.sin(o.phi);                      // how side-on it is, and which way it faces
+        const dir = side >= 0 ? 1 : -1;
+        const ls = 0.3 + 0.7 * Math.abs(side);              // body foreshortens as it turns
+        const h = 4 * depth;
+        const bodyR = h * 0.8 * ls;
+        const step = o.walking ? Math.sin(o.gait) : 0;
+
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.lineCap = 'round';
+
+        // Legs, dark lower half like the real thing
+        ctx.globalAlpha = 0.75;
+        ctx.strokeStyle = 'rgb(70,52,44)';
+        ctx.lineWidth = 0.5;
+        [[-0.6, step], [-0.35, -step], [0.45, -step], [0.7, step]].forEach(([f, s]) => {
+            ctx.beginPath();
+            ctx.moveTo(f * bodyR, -h * 0.62);
+            ctx.lineTo(f * bodyR + s * 0.5 * ls, 0);
+            ctx.stroke();
+        });
+
+        // Pale body, warmed by the evening light
+        ctx.fillStyle = 'rgb(214,190,160)';
+        ctx.beginPath();
+        ctx.ellipse(0, -h * 0.78, Math.max(bodyR, h * 0.32), h * 0.27, 0, 0, 6.283);
+        ctx.fill();
+
+        // Neck and head, lowered to graze
+        const hx = dir * (bodyR + h * 0.25 * ls);
+        const hy = -h * (1.15 - 0.75 * o.head);
+        ctx.strokeStyle = 'rgb(214,190,160)';
+        ctx.lineWidth = h * 0.18;
+        ctx.beginPath();
+        ctx.moveTo(dir * bodyR * 0.75, -h * 0.85);
+        ctx.lineTo(hx, hy);
+        ctx.stroke();
+        ctx.fillStyle = 'rgb(90,70,60)';   // the dark face markings
+        ctx.beginPath();
+        ctx.arc(hx, hy, h * 0.13, 0, 6.283);
+        ctx.fill();
+
+        // Long, straight, swept-back horns
+        ctx.strokeStyle = 'rgb(60,48,44)';
+        ctx.lineWidth = 0.3;
+        ctx.beginPath();
+        ctx.moveTo(hx, hy - h * 0.08);
+        ctx.lineTo(hx - dir * h * 0.35 * ls, hy - h * (0.95 - 0.25 * o.head));
+        ctx.stroke();
+
+        // Tail flick now and then
+        const flick = Math.sin(t * 0.7) > 0.95 ? Math.sin(t * 25) * 0.3 : 0;
+        ctx.lineWidth = 0.35;
+        ctx.beginPath();
+        ctx.moveTo(-dir * bodyR, -h * 0.85);
+        ctx.lineTo(-dir * (bodyR + 0.4 * ls) + flick, -h * 0.45);
+        ctx.stroke();
+
+        ctx.restore();
+    }
+
     /* ---------- hut porch lights ---------- */
 
     const hutState = HUT_LIGHTS.map((_, i) => ({ on: hash(i + 400) > 0.5, since: -10, next: 2 + hash(i + 500) * 8 }));
@@ -1001,9 +1429,9 @@
         ctx.rotate(g.heading + Math.PI / 2);   // the drawing below faces "up"
         ctx.scale(1.1, 1.1);
         ctx.globalCompositeOperation = 'source-over';
-        ctx.globalAlpha = 0.85 * g.fade;
-        ctx.fillStyle = 'rgb(196,178,150)';   // a pale house gecko, lit by the lamps
-        ctx.strokeStyle = 'rgb(196,178,150)';
+        ctx.globalAlpha = 0.8 * g.fade;
+        ctx.fillStyle = 'rgb(96,84,74)';   // camouflaged: only a shade lighter than the stone
+        ctx.strokeStyle = 'rgb(96,84,74)';
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
 
@@ -1033,7 +1461,7 @@
         ctx.fill();
 
         // A faint warm rim from the fire below
-        ctx.globalAlpha = 0.3 * g.fade;
+        ctx.globalAlpha = 0.12 * g.fade;
         ctx.strokeStyle = 'rgb(255,170,100)';
         ctx.lineWidth = 0.35;
         ctx.beginPath();
@@ -1131,15 +1559,24 @@
         updateGecko(t, dt);
         updatePlane(t);
         updateParty(t, dt);
+        updateCrowd(t);
+        updateMonkeys(t, dt);
+        updateFish(t, dt);
+        updateOryx(t, dt);
 
         ctx.setTransform(k, 0, 0, k, 0, 0);
         ctx.clearRect(0, 0, IMG_W, IMG_H);
         regions.forEach(r => drawDistort(r, t));
         drawBoat(t);
+        drawFish(t);
         drawAquarium(t);
+        drawMonkeys(t);
+        drawOryx(t);
         drawSteam(t);
         drawGecko(t);
         drawParty(t);
+        DANCERS.forEach((d, i) => drawDancer(d, i, t));
+        drawCrowd(t);
         drawLights(t);
 
         // Effects ease in once the entrance has settled

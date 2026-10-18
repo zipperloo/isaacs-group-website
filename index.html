@@ -190,9 +190,71 @@
             z-index: 2;
         }
         .contact:hover { opacity: 0.75; }
-        .contact:focus-visible {
+        .contact:focus-visible,
+        .sound:focus-visible {
             outline: 1px solid var(--ivory);
             outline-offset: 4px;
+        }
+
+        /* Sound toggle, bottom right */
+        .sound {
+            position: fixed;
+            right: var(--gutter-right);
+            bottom: var(--edge);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px;
+            margin: -6px;
+            background: none;
+            border: 0;
+            color: var(--ivory);
+            font: inherit;
+            font-size: clamp(11px, 0.8vw, 14px);
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            text-shadow: 0 0 6px var(--halo);
+            cursor: pointer;
+            transition: opacity 0.3s ease;
+            z-index: 2;
+        }
+        .sound:hover { opacity: 0.75; }
+        .sound:disabled { opacity: 0.4; cursor: default; }
+        .eq {
+            display: flex;
+            align-items: flex-end;
+            gap: 2px;
+            height: 12px;
+        }
+        .eq i {
+            width: 2px;
+            height: 3px;
+            background: var(--ivory);
+            box-shadow: 0 0 4px var(--halo);
+            transition: height 0.4s ease;
+        }
+        .sound[data-state="waiting"] .eq i { animation: eq-wait 1.2s ease-in-out infinite; }
+        .sound[data-state="playing"] .eq i { animation: eq 0.9s ease-in-out infinite alternate; }
+        .eq i:nth-child(2) { animation-delay: -0.3s !important; }
+        .eq i:nth-child(3) { animation-delay: -0.6s !important; }
+        .eq i:nth-child(4) { animation-delay: -0.15s !important; }
+        @keyframes eq {
+            0% { height: 3px; }
+            50% { height: 12px; }
+            100% { height: 5px; }
+        }
+        @keyframes eq-wait {
+            0%, 100% { opacity: 0.35; }
+            50% { opacity: 0.9; }
+        }
+        /* The YouTube player only provides the audio, so it is kept out of view */
+        .yt-player {
+            position: fixed;
+            left: -10000px;
+            top: 0;
+            width: 200px;
+            height: 200px;
+            pointer-events: none;
         }
 
         /* Contact dialog */
@@ -337,7 +399,7 @@
                 font-weight: 300; /* ExtraLight breaks up at this small size */
                 letter-spacing: 0.35em;
                 padding-left: 0.35em;
-                bottom: calc(var(--edge) + 24px);
+                bottom: calc(var(--edge) + 44px);
             }
             .stage img { object-position: 42% 50%; }
         }
@@ -379,7 +441,15 @@
                 <p class="tagline">A World of Perspective</p>
             </div>
         </main>
+
+        <div class="layer reveal" style="--delay: 2.6s">
+            <button class="sound" id="sound-toggle" type="button" aria-pressed="false" data-state="off">
+                <span class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+                <span id="sound-label">Sound off</span>
+            </button>
+        </div>
     </div>
+    <div class="yt-player" aria-hidden="true"><div id="yt-player"></div></div>
 
     <div class="curtain" aria-hidden="true"></div>
 
@@ -413,6 +483,7 @@
     </div>
 
     <script src="assets/scene.js"></script>
+    <script src="assets/sound.js"></script>
     <script>
         // Contact dialog
         const dialog = document.getElementById('contact-dialog');
