@@ -10,7 +10,7 @@ The home page is a full-screen illustrated scene with the ISAACS logo, a tagline
 | --- | --- |
 | `index.html` | The whole site. HTML, CSS and JavaScript are all inline. |
 | `assets/background-day.jpg`, `assets/background-night.jpg` | Full-screen backgrounds. The two images are aligned so they crossfade cleanly. |
-| `assets/typography/` | Lettering as transparent PNGs, each in an `-ivory` (night) and `-espresso` (day) version: wordmark, "family office", tagline, contact, day, night and domain. |
+| `assets/typography/` | Lettering as transparent PNGs, each in an `-ivory` (night) and `-espresso` (day) version: wordmark, "family office", contact, day, night and domain. The tagline "A World of Perspective" is live text instead, set in Source Sans 3 ExtraLight (the supplied artwork's typeface at a lighter weight, to match the wordmark). |
 | `favicon.ico` | Browser tab icon. |
 | `logo.png` | Old yellow logo mark. Not used by the current site. |
 | `CNAME` | Custom domain for GitHub Pages (`isaacs.group`). |

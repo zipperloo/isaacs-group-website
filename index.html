@@ -9,7 +9,7 @@
     <link rel="preload" as="image" href="assets/background-night.jpg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400&family=Source+Sans+3:wght@200;300&display=swap" rel="stylesheet">
     <script>
         // Apply the visitor's saved mode before first paint to avoid a flash
         try {
@@ -27,8 +27,9 @@
             --edge: clamp(20px, 4vw, 56px);
             --label-h: clamp(18px, 1.4vw, 26px);
         }
-        html[data-mode="night"] { --ink: var(--ivory); --paper: var(--espresso); }
-        html[data-mode="day"] { --ink: var(--espresso); --paper: var(--ivory); }
+        /* --halo is a soft glow behind thin type so it reads on busy parts of the image */
+        html[data-mode="night"] { --ink: var(--ivory); --paper: var(--espresso); --halo: rgba(10, 8, 6, 0.55); }
+        html[data-mode="day"] { --ink: var(--espresso); --paper: var(--ivory); --halo: rgba(245, 239, 230, 0.9); }
 
         * { box-sizing: border-box; }
 
@@ -85,7 +86,7 @@
         .shade-day {
             background:
                 linear-gradient(to bottom, rgba(255, 255, 255, 0.25) 0%, transparent 22%),
-                linear-gradient(to top, rgba(240, 232, 220, 0.75) 0%, rgba(240, 232, 220, 0.35) 14%, transparent 30%);
+                linear-gradient(to top, rgba(240, 232, 220, 0.85) 0%, rgba(240, 232, 220, 0.5) 14%, transparent 30%);
             opacity: 0;
         }
         html[data-mode="day"] .shade-night { opacity: 0; }
@@ -113,8 +114,8 @@
         /* Layout */
         .logo {
             position: fixed;
-            top: var(--edge);
-            left: var(--gutter);
+            top: calc(var(--edge) + 1.5vw);
+            left: calc(var(--gutter) + 1.5vw);
             width: clamp(170px, 21vw, 400px);
             margin: 0;
             z-index: 2;
@@ -123,19 +124,29 @@
         .logo img { width: 100%; height: auto; }
         .logo .family-office {
             width: 85%;
-            margin-top: 4%;
+            margin: 4% auto 0;
         }
 
+        /* Same typeface as the supplied artwork, at a lighter weight to match the ISAACS wordmark */
         .tagline {
             position: fixed;
             left: 50%;
             bottom: clamp(36px, 6vh, 72px);
             transform: translateX(-50%);
-            width: min(48vw, 900px);
             margin: 0;
+            padding-left: 0.45em; /* balances the trailing letter-spacing so the line stays centred */
+            color: var(--ink);
+            font-family: 'Source Sans 3', sans-serif;
+            font-weight: 200;
+            text-shadow: 0 0 14px var(--halo), 0 0 4px var(--halo);
+            font-size: clamp(14px, 2.4vw, 46px);
+            letter-spacing: 0.45em;
+            line-height: 1;
+            text-transform: uppercase;
+            white-space: nowrap;
+            transition: color var(--fade);
             z-index: 2;
         }
-        .tagline .duo, .tagline img { width: 100%; height: auto; }
 
         .domain {
             position: fixed;
@@ -156,6 +167,9 @@
         }
         .label-button .duo,
         .mode-toggle .duo { height: var(--label-h); }
+        .label-button .duo,
+        .mode-toggle .duo,
+        .domain { filter: drop-shadow(0 0 2px var(--halo)) drop-shadow(0 0 8px var(--halo)); }
         .label-button:hover { opacity: 0.75; }
         .label-button:focus-visible,
         .mode-toggle button:focus-visible {
@@ -170,11 +184,12 @@
             z-index: 2;
         }
 
-        /* Day / night toggle */
+        /* Day / night toggle, top centre (clear sky in both backgrounds) */
         .mode-toggle {
             position: fixed;
-            left: var(--gutter);
-            bottom: var(--edge);
+            top: calc(var(--edge) * 0.6);
+            left: 50%;
+            transform: translateX(-50%);
             display: flex;
             align-items: center;
             gap: 14px;
@@ -341,8 +356,24 @@
         }
 
         @media (max-width: 768px) {
-            .tagline { width: 84vw; bottom: calc(var(--edge) + var(--label-h) + 28px); }
+            .tagline {
+                font-size: 3.4vw;
+                font-weight: 300; /* ExtraLight breaks up at this small size */
+                letter-spacing: 0.35em;
+                padding-left: 0.35em;
+                bottom: calc(var(--edge) + var(--label-h) + 28px);
+            }
             .scene { background-position: 42% center; }
+        }
+
+        /* On phones the toggle moves under Contact, clear of the logo */
+        @media (max-width: 600px) {
+            .mode-toggle {
+                top: calc(var(--edge) * 0.6 + var(--label-h) + 52px);
+                left: auto;
+                right: var(--gutter-right);
+                transform: none;
+            }
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -369,40 +400,37 @@
             </span>
         </h1>
 
-        <button class="contact label-button" id="contact-button" type="button" aria-haspopup="dialog">
-            <span class="duo">
-                <img class="ivory" src="assets/typography/contact-ivory.png" alt="Contact">
-                <img class="espresso" src="assets/typography/contact-espresso.png" alt="" aria-hidden="true">
-            </span>
-        </button>
+        <nav>
+            <div class="mode-toggle" role="group" aria-label="Background">
+                <button class="word word-day" type="button" data-set-mode="day">
+                    <span class="duo">
+                        <img class="ivory" src="assets/typography/day-ivory.png" alt="Day">
+                        <img class="espresso" src="assets/typography/day-espresso.png" alt="" aria-hidden="true">
+                    </span>
+                </button>
+                <button class="switch" id="mode-switch" type="button" role="switch" aria-checked="true" aria-label="Night mode"></button>
+                <button class="word word-night" type="button" data-set-mode="night">
+                    <span class="duo">
+                        <img class="ivory" src="assets/typography/night-ivory.png" alt="Night">
+                        <img class="espresso" src="assets/typography/night-espresso.png" alt="" aria-hidden="true">
+                    </span>
+                </button>
+            </div>
+
+            <button class="contact label-button" id="contact-button" type="button" aria-haspopup="dialog">
+                <span class="duo">
+                    <img class="ivory" src="assets/typography/contact-ivory.png" alt="Contact">
+                    <img class="espresso" src="assets/typography/contact-espresso.png" alt="" aria-hidden="true">
+                </span>
+            </button>
+        </nav>
     </header>
 
     <main>
-        <p class="tagline">
-            <span class="duo">
-                <img class="ivory" src="assets/typography/title-ivory.png" alt="A world of perspective">
-                <img class="espresso" src="assets/typography/title-espresso.png" alt="" aria-hidden="true">
-            </span>
-        </p>
+        <p class="tagline">A World of Perspective</p>
     </main>
 
     <footer>
-        <div class="mode-toggle" role="group" aria-label="Background">
-            <button class="word word-day" type="button" data-set-mode="day">
-                <span class="duo">
-                    <img class="ivory" src="assets/typography/day-ivory.png" alt="Day">
-                    <img class="espresso" src="assets/typography/day-espresso.png" alt="" aria-hidden="true">
-                </span>
-            </button>
-            <button class="switch" id="mode-switch" type="button" role="switch" aria-checked="true" aria-label="Night mode"></button>
-            <button class="word word-night" type="button" data-set-mode="night">
-                <span class="duo">
-                    <img class="ivory" src="assets/typography/night-ivory.png" alt="Night">
-                    <img class="espresso" src="assets/typography/night-espresso.png" alt="" aria-hidden="true">
-                </span>
-            </button>
-        </div>
-
         <span class="domain duo">
             <img class="ivory" src="assets/typography/domain-ivory.png" alt="isaacs.group">
             <img class="espresso" src="assets/typography/domain-espresso.png" alt="" aria-hidden="true">
