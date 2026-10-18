@@ -305,13 +305,13 @@
         /* Contact panel header: wordmark, title, then who the message goes to */
         .panel-logo {
             display: block;
-            width: min(170px, 50%);
+            width: min(200px, 60%);
             height: auto;
             margin: 6px auto 8px;
         }
         .panel-sub {
             display: block;
-            width: min(168px, 50%);   /* a touch wider than the main logo's proportion, for legibility at this size */
+            width: min(170px, 51%);   /* 85% of the wordmark, the same proportion as the main logo */
             height: auto;
             margin: 0 auto;
             opacity: 1;
@@ -449,8 +449,8 @@
         /* A more compact contact panel on phones */
         @media (max-width: 600px) {
             .panel { padding: 24px 24px 22px; }
-            .panel-logo { width: 130px; margin: 0 auto 6px; }
-            .panel-sub { width: 130px; }
+            .panel-logo { width: 156px; margin: 0 auto 7px; }
+            .panel-sub { width: 133px; }
             .recipient { margin-bottom: 22px; }
             .recipient::before { margin: 16px auto 14px; }
             .recipient-name { font-size: 1.05rem; }
