@@ -4,11 +4,20 @@ The single-page website for ISAACS Family Office ("A world of perspective"), ser
 
 The home page is a full-screen illustrated night scene with the ISAACS logo, the tagline, a link to the contact form and the domain, all in ivory.
 
+The scene is subtly animated (see `assets/scene.js`):
+
+- **Entrance:** fades up from black while the scene settles from a slight zoom, then the lettering appears in turn.
+- **Depth:** gentle parallax that follows the mouse (or the tilt of a phone, where the browser allows it), and a very slow "breathing" zoom.
+- **Living details:** shimmering city lights, blinking aircraft warning lights on the tallest towers, faint twinkling stars, rippling water, flickering firelight with heat haze, the desk lantern, navigation lights on the space station, and divers' bubbles, light shafts and drifting particles in the aquarium.
+
+Visitors who have "reduce motion" turned on in their device settings see the still image only.
+
 ## Files
 
 | Path | Purpose |
 | --- | --- |
-| `index.html` | The whole site. HTML, CSS and JavaScript are all inline. |
+| `index.html` | The page, its styles and the contact form script. |
+| `assets/scene.js` | The scene animation: layout, parallax and the canvas effects. |
 | `assets/background-night.jpg` | Full-screen background. |
 | `assets/typography/` | Ivory lettering as transparent PNGs: wordmark, "family office", contact and domain. The tagline "A World of Perspective" is live text instead, set in Source Sans 3 ExtraLight (the supplied artwork's typeface at a lighter weight, to match the wordmark). |
 | `favicon.ico` | Browser tab icon. |
@@ -26,6 +35,8 @@ These are set as `--espresso` and `--ivory` at the top of the CSS in `index.html
 ### Updating images
 
 The originals are 1672×941 PNGs. The background is saved as JPEG (quality 88) to keep the page fast to load (about 0.4 MB instead of 2.5 MB). The wordmark is trimmed to its content and resized to 1200px wide. Its ivory version was made by recolouring the espresso original, because the source files only include an espresso wordmark. If you replace an image, keep the same file name. The day background and the espresso lettering were removed with the day/night toggle; they're still in the git history if you need them.
+
+**If the background picture changes, the effects in `assets/scene.js` must be re-mapped.** Every effect is placed using pixel coordinates in the 1672×941 image: the city light and star positions (detected from the image's brightest lights and darkest sky), and the outlines of the water, flames, aquarium and divers.
 
 ## Running locally
 

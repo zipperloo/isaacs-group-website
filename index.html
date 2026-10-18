@@ -10,6 +10,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400&family=Source+Sans+3:wght@200;300&display=swap" rel="stylesheet">
+    <script>
+        // Hold the entrance until the background is ready (scene.js removes this)
+        document.documentElement.classList.add('loading');
+    </script>
     <style>
         :root {
             --espresso: #4b382d;
@@ -48,11 +52,72 @@
             border: 0;
         }
 
-        /* Background scene */
-        .scene {
+        /* Background scene: the image and the effects canvas share one stage.
+           scene.js sizes the stage and moves it for parallax; without JS it simply covers the screen. */
+        .stage {
             position: fixed;
             inset: 0;
-            background: url('assets/background-night.jpg') 44% center / cover no-repeat;
+            overflow: hidden;
+            will-change: transform;
+        }
+        .settle,
+        .breathe {
+            position: absolute;
+            inset: 0;
+            transform-origin: 50% 50%;
+        }
+        .stage img,
+        .stage canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+        }
+        .stage img {
+            object-fit: cover;
+            object-position: 44% 50%;
+        }
+        .stage canvas {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Entrance: fade up from black while the scene settles, then the lettering appears */
+        .curtain {
+            position: fixed;
+            inset: 0;
+            background: #000;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 2.4s ease, visibility 0s 2.4s;
+            z-index: 5;
+        }
+        .settle { transition: transform 7s cubic-bezier(0.16, 0.7, 0.2, 1); }
+        .reveal { transition: opacity 1.6s ease var(--delay, 0s), transform 1.6s cubic-bezier(0.2, 0.7, 0.2, 1) var(--delay, 0s); }
+        html.loading .curtain { opacity: 1; visibility: visible; transition: none; }
+        html.loading .settle { transform: scale(1.06); transition: none; }
+        html.loading .reveal { opacity: 0; transform: translateY(10px); transition: none; }
+
+        /* A barely-there, slow zoom so the scene never feels static */
+        .breathe { animation: breathe 48s ease-in-out infinite alternate; }
+        @keyframes breathe {
+            from { transform: scale(1); }
+            to { transform: scale(1.025); }
+        }
+
+        .ui {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            will-change: transform;
+            z-index: 2;
+        }
+        .ui button { pointer-events: auto; }
+        /* Full-screen wrappers, so the fade-in transform doesn't shift what the lettering is positioned against */
+        .layer {
+            position: absolute;
+            inset: 0;
         }
 
         /* Soft shading so the type stays legible on any part of the image */
@@ -265,33 +330,55 @@
                 padding-left: 0.35em;
                 bottom: calc(var(--edge) + var(--label-h) + 28px);
             }
-            .scene { background-position: 42% center; }
+            .stage img { object-position: 42% 50%; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .settle, .reveal, .curtain { transition: none !important; }
+            .breathe { animation: none; }
         }
     </style>
 </head>
 <body>
-    <div class="scene" aria-hidden="true"></div>
+    <div class="stage" id="stage" aria-hidden="true">
+        <div class="settle">
+            <div class="breathe">
+                <img id="scene-img" src="assets/background-night.jpg" alt="">
+                <canvas id="fx"></canvas>
+            </div>
+        </div>
+    </div>
     <div class="shade" aria-hidden="true"></div>
 
-    <header>
-        <h1 class="logo">
-            <span class="sr-only">ISAACS Family Office</span>
-            <img src="assets/typography/isaacs-wordmark-ivory.png" alt="" aria-hidden="true">
-            <img class="family-office" src="assets/typography/family-office-ivory.png" alt="" aria-hidden="true">
-        </h1>
+    <div class="ui" id="ui">
+        <header>
+            <h1 class="logo reveal" style="--delay: 1.2s">
+                <span class="sr-only">ISAACS Family Office</span>
+                <img src="assets/typography/isaacs-wordmark-ivory.png" alt="" aria-hidden="true">
+                <img class="family-office" src="assets/typography/family-office-ivory.png" alt="" aria-hidden="true">
+            </h1>
 
-        <button class="contact" id="contact-button" type="button" aria-haspopup="dialog">
-            <img class="label" src="assets/typography/contact-ivory.png" alt="Contact">
-        </button>
-    </header>
+            <div class="layer reveal" style="--delay: 2.6s">
+                <button class="contact" id="contact-button" type="button" aria-haspopup="dialog">
+                    <img class="label" src="assets/typography/contact-ivory.png" alt="Contact">
+                </button>
+            </div>
+        </header>
 
-    <main>
-        <p class="tagline">A World of Perspective</p>
-    </main>
+        <main>
+            <div class="layer reveal" style="--delay: 2s">
+                <p class="tagline">A World of Perspective</p>
+            </div>
+        </main>
 
-    <footer class="domain">
-        <img class="label" src="assets/typography/domain-ivory.png" alt="isaacs.group">
-    </footer>
+        <footer class="layer reveal" style="--delay: 2.6s">
+            <div class="domain">
+                <img class="label" src="assets/typography/domain-ivory.png" alt="isaacs.group">
+            </div>
+        </footer>
+    </div>
+
+    <div class="curtain" aria-hidden="true"></div>
 
     <!-- Contact dialog -->
     <div class="dialog" id="contact-dialog" role="dialog" aria-modal="true" aria-labelledby="contact-title">
@@ -317,6 +404,7 @@
         </div>
     </div>
 
+    <script src="assets/scene.js"></script>
     <script>
         // Contact dialog
         const dialog = document.getElementById('contact-dialog');
