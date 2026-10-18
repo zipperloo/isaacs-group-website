@@ -111,8 +111,10 @@
     // The laptop on the terrace desk shows the Medik8 home page (Crystal Retinal slide).
     // The four corners of the screen panel, measured from the picture: top-left, top-right,
     // bottom-right, bottom-left. The screen is slightly rotated and seen in perspective.
-    const LAPTOP = [[838.5, 534], [920.5, 536], [912.5, 579.5], [833.5, 577.3]];
-    const POSTIT = [1171, 625];   // centre of the post-it on the desk
+    const LAPTOP = [[838.5, 534], [920.5, 536], [912.5, 579.5], [832.5, 577.5]];
+    // The post-it's four corners on the desk (top-left, top-right, bottom-right, bottom-left
+    // of the note itself). It lies flat and turned, so it reads as a diamond-ish shape.
+    const POSTIT = [[1115, 645.6], [1140, 646.9], [1125.5, 658], [1100, 654.6]];
     const laptopImg = new Image();
     laptopImg.src = 'assets/laptop-screen.jpg';
 
@@ -1239,48 +1241,75 @@
 
     // A yellow post-it on the desk by the headphones, "NPD" in black marker. It lies flat on
     // the desk, so it is foreshortened, and it is turned a little off square.
+    // The note is drawn flat on a small canvas, then warped onto its corners on the desk
+    const postItTex = document.createElement('canvas');
+    postItTex.width = postItTex.height = 96;
+    function paintPostIt() {
+        const c = postItTex;
+        const x = c.getContext('2d');
+        x.setTransform(1, 0, 0, 1, 0, 0);
+        x.clearRect(0, 0, 96, 96);
+        const g = x.createLinearGradient(0, 0, 96, 96);
+        g.addColorStop(0, 'rgb(218,194,88)');
+        g.addColorStop(1, 'rgb(178,152,60)');
+        x.fillStyle = g;
+        x.beginPath();
+        x.moveTo(0, 0);
+        x.lineTo(96, 0);
+        x.lineTo(96, 84);
+        x.lineTo(84, 96);       // the bottom corner curls up slightly
+        x.lineTo(0, 96);
+        x.closePath();
+        x.fill();
+        x.fillStyle = 'rgba(120,96,30,0.6)';
+        x.beginPath();
+        x.moveTo(96, 84);
+        x.lineTo(84, 96);
+        x.lineTo(86, 86);
+        x.closePath();
+        x.fill();
+        // Sticky strip along the top, very faintly darker
+        x.fillStyle = 'rgba(150,120,40,0.18)';
+        x.fillRect(0, 0, 96, 16);
+        // "NPD" handwritten in black marker
+        x.fillStyle = 'rgba(24,22,28,0.9)';
+        x.font = '40px "Permanent Marker", "Segoe Print", cursive';
+        x.textAlign = 'center';
+        x.textBaseline = 'middle';
+        x.translate(47, 54);
+        x.rotate(-0.08);
+        x.fillText('NPD', 0, 0);
+    }
+    paintPostIt();
+    // Repaint once the handwriting font has loaded
+    if (document.fonts && document.fonts.load) {
+        document.fonts.load('40px "Permanent Marker"').then(() => { paintPostIt(); drawLaptop(); }).catch(() => {});
+    }
+
     function drawPostIt() {
-        const [cx, cy] = POSTIT;
-        const size = 12;
+        // Soft contact shadow just below and right of the note
         sctx.save();
-        sctx.translate(cx, cy);
-        sctx.scale(1, 0.48);        // seen at a low angle across the desk
-        sctx.rotate(-0.22);
-        // Soft contact shadow
-        sctx.globalAlpha = 0.35;
+        sctx.globalAlpha = 0.3;
         sctx.fillStyle = 'rgb(10,8,8)';
-        sctx.fillRect(-size / 2 + 0.6, -size / 2 + 0.9, size, size);
-        // The note, warm-lit and a little dim like everything on the desk
-        const g = sctx.createLinearGradient(-size / 2, -size / 2, size / 2, size / 2);
-        g.addColorStop(0, 'rgb(214,190,86)');
-        g.addColorStop(1, 'rgb(176,150,58)');
-        sctx.globalAlpha = 0.95;
-        sctx.fillStyle = g;
         sctx.beginPath();
-        sctx.moveTo(-size / 2, -size / 2);
-        sctx.lineTo(size / 2, -size / 2);
-        sctx.lineTo(size / 2, size / 2 - 1.6);
-        sctx.lineTo(size / 2 - 1.6, size / 2);   // the bottom corner curls up slightly
-        sctx.lineTo(-size / 2, size / 2);
+        POSTIT.forEach(([x, y], i) => (i ? sctx.lineTo(x + 0.6, y + 0.8) : sctx.moveTo(x + 0.6, y + 0.8)));
         sctx.closePath();
         sctx.fill();
-        sctx.fillStyle = 'rgba(120,96,30,0.6)';
-        sctx.beginPath();
-        sctx.moveTo(size / 2, size / 2 - 1.6);
-        sctx.lineTo(size / 2 - 1.6, size / 2);
-        sctx.lineTo(size / 2 - 1.3, size / 2 - 1.3);
-        sctx.closePath();
-        sctx.fill();
-        // "NPD" in sharpie
-        sctx.globalAlpha = 0.85;
-        sctx.fillStyle = 'rgb(24,22,28)';
-        sctx.font = '900 4.6px "Arial Black", "Segoe UI", sans-serif';
-        sctx.textAlign = 'center';
-        sctx.textBaseline = 'middle';
-        sctx.save();
-        sctx.rotate(-0.06);
-        sctx.fillText('NPD', 0, 0.3);
         sctx.restore();
+
+        const map = homography(POSTIT);
+        const N = 4;
+        const w = postItTex.width;
+        sctx.save();
+        sctx.globalAlpha = 0.95;
+        for (let i = 0; i < N; i++) {
+            for (let j = 0; j < N; j++) {
+                const u0 = i / N, u1 = (i + 1) / N, v0 = j / N, v1 = (j + 1) / N;
+                const s00 = [u0 * w, v0 * w], s10 = [u1 * w, v0 * w], s11 = [u1 * w, v1 * w], s01 = [u0 * w, v1 * w];
+                drawTriangle(sctx, postItTex, s00, s10, s11, map(u0, v0), map(u1, v0), map(u1, v1));
+                drawTriangle(sctx, postItTex, s00, s11, s01, map(u0, v0), map(u1, v1), map(u0, v1));
+            }
+        }
         sctx.restore();
     }
 
