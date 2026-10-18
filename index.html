@@ -176,12 +176,6 @@
             filter: drop-shadow(0 0 2px var(--halo)) drop-shadow(0 0 8px var(--halo));
         }
 
-        .domain {
-            position: fixed;
-            right: var(--gutter-right);
-            bottom: var(--edge);
-            z-index: 2;
-        }
 
         .contact {
             position: fixed;
@@ -343,7 +337,7 @@
                 font-weight: 300; /* ExtraLight breaks up at this small size */
                 letter-spacing: 0.35em;
                 padding-left: 0.35em;
-                bottom: calc(var(--edge) + var(--label-h) + 28px);
+                bottom: calc(var(--edge) + 24px);
             }
             .stage img { object-position: 42% 50%; }
         }
@@ -385,12 +379,6 @@
                 <p class="tagline">A World of Perspective</p>
             </div>
         </main>
-
-        <footer class="layer reveal" style="--delay: 2.6s">
-            <div class="domain">
-                <img class="label" src="assets/typography/domain-ivory.png" alt="isaacs.group">
-            </div>
-        </footer>
     </div>
 
     <div class="curtain" aria-hidden="true"></div>
