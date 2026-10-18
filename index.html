@@ -18,6 +18,7 @@
     <style>
         :root {
             --espresso: #4b382d;
+            --navy: #132038;
             --ivory: #e2d8c9;
             --halo: rgba(10, 8, 6, 0.55); /* soft glow behind thin type so it reads on busy parts of the image */
             --gutter: clamp(16px, 5.5vw, 96px);
@@ -293,7 +294,7 @@
             max-height: calc(100vh - 32px);
             overflow-y: auto;
             padding: clamp(28px, 5vw, 48px);
-            background: color-mix(in srgb, var(--espresso) 92%, transparent);
+            background: color-mix(in srgb, var(--navy) 94%, transparent);
             border: 1px solid color-mix(in srgb, var(--ivory) 30%, transparent);
             transform: translateY(12px);
             transition: transform 0.4s ease;
@@ -313,6 +314,13 @@
             font-size: 1.1rem;
             letter-spacing: 0.2em;
             opacity: 1;
+        }
+
+        .panel-logo {
+            display: block;
+            width: min(200px, 55%);
+            height: auto;
+            margin: 4px auto 22px;
         }
 
         .panel h2 {
@@ -387,7 +395,7 @@
         }
         .submit:hover {
             background: var(--ivory);
-            color: var(--espresso);
+            color: var(--navy);
         }
         .submit:disabled {
             opacity: 0.5;
@@ -467,6 +475,7 @@
     <div class="dialog" id="contact-dialog" role="dialog" aria-modal="true" aria-labelledby="contact-title">
         <div class="panel">
             <button class="close" id="contact-close" type="button" aria-label="Close">&times;</button>
+            <img class="panel-logo" src="assets/typography/isaacs-wordmark-ivory.png" alt="ISAACS">
             <h2 id="contact-title">Contact</h2>
             <p class="recipient">
                 <span class="recipient-name">Helen</span>

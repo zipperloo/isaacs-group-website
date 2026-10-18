@@ -35,7 +35,7 @@ Visitors who have "reduce motion" turned on in their device settings see the sti
 ### Brand colours
 
 - Ivory `#E2D8C9` – all lettering
-- Espresso `#4B382D` – contact form panel
+- Navy `#132038` – contact form panel (with the ISAACS wordmark)
 
 These are set as `--espresso` and `--ivory` at the top of the CSS in `index.html`.
 
