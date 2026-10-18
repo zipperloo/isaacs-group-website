@@ -209,26 +209,41 @@
 
     let k = 0; // canvas pixels per image pixel
 
+    // Swipe-to-explore: which slice of the picture is in view, 0 (left edge) to 1 (right edge)
+    const pan = { base: 0.44, focal: 0.44, focalY: 0.5, vel: 0, velY: 0, lastY: 0, dragging: false, lastX: 0, lastT: 0, touched: false };
+    let overflowX = 0;   // how much wider the picture is than the screen, px
+    let overflowY = 0;   // and how much taller
+    let stageScale = 1;
+
+    // How much of the far-left wall is on screen, to keep the gecko on it. The slow breathing
+    // zoom can push the edge a little further off screen at its peak, so allow for most of that.
+    function updateGeckoShift() {
+        const visibleLeft = (overflowX * pan.focal) / stageScale + IMG_W * 0.0075 + PARALLAX_X / stageScale;
+        const geckoX = Math.max(GECKO_PATH[0][0] - 10, visibleLeft + 5);
+        geckoShift = geckoX <= GECKO_WALL_EDGE - 3 ? geckoX - GECKO_PATH[0][0] : null;
+    }
+
     function layout() {
         const vw = innerWidth;
         const vh = innerHeight;
-        const focalX = vw <= 768 ? 0.42 : 0.44;
+        pan.base = vw <= 768 ? 0.42 : 0.44;
+        if (!pan.touched) pan.focal = pan.base;
         const s = Math.max((vw + 2 * MARGIN) / IMG_W, (vh + 2 * MARGIN) / IMG_H);
-
-        // How much of the far-left wall is on screen. The slow breathing zoom can push the
-        // edge a little further off screen at its peak, so allow for most of that.
-        const visibleLeft = -((vw - IMG_W * s) * focalX) / s + IMG_W * 0.0075 + PARALLAX_X / s;
-        const geckoX = Math.max(GECKO_PATH[0][0] - 10, visibleLeft + 5);
-        geckoShift = geckoX <= GECKO_WALL_EDGE - 3 ? geckoX - GECKO_PATH[0][0] : null;
+        stageScale = s;
         const w = IMG_W * s;
         const h = IMG_H * s;
+        overflowX = w - vw;
+        overflowY = h - vh;
+        updateGeckoShift();
         Object.assign(stage.style, {
             width: w + 'px',
             height: h + 'px',
-            left: (vw - w) * focalX + 'px',
-            top: (vh - h) * 0.5 + 'px',
+            left: '0px',
+            top: '0px',
             right: 'auto',
-            bottom: 'auto'
+            bottom: 'auto',
+            // Placed here too, so the picture is framed correctly even before the animation runs
+            transform: `translate3d(${(-overflowX * pan.focal).toFixed(2)}px, ${(-overflowY * pan.focalY).toFixed(2)}px, 0)`
         });
 
         const newK = Math.min(2, Math.max(1, (w * (devicePixelRatio || 1)) / IMG_W));
@@ -1684,6 +1699,67 @@
     const current = { x: 0, y: 0 };
     let steered = false;
 
+    /* ---------- swipe to explore (touch screens) ---------- */
+
+    const panLimit = () => MARGIN / Math.max(1, overflowX);   // keep the overscan margin at each end
+
+    function updatePan(t) {
+        const lo = panLimit(), hi = 1 - panLimit();
+        if (!pan.dragging) {
+            if (!pan.touched && overflowX > innerWidth * 0.3 && t > 6 && t < 11) {
+                // A one-off drift on phones to show there is more to see, then back
+                const f = (t - 6) / 5;
+                pan.focal = pan.base + Math.sin(f * Math.PI) * 0.16;
+            } else {
+                // Momentum after a swipe, easing to a stop and settling softly inside the edges
+                pan.focal += pan.vel;
+                pan.vel *= 0.93;
+                if (pan.focal < lo) { pan.focal += (lo - pan.focal) * 0.2; pan.vel *= 0.5; }
+                if (pan.focal > hi) { pan.focal += (hi - pan.focal) * 0.2; pan.vel *= 0.5; }
+            }
+            // Vertical, for when the screen is wider than the picture's shape (phone held sideways)
+            const loY = MARGIN / Math.max(1, overflowY), hiY = 1 - loY;
+            pan.focalY += pan.velY;
+            pan.velY *= 0.93;
+            if (pan.focalY < loY) { pan.focalY += (loY - pan.focalY) * 0.2; pan.velY *= 0.5; }
+            if (pan.focalY > hiY) { pan.focalY += (hiY - pan.focalY) * 0.2; pan.velY *= 0.5; }
+            updateGeckoShift();
+        }
+    }
+
+    stage.addEventListener('pointerdown', e => {
+        if (e.pointerType === 'mouse' || (overflowX < 40 && overflowY < 40)) return;
+        pan.dragging = true;
+        pan.touched = true;
+        pan.vel = 0;
+        pan.velY = 0;
+        pan.lastX = e.clientX;
+        pan.lastY = e.clientY;
+        pan.lastT = performance.now();
+    });
+    addEventListener('pointermove', e => {
+        if (!pan.dragging) return;
+        const now = performance.now();
+        const d = -(e.clientX - pan.lastX) / overflowX;
+        // A little resistance past the edges
+        const lo = panLimit(), hi = 1 - panLimit();
+        const out = pan.focal < lo || pan.focal > hi;
+        pan.focal += out ? d * 0.35 : d;
+        pan.vel = d / Math.max(1, (now - pan.lastT) / 16.7);
+        if (overflowY > 2 * MARGIN) {
+            const dy = -(e.clientY - pan.lastY) / overflowY;
+            const outY = pan.focalY < 0 || pan.focalY > 1;
+            pan.focalY += outY ? dy * 0.35 : dy;
+            pan.velY = dy / Math.max(1, (now - pan.lastT) / 16.7);
+        }
+        pan.lastY = e.clientY;
+        pan.lastX = e.clientX;
+        pan.lastT = now;
+    });
+    const endDrag = () => { if (pan.dragging) { pan.dragging = false; pan.vel = Math.max(-0.04, Math.min(0.04, pan.vel)); pan.velY = Math.max(-0.04, Math.min(0.04, pan.velY)); } };
+    addEventListener('pointerup', endDrag);
+    addEventListener('pointercancel', endDrag);
+
     addEventListener('pointermove', e => {
         if (e.pointerType === 'touch') return;
         steered = true;
@@ -1704,7 +1780,10 @@
         const ty = steered ? target.y : Math.sin(t * 0.05 + 1) * 0.25;
         current.x += (tx - current.x) * 0.04;
         current.y += (ty - current.y) * 0.04;
-        stage.style.transform = `translate3d(${(-current.x * PARALLAX_X).toFixed(2)}px, ${(-current.y * PARALLAX_Y).toFixed(2)}px, 0)`;
+        updatePan(t);
+        const panPx = -overflowX * pan.focal;
+        const panPy = -overflowY * pan.focalY;
+        stage.style.transform = `translate3d(${(panPx - current.x * PARALLAX_X).toFixed(2)}px, ${(panPy - current.y * PARALLAX_Y).toFixed(2)}px, 0)`;
         ui.style.transform = `translate3d(${(-current.x * UI_PARALLAX).toFixed(2)}px, ${(-current.y * UI_PARALLAX).toFixed(2)}px, 0)`;
     }
 

@@ -15,6 +15,8 @@ The scene is subtly animated (see `assets/scene.js`):
 
 The occasional moments run on random timers. There are enough of them that something small is always changing somewhere, but never everything at once.
 
+On touch screens, visitors can **swipe to explore** the whole picture (left and right on phones held upright, and up and down too when held sideways). The logo, tagline and buttons stay fixed while the scene slides underneath. On first visit the view drifts once to hint that there is more to see.
+
 Visitors who have "reduce motion" turned on in their device settings see the still image only.
 
 ## Files
