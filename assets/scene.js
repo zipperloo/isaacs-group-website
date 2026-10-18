@@ -105,7 +105,7 @@
 
     // The laptop on the terrace desk shows the Medik8 home page (Crystal Retinal slide).
     // Corners of the screen: top-left, top-right, bottom-left. The image is pre-muted.
-    const LAPTOP = { tl: [842, 537.5], tr: [921, 536.5], bl: [838.5, 578] };
+    const LAPTOP = { tl: [841.5, 537], tr: [916.5, 536], bl: [839.5, 578.5] };
     const laptopImg = new Image();
     laptopImg.src = 'assets/laptop-screen.jpg';
 
