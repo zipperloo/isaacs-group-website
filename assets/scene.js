@@ -111,7 +111,8 @@
     // The laptop on the terrace desk shows the Medik8 home page (Crystal Retinal slide).
     // The four corners of the screen panel, measured from the picture: top-left, top-right,
     // bottom-right, bottom-left. The screen is slightly rotated and seen in perspective.
-    const LAPTOP = [[838.5, 534], [920.5, 536], [916.5, 580], [833.5, 577.3]];
+    const LAPTOP = [[838.5, 534], [920.5, 536], [912.5, 579.5], [833.5, 577.3]];
+    const POSTIT = [1171, 625];   // centre of the post-it on the desk
     const laptopImg = new Image();
     laptopImg.src = 'assets/laptop-screen.jpg';
 
@@ -1201,14 +1202,16 @@
 
     // The screen is static, so it is drawn once (and again only if the canvas is resized)
     function drawLaptop() {
-        if (!k || !laptopImg.complete || !laptopImg.naturalWidth) return;
+        if (!k) return;
+        sctx.setTransform(1, 0, 0, 1, 0, 0);
+        sctx.clearRect(0, 0, screenCanvas.width, screenCanvas.height);
+        sctx.setTransform(k, 0, 0, k, 0, 0);
+        drawPostIt();
+        if (!laptopImg.complete || !laptopImg.naturalWidth) return;
         const w = laptopImg.naturalWidth;
         const h = laptopImg.naturalHeight;
         const map = homography(LAPTOP);
         const N = 8;
-        sctx.setTransform(1, 0, 0, 1, 0, 0);
-        sctx.clearRect(0, 0, screenCanvas.width, screenCanvas.height);
-        sctx.setTransform(k, 0, 0, k, 0, 0);
         sctx.globalAlpha = 0.88;
         for (let i = 0; i < N; i++) {
             for (let j = 0; j < N; j++) {
@@ -1233,6 +1236,53 @@
         sctx.fill();
     }
     laptopImg.addEventListener('load', drawLaptop);
+
+    // A yellow post-it on the desk by the headphones, "NPD" in black marker. It lies flat on
+    // the desk, so it is foreshortened, and it is turned a little off square.
+    function drawPostIt() {
+        const [cx, cy] = POSTIT;
+        const size = 12;
+        sctx.save();
+        sctx.translate(cx, cy);
+        sctx.scale(1, 0.48);        // seen at a low angle across the desk
+        sctx.rotate(-0.22);
+        // Soft contact shadow
+        sctx.globalAlpha = 0.35;
+        sctx.fillStyle = 'rgb(10,8,8)';
+        sctx.fillRect(-size / 2 + 0.6, -size / 2 + 0.9, size, size);
+        // The note, warm-lit and a little dim like everything on the desk
+        const g = sctx.createLinearGradient(-size / 2, -size / 2, size / 2, size / 2);
+        g.addColorStop(0, 'rgb(214,190,86)');
+        g.addColorStop(1, 'rgb(176,150,58)');
+        sctx.globalAlpha = 0.95;
+        sctx.fillStyle = g;
+        sctx.beginPath();
+        sctx.moveTo(-size / 2, -size / 2);
+        sctx.lineTo(size / 2, -size / 2);
+        sctx.lineTo(size / 2, size / 2 - 1.6);
+        sctx.lineTo(size / 2 - 1.6, size / 2);   // the bottom corner curls up slightly
+        sctx.lineTo(-size / 2, size / 2);
+        sctx.closePath();
+        sctx.fill();
+        sctx.fillStyle = 'rgba(120,96,30,0.6)';
+        sctx.beginPath();
+        sctx.moveTo(size / 2, size / 2 - 1.6);
+        sctx.lineTo(size / 2 - 1.6, size / 2);
+        sctx.lineTo(size / 2 - 1.3, size / 2 - 1.3);
+        sctx.closePath();
+        sctx.fill();
+        // "NPD" in sharpie
+        sctx.globalAlpha = 0.85;
+        sctx.fillStyle = 'rgb(24,22,28)';
+        sctx.font = '900 4.6px "Arial Black", "Segoe UI", sans-serif';
+        sctx.textAlign = 'center';
+        sctx.textBaseline = 'middle';
+        sctx.save();
+        sctx.rotate(-0.06);
+        sctx.fillText('NPD', 0, 0.3);
+        sctx.restore();
+        sctx.restore();
+    }
 
     /* ---------- oryx ---------- */
 
