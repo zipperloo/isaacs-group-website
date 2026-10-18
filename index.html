@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-mode="night">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,26 +10,16 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400&family=Source+Sans+3:wght@200;300&display=swap" rel="stylesheet">
-    <script>
-        // Apply the visitor's saved mode before first paint to avoid a flash
-        try {
-            const saved = localStorage.getItem('isaacs-mode');
-            if (saved === 'day' || saved === 'night') document.documentElement.dataset.mode = saved;
-        } catch (e) {}
-    </script>
     <style>
         :root {
             --espresso: #4b382d;
             --ivory: #e2d8c9;
-            --fade: 1.2s ease;
+            --halo: rgba(10, 8, 6, 0.55); /* soft glow behind thin type so it reads on busy parts of the image */
             --gutter: clamp(16px, 5.5vw, 96px);
             --gutter-right: clamp(16px, 2.2vw, 48px);
             --edge: clamp(20px, 4vw, 56px);
             --label-h: clamp(18px, 1.4vw, 26px);
         }
-        /* --halo is a soft glow behind thin type so it reads on busy parts of the image */
-        html[data-mode="night"] { --ink: var(--ivory); --paper: var(--espresso); --halo: rgba(10, 8, 6, 0.55); }
-        html[data-mode="day"] { --ink: var(--espresso); --paper: var(--ivory); --halo: rgba(245, 239, 230, 0.9); }
 
         * { box-sizing: border-box; }
 
@@ -40,7 +30,7 @@
 
         body {
             background: #0d0f1a;
-            color: var(--ink);
+            color: var(--ivory);
             font-family: 'Jost', 'Segoe UI', sans-serif;
             font-weight: 300;
             overflow: hidden;
@@ -58,68 +48,38 @@
             border: 0;
         }
 
-        /* Background scenes */
+        /* Background scene */
         .scene {
             position: fixed;
             inset: 0;
-            background-size: cover;
-            background-position: 44% center;
-            transition: opacity var(--fade);
+            background: url('assets/background-night.jpg') 44% center / cover no-repeat;
         }
-        .scene-night { background-image: url('assets/background-night.jpg'); }
-        .scene-day { background-image: url('assets/background-day.jpg'); }
-        html[data-mode="night"] .scene-day { opacity: 0; }
-        html[data-mode="day"] .scene-day { opacity: 1; }
 
         /* Soft shading so the type stays legible on any part of the image */
         .shade {
             position: fixed;
             inset: 0;
             pointer-events: none;
-            transition: opacity var(--fade);
-        }
-        .shade-night {
             background:
                 linear-gradient(to bottom, rgba(10, 12, 25, 0.45) 0%, transparent 22%),
                 linear-gradient(to top, rgba(10, 8, 6, 0.6) 0%, transparent 28%);
         }
-        .shade-day {
-            background: linear-gradient(to bottom, rgba(255, 255, 255, 0.25) 0%, transparent 22%);
-            opacity: 0;
-        }
-        html[data-mode="day"] .shade-night { opacity: 0; }
-        html[data-mode="day"] .shade-day { opacity: 1; }
-
-        /* Two-tone type: an ivory and an espresso image stacked and crossfaded */
-        .duo {
-            position: relative;
-            display: inline-block;
-            line-height: 0;
-        }
-        .duo img {
-            display: block;
-            height: 100%;
-            width: auto;
-            transition: opacity var(--fade);
-        }
-        .duo img.espresso {
-            position: absolute;
-            inset: 0;
-        }
-        html[data-mode="night"] .duo img.espresso { opacity: 0; }
-        html[data-mode="day"] .duo img.ivory { opacity: 0; }
 
         /* Layout */
         .logo {
             position: fixed;
-            top: calc(var(--edge) + 1.5vw);
+            top: var(--edge);
             left: calc(var(--gutter) + 1.5vw);
             width: clamp(170px, 21vw, 400px);
             margin: 0;
+            line-height: 0;
             z-index: 2;
         }
-        .logo .duo { display: block; }
-        .logo img { width: 100%; height: auto; }
+        .logo img {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
         .logo .family-office {
             width: 85%;
             margin: 4% auto 0;
@@ -133,104 +93,48 @@
             transform: translateX(-50%);
             margin: 0;
             padding-left: 0.45em; /* balances the trailing letter-spacing so the line stays centred */
-            /* Ivory in both modes: it sits on the dark rug in the day image too */
-            color: var(--ivory);
             font-family: 'Source Sans 3', sans-serif;
             font-weight: 200;
-            text-shadow: 0 0 14px rgba(10, 8, 6, 0.55), 0 0 4px rgba(10, 8, 6, 0.55);
             font-size: clamp(14px, 2.4vw, 46px);
             letter-spacing: 0.45em;
             line-height: 1;
             text-transform: uppercase;
+            text-shadow: 0 0 14px var(--halo), 0 0 4px var(--halo);
             white-space: nowrap;
-            transition: color var(--fade);
             z-index: 2;
+        }
+
+        .label {
+            display: block;
+            height: var(--label-h);
+            width: auto;
+            filter: drop-shadow(0 0 2px var(--halo)) drop-shadow(0 0 8px var(--halo));
         }
 
         .domain {
             position: fixed;
             right: var(--gutter-right);
             bottom: var(--edge);
-            height: var(--label-h);
             z-index: 2;
-        }
-
-        .label-button {
-            background: none;
-            border: 0;
-            padding: 6px;
-            margin: -6px;
-            cursor: pointer;
-            height: calc(var(--label-h) + 12px);
-            transition: opacity 0.3s ease;
-        }
-        .label-button .duo,
-        .mode-toggle .duo { height: var(--label-h); }
-        .label-button .duo,
-        .mode-toggle .duo,
-        .domain { filter: drop-shadow(0 0 2px var(--halo)) drop-shadow(0 0 8px var(--halo)); }
-        .label-button:hover { opacity: 0.75; }
-        .label-button:focus-visible,
-        .mode-toggle button:focus-visible {
-            outline: 1px solid var(--ink);
-            outline-offset: 4px;
         }
 
         .contact {
             position: fixed;
             top: calc(var(--edge) * 0.6);
             right: var(--gutter-right);
-            z-index: 2;
-        }
-
-        /* Day / night toggle, top centre (clear sky in both backgrounds) */
-        .mode-toggle {
-            position: fixed;
-            top: calc(var(--edge) * 0.6);
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            height: var(--label-h);
-            z-index: 2;
-        }
-        .mode-toggle .word {
+            padding: 6px;
+            margin: -6px;
             background: none;
             border: 0;
-            padding: 0;
-            height: 100%;
             cursor: pointer;
-            opacity: 0.6;
-            transition: opacity 0.4s ease;
+            transition: opacity 0.3s ease;
+            z-index: 2;
         }
-        html[data-mode="day"] .mode-toggle .word-day,
-        html[data-mode="night"] .mode-toggle .word-night { opacity: 1; }
-        .mode-toggle .word:hover { opacity: 1; }
-
-        .switch {
-            position: relative;
-            width: 44px;
-            height: 22px;
-            padding: 0;
-            border: 1px solid var(--ink);
-            border-radius: 11px;
-            background: transparent;
-            cursor: pointer;
-            transition: border-color var(--fade);
+        .contact:hover { opacity: 0.75; }
+        .contact:focus-visible {
+            outline: 1px solid var(--ivory);
+            outline-offset: 4px;
         }
-        .switch::after {
-            content: '';
-            position: absolute;
-            top: 3px;
-            left: 3px;
-            width: 14px;
-            height: 14px;
-            border-radius: 50%;
-            background: var(--ink);
-            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), background-color var(--fade);
-        }
-        html[data-mode="night"] .switch::after { transform: translateX(22px); }
 
         /* Contact dialog */
         .dialog {
@@ -259,9 +163,8 @@
             max-height: calc(100vh - 32px);
             overflow-y: auto;
             padding: clamp(28px, 5vw, 48px);
-            background: color-mix(in srgb, var(--paper) 92%, transparent);
-            color: var(--ink);
-            border: 1px solid color-mix(in srgb, var(--ink) 30%, transparent);
+            background: color-mix(in srgb, var(--espresso) 92%, transparent);
+            border: 1px solid color-mix(in srgb, var(--ivory) 30%, transparent);
             transform: translateY(12px);
             transition: transform 0.4s ease;
         }
@@ -307,7 +210,7 @@
             width: 100%;
             padding: 10px 0;
             border: 0;
-            border-bottom: 1px solid color-mix(in srgb, var(--ink) 45%, transparent);
+            border-bottom: 1px solid color-mix(in srgb, var(--ivory) 45%, transparent);
             border-radius: 0;
             background: transparent;
             color: inherit;
@@ -321,7 +224,7 @@
             resize: vertical;
         }
         .field input:focus,
-        .field textarea:focus { border-bottom-color: var(--ink); }
+        .field textarea:focus { border-bottom-color: var(--ivory); }
 
         .submit {
             display: block;
@@ -329,7 +232,7 @@
             padding: 14px 40px;
             background: transparent;
             color: inherit;
-            border: 1px solid var(--ink);
+            border: 1px solid var(--ivory);
             font: inherit;
             font-size: 0.8rem;
             letter-spacing: 0.35em;
@@ -338,8 +241,8 @@
             transition: background-color 0.3s ease, color 0.3s ease;
         }
         .submit:hover {
-            background: var(--ink);
-            color: var(--paper);
+            background: var(--ivory);
+            color: var(--espresso);
         }
         .submit:disabled {
             opacity: 0.5;
@@ -364,76 +267,30 @@
             }
             .scene { background-position: 42% center; }
         }
-
-        /* On phones the toggle moves under Contact, clear of the logo */
-        @media (max-width: 600px) {
-            .mode-toggle {
-                top: calc(var(--edge) * 0.6 + var(--label-h) + 52px);
-                left: auto;
-                right: var(--gutter-right);
-                transform: none;
-            }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            :root { --fade: 0.01s linear; }
-        }
     </style>
 </head>
 <body>
-    <div class="scene scene-night" aria-hidden="true"></div>
-    <div class="scene scene-day" aria-hidden="true"></div>
-    <div class="shade shade-night" aria-hidden="true"></div>
-    <div class="shade shade-day" aria-hidden="true"></div>
+    <div class="scene" aria-hidden="true"></div>
+    <div class="shade" aria-hidden="true"></div>
 
     <header>
         <h1 class="logo">
             <span class="sr-only">ISAACS Family Office</span>
-            <span class="duo wordmark" aria-hidden="true">
-                <img class="ivory" src="assets/typography/isaacs-wordmark-ivory.png" alt="">
-                <img class="espresso" src="assets/typography/isaacs-wordmark-espresso.png" alt="">
-            </span>
-            <span class="duo family-office" aria-hidden="true">
-                <img class="ivory" src="assets/typography/family-office-ivory.png" alt="">
-                <img class="espresso" src="assets/typography/family-office-espresso.png" alt="">
-            </span>
+            <img src="assets/typography/isaacs-wordmark-ivory.png" alt="" aria-hidden="true">
+            <img class="family-office" src="assets/typography/family-office-ivory.png" alt="" aria-hidden="true">
         </h1>
 
-        <nav>
-            <div class="mode-toggle" role="group" aria-label="Background">
-                <button class="word word-day" type="button" data-set-mode="day">
-                    <span class="duo">
-                        <img class="ivory" src="assets/typography/day-ivory.png" alt="Day">
-                        <img class="espresso" src="assets/typography/day-espresso.png" alt="" aria-hidden="true">
-                    </span>
-                </button>
-                <button class="switch" id="mode-switch" type="button" role="switch" aria-checked="true" aria-label="Night mode"></button>
-                <button class="word word-night" type="button" data-set-mode="night">
-                    <span class="duo">
-                        <img class="ivory" src="assets/typography/night-ivory.png" alt="Night">
-                        <img class="espresso" src="assets/typography/night-espresso.png" alt="" aria-hidden="true">
-                    </span>
-                </button>
-            </div>
-
-            <button class="contact label-button" id="contact-button" type="button" aria-haspopup="dialog">
-                <span class="duo">
-                    <img class="ivory" src="assets/typography/contact-ivory.png" alt="Contact">
-                    <img class="espresso" src="assets/typography/contact-espresso.png" alt="" aria-hidden="true">
-                </span>
-            </button>
-        </nav>
+        <button class="contact" id="contact-button" type="button" aria-haspopup="dialog">
+            <img class="label" src="assets/typography/contact-ivory.png" alt="Contact">
+        </button>
     </header>
 
     <main>
         <p class="tagline">A World of Perspective</p>
     </main>
 
-    <footer>
-        <span class="domain duo">
-            <img class="ivory" src="assets/typography/domain-ivory.png" alt="isaacs.group">
-            <img class="espresso" src="assets/typography/domain-espresso.png" alt="" aria-hidden="true">
-        </span>
+    <footer class="domain">
+        <img class="label" src="assets/typography/domain-ivory.png" alt="isaacs.group">
     </footer>
 
     <!-- Contact dialog -->
@@ -461,24 +318,6 @@
     </div>
 
     <script>
-        const root = document.documentElement;
-        const modeSwitch = document.getElementById('mode-switch');
-
-        // Day / night toggle
-        function setMode(mode) {
-            root.dataset.mode = mode;
-            modeSwitch.setAttribute('aria-checked', String(mode === 'night'));
-            try { localStorage.setItem('isaacs-mode', mode); } catch (e) {}
-        }
-
-        modeSwitch.addEventListener('click', () => {
-            setMode(root.dataset.mode === 'night' ? 'day' : 'night');
-        });
-        document.querySelectorAll('[data-set-mode]').forEach(button => {
-            button.addEventListener('click', () => setMode(button.dataset.setMode));
-        });
-        modeSwitch.setAttribute('aria-checked', String(root.dataset.mode === 'night'));
-
         // Contact dialog
         const dialog = document.getElementById('contact-dialog');
         const contactButton = document.getElementById('contact-button');

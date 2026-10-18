@@ -2,15 +2,15 @@
 
 The single-page website for ISAACS Family Office ("A world of perspective"), served at [isaacs.group](https://isaacs.group).
 
-The home page is a full-screen illustrated scene with the ISAACS logo, a tagline, a contact form and a **Day / Night** toggle. The toggle crossfades between the day and night backgrounds and swaps the lettering between espresso (day) and ivory (night). The tagline stays ivory in both, because it sits on the dark rug in both pictures. The site remembers the visitor's last choice and starts in night mode the first time.
+The home page is a full-screen illustrated night scene with the ISAACS logo, the tagline, a link to the contact form and the domain, all in ivory.
 
 ## Files
 
 | Path | Purpose |
 | --- | --- |
 | `index.html` | The whole site. HTML, CSS and JavaScript are all inline. |
-| `assets/background-day.jpg`, `assets/background-night.jpg` | Full-screen backgrounds. The two images are aligned so they crossfade cleanly. |
-| `assets/typography/` | Lettering as transparent PNGs, each in an `-ivory` (night) and `-espresso` (day) version: wordmark, "family office", contact, day, night and domain. The tagline "A World of Perspective" is live text instead, set in Source Sans 3 ExtraLight (the supplied artwork's typeface at a lighter weight, to match the wordmark). |
+| `assets/background-night.jpg` | Full-screen background. |
+| `assets/typography/` | Ivory lettering as transparent PNGs: wordmark, "family office", contact and domain. The tagline "A World of Perspective" is live text instead, set in Source Sans 3 ExtraLight (the supplied artwork's typeface at a lighter weight, to match the wordmark). |
 | `favicon.ico` | Browser tab icon. |
 | `logo.png` | Old yellow logo mark. Not used by the current site. |
 | `CNAME` | Custom domain for GitHub Pages (`isaacs.group`). |
@@ -18,14 +18,14 @@ The home page is a full-screen illustrated scene with the ISAACS logo, a tagline
 
 ### Brand colours
 
-- Espresso `#4B382D` – lettering on the day background
-- Ivory `#E2D8C9` – lettering on the night background
+- Ivory `#E2D8C9` – all lettering
+- Espresso `#4B382D` – contact form panel
 
 These are set as `--espresso` and `--ivory` at the top of the CSS in `index.html`.
 
 ### Updating images
 
-The originals are 1672×941 PNGs. The backgrounds are saved as JPEG (quality 88) to keep the page fast to load (about 0.9 MB for both, instead of 5 MB). The wordmark is trimmed to its content and resized to 1200px wide. Its ivory version was made by recolouring the espresso original, because the source files only include an espresso wordmark. If you replace an image, keep the same file name, and give the day and night backgrounds the same size and framing.
+The originals are 1672×941 PNGs. The background is saved as JPEG (quality 88) to keep the page fast to load (about 0.4 MB instead of 2.5 MB). The wordmark is trimmed to its content and resized to 1200px wide. Its ivory version was made by recolouring the espresso original, because the source files only include an espresso wordmark. If you replace an image, keep the same file name. The day background and the espresso lettering were removed with the day/night toggle; they're still in the git history if you need them.
 
 ## Running locally
 
