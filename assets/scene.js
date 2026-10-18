@@ -1710,7 +1710,7 @@
         if (overflowX < innerWidth * 0.3) return;
         const lo = panLimit(), hi = 1 - panLimit();
         const stops = [pan.focal, lo, hi, pan.base];
-        const legs = stops.slice(1).map((f, i) => ({ from: stops[i], to: f, dur: 1.5 + Math.abs(f - stops[i]) * 14 }));
+        const legs = stops.slice(1).map((f, i) => ({ from: stops[i], to: f, dur: 3 + Math.abs(f - stops[i]) * 30 }));
         tour = { legs, start: performance.now() / 1000 };
         pan.touched = true;   // no first-visit hint after this
         pan.vel = 0;
@@ -1721,7 +1721,7 @@
         for (const leg of tour.legs) {
             if (el < leg.dur) {
                 const f = el / leg.dur;
-                const e = f * f * (3 - 2 * f);
+                const e = (1 - Math.cos(f * Math.PI)) / 2;   // gentle sine ease in and out
                 pan.focal = leg.from + (leg.to - leg.from) * e;
                 return;
             }
