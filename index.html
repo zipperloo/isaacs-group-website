@@ -439,6 +439,21 @@
             .recipient-role { letter-spacing: 0.16em; }
         }
 
+        /* A more compact contact panel on phones */
+        @media (max-width: 600px) {
+            .panel { padding: 24px 24px 22px; }
+            .panel-logo { width: 130px; margin: 0 auto 12px; }
+            .recipient { margin-bottom: 22px; }
+            .recipient::before { margin: 16px auto 14px; }
+            .recipient-name { font-size: 1.05rem; }
+            .field { margin-bottom: 14px; }
+            .field span { margin-bottom: 2px; }
+            .field input, .field textarea { padding: 7px 0; }
+            .field textarea { min-height: 72px; }
+            .submit { margin-top: 20px; padding: 12px 36px; }
+            .status { margin-top: 10px; }
+        }
+
         @media (prefers-reduced-motion: reduce) {
             .settle, .reveal, .curtain { transition: none !important; }
             .breathe { animation: none; }
