@@ -8,7 +8,7 @@ The scene is subtly animated (see `assets/scene.js`):
 
 - **Entrance:** fades up from black while the scene settles from a slight zoom, then the lettering appears in turn.
 - **Depth:** gentle parallax that follows the mouse (or the tilt of a phone, where the browser allows it), and a very slow "breathing" zoom.
-- **Living details:** shimmering city lights, blinking aircraft warning lights on the tallest towers, faint twinkling stars, rippling water, flickering firelight with heat haze, the desk lantern, navigation lights on the space station, and divers' bubbles, light shafts and drifting particles in the aquarium.
+- **Living details:** twinkling city lights, blinking aircraft warning lights on the tallest towers, faint twinkling stars, rippling water, flickering firelight with heat haze, the desk lantern, steam from the coffee cup on the terrace, navigation lights on the space station, and divers' bubbles, light shafts and drifting particles in the aquarium.
 
 Visitors who have "reduce motion" turned on in their device settings see the still image only.
 
@@ -36,7 +36,7 @@ These are set as `--espresso` and `--ivory` at the top of the CSS in `index.html
 
 The originals are 1672×941 PNGs. The background is saved as JPEG (quality 88) to keep the page fast to load (about 0.4 MB instead of 2.5 MB). The wordmark is trimmed to its content and resized to 1200px wide. Its ivory version was made by recolouring the espresso original, because the source files only include an espresso wordmark. If you replace an image, keep the same file name. The day background and the espresso lettering were removed with the day/night toggle; they're still in the git history if you need them.
 
-**If the background picture changes, the effects in `assets/scene.js` must be re-mapped.** Every effect is placed using pixel coordinates in the 1672×941 image: the city light and star positions (detected from the image's brightest lights and darkest sky), and the outlines of the water, flames, aquarium and divers.
+**If the background picture changes, the effects in `assets/scene.js` must be re-mapped.** Every effect is placed using pixel coordinates in the 1672×941 image: the city light and star positions (detected from the image's brightest lights and darkest sky), and the outlines or positions of the water, flames, aquarium, divers and coffee cup.
 
 ## Running locally
 
@@ -50,7 +50,7 @@ Open http://localhost:8000. The contact form needs the page to be served over ht
 
 ## Contact form
 
-The **Contact** link opens a form that posts to [Formspree](https://formspree.io) (endpoint `https://formspree.io/f/mldqppyg`, set on the `<form>` tag's `action` attribute in `index.html`). Messages arrive at the email address linked to that Formspree form. The form shows a confirmation or error message without leaving the page.
+The **Contact** link opens a form addressed to Helen, Executive Assistant to the Family Office. It posts to [Formspree](https://formspree.io) (endpoint `https://formspree.io/f/mldqppyg`, set on the `<form>` tag's `action` attribute in `index.html`). Messages arrive at the email address linked to that Formspree form. The form shows a confirmation or error message without leaving the page.
 
 ## Deployment
 

@@ -96,7 +96,7 @@
         .settle { transition: transform 7s cubic-bezier(0.16, 0.7, 0.2, 1); }
         .reveal { transition: opacity 1.6s ease var(--delay, 0s), transform 1.6s cubic-bezier(0.2, 0.7, 0.2, 1) var(--delay, 0s); }
         html.loading .curtain { opacity: 1; visibility: visible; transition: none; }
-        html.loading .settle { transform: scale(1.06); transition: none; }
+        html.loading .settle { transform: scale(1.03); transition: none; }
         html.loading .reveal { opacity: 0; transform: translateY(10px); transition: none; }
 
         /* A barely-there, slow zoom so the scene never feels static */
@@ -235,8 +235,23 @@
         }
         .dialog.open .panel { transform: none; }
 
+        .recipient {
+            margin: 0 0 32px;
+            text-align: center;
+            font-size: 0.8rem;
+            letter-spacing: 0.15em;
+            line-height: 1.6;
+            opacity: 0.8;
+        }
+        .recipient-name {
+            display: block;
+            font-size: 1.1rem;
+            letter-spacing: 0.2em;
+            opacity: 1;
+        }
+
         .panel h2 {
-            margin: 0 0 28px;
+            margin: 0 0 14px;
             font-weight: 300;
             font-size: 1rem;
             letter-spacing: 0.4em;
@@ -385,7 +400,12 @@
         <div class="panel">
             <button class="close" id="contact-close" type="button" aria-label="Close">&times;</button>
             <h2 id="contact-title">Contact</h2>
+            <p class="recipient">
+                <span class="recipient-name">Helen</span>
+                Executive Assistant to the Family Office
+            </p>
             <form id="contact-form" action="https://formspree.io/f/mldqppyg" method="POST">
+                <input type="hidden" name="_subject" value="Website enquiry for Helen">
                 <label class="field">
                     <span>Name</span>
                     <input type="text" name="name" autocomplete="name" required>
@@ -446,7 +466,7 @@
             }).then(response => {
                 if (response.ok) {
                     contactForm.reset();
-                    status.textContent = 'Thank you for contacting ISAACS. We will respond where there is a mutual interest.';
+                    status.textContent = 'Thank you. Helen will respond where there is a mutual interest.';
                 } else {
                     status.textContent = 'There was an issue sending your message. Please try again.';
                 }

@@ -10,9 +10,9 @@
     const IMG_W = 1672;
     const IMG_H = 941;
     const MARGIN = 18;        // overscan so parallax never reveals an edge
-    const PARALLAX_X = 12;    // max background shift, px
-    const PARALLAX_Y = 8;
-    const UI_PARALLAX = 3;    // max lettering shift, px
+    const PARALLAX_X = 6;     // max background shift, px
+    const PARALLAX_Y = 4;
+    const UI_PARALLAX = 1.5;  // max lettering shift, px
 
     const root = document.documentElement;
     const stage = document.getElementById('stage');
@@ -33,23 +33,26 @@
 
     // Water, as polygons; ripple amplitude (px) grows towards the viewer
     const WATER = [
-        { poly: [[612, 404], [700, 401], [760, 409], [860, 403], [940, 400], [940, 468], [840, 470], [760, 466], [700, 452], [640, 445], [612, 430]], amp: [0.35, 1.0], freq: 0.85, speed: 1.7 },
-        { poly: [[1345, 352], [1520, 350], [1515, 420], [1440, 440], [1392, 470], [1385, 528], [1240, 530], [1240, 446], [1300, 440], [1362, 420]], amp: [0.4, 1.3], freq: 0.8, speed: 1.5 }
+        { poly: [[612, 404], [700, 401], [760, 409], [860, 403], [940, 400], [940, 468], [840, 470], [760, 466], [700, 452], [640, 445], [612, 430]], amp: [0.6, 1.6], freq: 0.85, speed: 1.9 },
+        { poly: [[1345, 352], [1520, 350], [1515, 420], [1440, 440], [1392, 470], [1385, 528], [1240, 530], [1240, 446], [1300, 440], [1362, 420]], amp: [0.7, 2.0], freq: 0.8, speed: 1.7 }
     ];
 
     // Heat haze over the flames
     const FLAMES = [
-        { poly: [[128, 606], [206, 606], [206, 642], [128, 642]], amp: [0.6, 0.35], freq: 1.9, speed: 7 },
-        { poly: [[0, 628], [42, 628], [42, 672], [0, 672]], amp: [0.6, 0.35], freq: 1.9, speed: 7.5 }
+        { poly: [[128, 600], [206, 600], [206, 642], [128, 642]], amp: [1.0, 0.5], freq: 1.9, speed: 8 },
+        { poly: [[0, 622], [42, 622], [42, 672], [0, 672]], amp: [1.0, 0.5], freq: 1.9, speed: 8.5 }
     ];
 
     // Firelight glows: x, y, radius, strength, seed
     const FIRE_GLOWS = [
-        [166, 626, 46, 0.30, 1], [166, 652, 60, 0.12, 2],   // fireplace and its floor reflection
-        [16, 650, 44, 0.30, 3],                              // fireplace on the far left
-        [120, 630, 230, 0.05, 4],                            // warm wash over the corner of the room
-        [533, 516, 9, 0.35, 5]                               // lantern on the desk
+        [166, 626, 48, 0.50, 1], [166, 652, 64, 0.22, 2],   // fireplace and its floor reflection
+        [16, 650, 46, 0.50, 3],                              // fireplace on the far left
+        [120, 630, 240, 0.09, 4],                            // warm wash over the corner of the room
+        [533, 516, 11, 0.55, 5]                              // lantern on the desk
     ];
+
+    // Steam from the coffee cup on the terrace
+    const CUP = [457, 495];
 
     // Aquarium
     const TANK = [[1256, 585], [1672, 600], [1672, 872], [1560, 852], [1420, 820], [1256, 792]];
@@ -96,7 +99,9 @@
         warm: sprite(255, 214, 160),
         white: sprite(240, 244, 255),
         red: sprite(255, 60, 40),
-        fire: sprite(255, 150, 60)
+        fire: sprite(255, 150, 60),
+        steam: sprite(236, 238, 242),
+        dim: sprite(30, 22, 30)
     };
 
     function drawSprite(s, x, y, size, alpha) {
@@ -298,27 +303,73 @@
         ctx.restore();
     }
 
+    /* ---------- steam ---------- */
+
+    const steam = [];
+    let nextPuff = 0;
+
+    function updateSteam(t) {
+        while (t >= nextPuff) {
+            steam.push({
+                born: nextPuff,
+                life: 4.5 + Math.random() * 2,
+                x: CUP[0] + (Math.random() - 0.5) * 5,
+                vy: 7 + Math.random() * 4,
+                seed: Math.random() * 100
+            });
+            nextPuff += 0.12 + Math.random() * 0.1;
+        }
+        for (let i = steam.length - 1; i >= 0; i--) {
+            if (t - steam[i].born > steam[i].life) steam.splice(i, 1);
+        }
+    }
+
+    function drawSteam(t) {
+        ctx.globalCompositeOperation = 'screen';
+        const breeze = (noise(t * 0.25) - 0.5) * 16;
+        steam.forEach(p => {
+            const age = t - p.born;
+            const life = age / p.life;
+            // Each wisp curls more, and drifts further with the breeze, the higher it rises
+            const curl = (noise(p.seed + age * 0.9) - 0.5) * 18 + Math.sin(age * 1.7 + p.seed) * 3;
+            const x = p.x + (curl + breeze) * life;
+            const y = CUP[1] - age * p.vy * (1 - life * 0.35);
+            const fadeIn = Math.min(1, life / 0.12);
+            drawSprite(SPRITES.steam, x, y, 4 + life * 22, 0.28 * fadeIn * Math.pow(1 - life, 1.6));
+        });
+        ctx.globalCompositeOperation = 'source-over';
+    }
+
     /* ---------- lights ---------- */
 
     function drawLights(t) {
         ctx.globalCompositeOperation = 'lighter';
 
-        // Distant city lights shimmer through the atmosphere
+        // Distant city lights twinkle through the atmosphere: each one dips dim at times
+        // and blooms at others. The picture's lights are already near white, so the dips
+        // are what make the twinkle visible.
+        const twinkle = CITY_LIGHTS.map((_, i) => noise(t * (1.2 + hash(i) * 2.2) + i * 7.3));
+        ctx.globalCompositeOperation = 'source-over';
+        CITY_LIGHTS.forEach(([x, y], i) => {
+            if (twinkle[i] < 0.3) drawSprite(SPRITES.dim, x, y, 5, ((0.3 - twinkle[i]) / 0.3) * 0.7);
+        });
+        ctx.globalCompositeOperation = 'lighter';
         CITY_LIGHTS.forEach(([x, y, r, , b], i) => {
-            const n = noise(t * (0.8 + hash(i) * 1.6) + i * 7.3);
-            drawSprite(r - b > 40 ? SPRITES.warm : SPRITES.white, x, y, 5, 0.06 + 0.42 * n * n * n);
+            if (twinkle[i] < 0.3) return;
+            const flare = Math.pow(noise(t * 0.6 + i * 3.7), 6);
+            drawSprite(r - b > 40 ? SPRITES.warm : SPRITES.white, x, y, 9 + flare * 10, ((twinkle[i] - 0.3) / 0.7) * 0.6 + flare * 0.6);
         });
 
         // Slow-blinking aircraft warning lights
         TOWER_LIGHTS.forEach(([x, y, phase]) => {
             const c = ((t + phase) % 2.4) / 2.4;
-            drawSprite(SPRITES.red, x, y, 6, c < 0.4 ? 0.75 * Math.sin((c / 0.4) * Math.PI) : 0);
+            drawSprite(SPRITES.red, x, y, 9, c < 0.4 ? Math.sin((c / 0.4) * Math.PI) : 0);
         });
 
         // Faint stars in the clearest gaps of the sky
         STARS.forEach(([x, y], i) => {
-            const n = noise(t * (0.25 + hash(i + 3) * 0.4) + i * 3.1);
-            drawSprite(SPRITES.white, x, y, 2.6, 0.12 + 0.4 * n * n);
+            const n = noise(t * (0.35 + hash(i + 3) * 0.5) + i * 3.1);
+            drawSprite(SPRITES.white, x, y, 3, 0.18 + 0.55 * n * n);
         });
 
         // Navigation lights on the space station
@@ -385,11 +436,13 @@
 
         applyParallax(t);
         updateBubbles(t, dt);
+        updateSteam(t);
 
         ctx.setTransform(k, 0, 0, k, 0, 0);
         ctx.clearRect(0, 0, IMG_W, IMG_H);
         regions.forEach(r => drawDistort(r, t));
         drawAquarium(t);
+        drawSteam(t);
         drawLights(t);
 
         // Effects ease in once the entrance has settled
