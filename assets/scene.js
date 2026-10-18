@@ -18,6 +18,10 @@
     const stage = document.getElementById('stage');
     const img = document.getElementById('scene-img');
     const canvas = document.getElementById('fx');
+    // The laptop screen has its own layer, so it appears with the picture rather than
+    // waiting for the effects to fade in
+    const screenCanvas = document.getElementById('screen');
+    const sctx = screenCanvas.getContext('2d');
     const ui = document.getElementById('ui');
     const ctx = canvas.getContext('2d');
     const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -104,8 +108,9 @@
     const FISH_COLOURS = [[196, 186, 120], [120, 150, 190], [205, 150, 112], [170, 180, 190]];
 
     // The laptop on the terrace desk shows the Medik8 home page (Crystal Retinal slide).
-    // Corners of the screen: top-left, top-right, bottom-left. The image is pre-muted.
-    const LAPTOP = { tl: [841.5, 537], tr: [916.5, 536], bl: [839.5, 578.5] };
+    // The four corners of the screen panel, measured from the picture: top-left, top-right,
+    // bottom-right, bottom-left. The screen is slightly rotated and seen in perspective.
+    const LAPTOP = [[841, 534.5], [918, 536.3], [914, 579.5], [836, 577]];
     const laptopImg = new Image();
     laptopImg.src = 'assets/laptop-screen.jpg';
 
@@ -227,7 +232,10 @@
             k = newK;
             canvas.width = Math.round(IMG_W * k);
             canvas.height = Math.round(IMG_H * k);
+            screenCanvas.width = canvas.width;
+            screenCanvas.height = canvas.height;
             buildDistortRegions();
+            drawLaptop();
         }
     }
 
@@ -1145,28 +1153,79 @@
 
     /* ---------- laptop screen ---------- */
 
-    function drawLaptop(t) {
-        if (!laptopImg.complete || !laptopImg.naturalWidth) return;
-        const { tl, tr, bl } = LAPTOP;
+    // Projective map from the unit square onto a quad (so all four corners land exactly)
+    function homography([[x0, y0], [x1, y1], [x2, y2], [x3, y3]]) {
+        const dx1 = x1 - x2, dx2 = x3 - x2, dx3 = x0 - x1 + x2 - x3;
+        const dy1 = y1 - y2, dy2 = y3 - y2, dy3 = y0 - y1 + y2 - y3;
+        const den = dx1 * dy2 - dx2 * dy1;
+        const g = (dx3 * dy2 - dx2 * dy3) / den;
+        const h = (dx1 * dy3 - dx3 * dy1) / den;
+        const a = x1 - x0 + g * x1, b = x3 - x0 + h * x3;
+        const d = y1 - y0 + g * y1, e = y3 - y0 + h * y3;
+        return (u, v) => {
+            const w = g * u + h * v + 1;
+            return [(a * u + b * v + x0) / w, (d * u + e * v + y0) / w];
+        };
+    }
+
+    // Draw one triangle of the source image onto a destination triangle
+    function drawTriangle(c, img, s0, s1, s2, d0, d1, d2) {
+        // Grow the clip triangle very slightly so neighbouring pieces overlap without seams
+        const cx = (d0[0] + d1[0] + d2[0]) / 3;
+        const cy = (d0[1] + d1[1] + d2[1]) / 3;
+        const grow = q => [q[0] + (q[0] - cx) * 0.04, q[1] + (q[1] - cy) * 0.04];
+        const [e0, e1, e2] = [grow(d0), grow(d1), grow(d2)];
+        c.save();
+        c.beginPath();
+        c.moveTo(e0[0], e0[1]);
+        c.lineTo(e1[0], e1[1]);
+        c.lineTo(e2[0], e2[1]);
+        c.closePath();
+        c.clip();
+        const den = (s1[0] - s0[0]) * (s2[1] - s0[1]) - (s2[0] - s0[0]) * (s1[1] - s0[1]);
+        const m11 = ((d1[0] - d0[0]) * (s2[1] - s0[1]) - (d2[0] - d0[0]) * (s1[1] - s0[1])) / den;
+        const m12 = ((d2[0] - d0[0]) * (s1[0] - s0[0]) - (d1[0] - d0[0]) * (s2[0] - s0[0])) / den;
+        const m21 = ((d1[1] - d0[1]) * (s2[1] - s0[1]) - (d2[1] - d0[1]) * (s1[1] - s0[1])) / den;
+        const m22 = ((d2[1] - d0[1]) * (s1[0] - s0[0]) - (d1[1] - d0[1]) * (s2[0] - s0[0])) / den;
+        c.transform(m11, m21, m12, m22, d0[0] - m11 * s0[0] - m12 * s0[1], d0[1] - m21 * s0[0] - m22 * s0[1]);
+        c.drawImage(img, 0, 0);
+        c.restore();
+    }
+
+    // The screen is static, so it is drawn once (and again only if the canvas is resized)
+    function drawLaptop() {
+        if (!k || !laptopImg.complete || !laptopImg.naturalWidth) return;
         const w = laptopImg.naturalWidth;
         const h = laptopImg.naturalHeight;
-        ctx.save();
-        ctx.globalCompositeOperation = 'source-over';
-        // Map the image onto the screen's corners (a slight perspective skew)
-        ctx.transform((tr[0] - tl[0]) / w, (tr[1] - tl[1]) / w, (bl[0] - tl[0]) / h, (bl[1] - tl[1]) / h, tl[0], tl[1]);
-        ctx.globalAlpha = 0.86;
-        ctx.drawImage(laptopImg, 0, 0);
-        // A faint diagonal glare across the glass, drifting very slowly
-        const g = ctx.createLinearGradient(0, 0, w, h);
-        const m = 0.35 + Math.sin(t * 0.05) * 0.05;
-        g.addColorStop(Math.max(0, m - 0.2), 'rgba(255,255,255,0)');
-        g.addColorStop(m, 'rgba(220,230,255,0.07)');
-        g.addColorStop(Math.min(1, m + 0.2), 'rgba(255,255,255,0)');
-        ctx.globalAlpha = 1;
-        ctx.fillStyle = g;
-        ctx.fillRect(0, 0, w, h);
-        ctx.restore();
+        const map = homography(LAPTOP);
+        const N = 8;
+        sctx.setTransform(1, 0, 0, 1, 0, 0);
+        sctx.clearRect(0, 0, screenCanvas.width, screenCanvas.height);
+        sctx.setTransform(k, 0, 0, k, 0, 0);
+        sctx.globalAlpha = 0.88;
+        for (let i = 0; i < N; i++) {
+            for (let j = 0; j < N; j++) {
+                const u0 = i / N, u1 = (i + 1) / N, v0 = j / N, v1 = (j + 1) / N;
+                const s00 = [u0 * w, v0 * h], s10 = [u1 * w, v0 * h], s11 = [u1 * w, v1 * h], s01 = [u0 * w, v1 * h];
+                const d00 = map(u0, v0), d10 = map(u1, v0), d11 = map(u1, v1), d01 = map(u0, v1);
+                drawTriangle(sctx, laptopImg, s00, s10, s11, d00, d10, d11);
+                drawTriangle(sctx, laptopImg, s00, s11, s01, d00, d11, d01);
+            }
+        }
+        // A faint diagonal glare across the glass
+        const [tl, , br] = [LAPTOP[0], LAPTOP[1], LAPTOP[2]];
+        const g = sctx.createLinearGradient(tl[0], tl[1], br[0], br[1]);
+        g.addColorStop(0.15, 'rgba(255,255,255,0)');
+        g.addColorStop(0.35, 'rgba(220,230,255,0.07)');
+        g.addColorStop(0.55, 'rgba(255,255,255,0)');
+        sctx.globalAlpha = 1;
+        sctx.fillStyle = g;
+        sctx.beginPath();
+        LAPTOP.forEach(([x, y], i) => (i ? sctx.lineTo(x, y) : sctx.moveTo(x, y)));
+        sctx.closePath();
+        sctx.fill();
     }
+    laptopImg.addEventListener('load', drawLaptop);
 
     /* ---------- oryx ---------- */
 
@@ -1598,7 +1657,6 @@
         drawAquarium(t);
         drawMonkeys(t);
         drawOryx(t);
-        drawLaptop(t);
         drawSteam(t);
         drawGecko(t);
         drawParty(t);

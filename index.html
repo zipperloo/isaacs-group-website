@@ -7,6 +7,7 @@
     <meta name="description" content="ISAACS Family Office — a world of perspective.">
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="preload" as="image" href="assets/background-night.jpg">
+    <link rel="preload" as="image" href="assets/laptop-screen.jpg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400&family=Source+Sans+3:wght@200;300&display=swap" rel="stylesheet">
@@ -81,6 +82,7 @@
             opacity: 0;
             pointer-events: none;
         }
+        .stage #screen { opacity: 1; }
 
         /* Entrance: fade up from black while the scene settles, then the lettering appears */
         .curtain {
@@ -234,6 +236,13 @@
             transition: height 0.4s ease;
         }
         .sound[data-state="waiting"] .eq i { animation: eq-wait 1.2s ease-in-out infinite; }
+        /* While sound is off, the toggle pulses gently to draw the eye */
+        .sound[data-state="off"] { animation: sound-blink 2.2s ease-in-out 4s infinite; }
+        .sound[data-state="off"]:hover { animation: none; }
+        @keyframes sound-blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.25; }
+        }
         .sound[data-state="playing"] .eq i { animation: eq 0.9s ease-in-out infinite alternate; }
         .eq i:nth-child(2) { animation-delay: -0.3s !important; }
         .eq i:nth-child(3) { animation-delay: -0.6s !important; }
@@ -415,6 +424,7 @@
         <div class="settle">
             <div class="breathe">
                 <img id="scene-img" src="assets/background-night.jpg" alt="">
+                <canvas id="screen"></canvas>
                 <canvas id="fx"></canvas>
             </div>
         </div>
