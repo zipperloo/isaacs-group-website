@@ -24,7 +24,6 @@ Visitors who have "reduce motion" turned on in their device settings see the sti
 | `index.html` | The page, its styles and the contact form script. |
 | `assets/scene.js` | The scene animation: layout, parallax and the canvas effects. |
 | `assets/sound.js` | The sound toggle and background music. |
-| `assets/audio/ambient.mp3` | Background music (see Music below). |
 | `assets/laptop-screen.jpg` | The Medik8 home page (Crystal Retinal slide), pre-muted, shown on the terrace laptop. |
 | `assets/background-night.jpg` | Full-screen background. |
 | `assets/typography/` | Ivory lettering as transparent PNGs: wordmark, "family office" and contact. The tagline "A World of Perspective" is live text instead, set in Source Sans 3 ExtraLight (the supplied artwork's typeface at a lighter weight, to match the wordmark). |
@@ -58,9 +57,9 @@ Open http://localhost:8000. The contact form needs the page to be served over ht
 
 ## Music
 
-The **Sound** toggle (bottom right) plays "Exploration Theme" by Cleyton Kauffman, an ambient synth and piano track that loops seamlessly. It is released under CC0 (public domain), so no licence fee or credit is needed, though credit is appreciated: *Music by Cleyton Kauffman – https://soundcloud.com/cleytonkauffman*. Source: https://opengameart.org/content/exploration-theme
+The **Sound** toggle (bottom right) plays "Space Waves" by Ben Elson through a hidden YouTube player (video `VYkSgmw81TQ`, loaded from youtube-nocookie.com only when the visitor first turns sound on). Sound always starts off, because browsers block audio until the visitor clicks. The player starts muted and only fades the volume up once the track itself is playing, so a YouTube advert is never heard. To change the track, edit `VIDEO_ID` in `assets/sound.js`.
 
-The file is hosted on the site and only downloads when a visitor first turns sound on. Sound always starts off, because browsers block audio until the visitor clicks. To change the track, replace `assets/audio/ambient.mp3`, keeping the same name.
+Note: YouTube's terms don't allow hiding the player for audio-only use, and a commercial track on a business site normally needs a licence. If YouTube blocks the embed, the toggle shows "Sound unavailable". A royalty-free fallback is "Outer Space Loop" (CC0): https://opengameart.org/content/outer-space-loop
 
 ## Laptop screen
 
