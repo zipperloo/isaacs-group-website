@@ -125,7 +125,7 @@
     laptopImg.src = 'assets/laptop-screen.jpg';
 
     // An Arabian oryx wandering a slow loop on the dunes: centre, radius across, radius in depth
-    const ORYX_LOOP = { cx: 196, cy: 360, rx: 34, ry: 4.5 };
+    const ORYX_LOOP = { cx: 184, cy: 369, rx: 24, ry: 3 };
 
     // Porch lights on the Thai huts that switch on and off: x, y, reflection y on the water (or 0)
     const HUT_LIGHTS = [[1012, 423, 0], [1046, 377, 0], [1168, 392, 0], [1192, 430, 0], [1262, 420, 452], [1293, 412, 455]];
@@ -1349,7 +1349,7 @@
             o.until = t + (o.walking ? 5 + Math.random() * 9 : 7 + Math.random() * 16);
         }
         if (o.walking) {
-            o.phi += (1.1 / ORYX_LOOP.rx) * dt;   // about 1px a second
+            o.phi += (0.9 / ORYX_LOOP.rx) * dt;   // about 1px a second
             o.gait += dt * 5;
         }
         // Head comes up to walk and goes down to graze
@@ -1361,70 +1361,117 @@
         const { cx, cy, rx, ry } = ORYX_LOOP;
         const x = cx + Math.cos(o.phi) * rx;
         const y = cy + Math.sin(o.phi) * ry;
-        const depth = 0.9 + 0.1 * (Math.sin(o.phi) + 1);   // a touch larger on the near side
-        const side = -Math.sin(o.phi);                      // how side-on it is, and which way it faces
+        const side = -Math.sin(o.phi);                // how side-on it is, and which way it faces
         const dir = side >= 0 ? 1 : -1;
-        const ls = 0.3 + 0.7 * Math.abs(side);              // body foreshortens as it turns
-        const h = 6.5 * depth;
-        const bodyR = h * 0.8 * ls;
+        const ls = 0.35 + 0.65 * Math.abs(side);      // the body foreshortens as it turns
+        const u = 1.15 + 0.08 * Math.sin(o.phi);      // size unit, a touch larger on the near side
         const step = o.walking ? Math.sin(o.gait) : 0;
+        const graze = o.head;
 
         ctx.save();
         ctx.translate(x, y);
+        ctx.scale(dir * ls * u, u);                   // the drawing below faces right, 1 unit ≈ 1px
         ctx.globalCompositeOperation = 'source-over';
         ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
 
-        // Legs, dark lower half like the real thing
-        ctx.globalAlpha = 0.75;
-        ctx.strokeStyle = 'rgb(70,52,44)';
-        ctx.lineWidth = 0.75;
-        [[-0.6, step], [-0.35, -step], [0.45, -step], [0.7, step]].forEach(([f, s]) => {
+        const coat = 'rgb(236,228,214)';
+        const dark = 'rgb(58,46,42)';
+
+        // Soft shadow on the sand
+        ctx.globalAlpha = 0.25;
+        ctx.fillStyle = 'rgb(90,50,30)';
+        ctx.beginPath();
+        ctx.ellipse(0, 0.2, 4.2, 0.6, 0, 0, 6.283);
+        ctx.fill();
+
+        // Legs: slim, white above with the oryx's dark band at the knee, pale below
+        const legs = [[-2.6, step], [-1.9, -step], [2.2, -step], [2.8, step]];
+        legs.forEach(([lx, sw], i) => {
+            const far = i % 2 === 1;
+            ctx.globalAlpha = far ? 0.75 : 0.95;
+            ctx.strokeStyle = coat;
+            ctx.lineWidth = 0.55;
             ctx.beginPath();
-            ctx.moveTo(f * bodyR, -h * 0.62);
-            ctx.lineTo(f * bodyR + s * 0.5 * ls, 0);
+            ctx.moveTo(lx, -3.6);
+            ctx.lineTo(lx + sw * 0.35, -1.9);
+            ctx.lineTo(lx + sw * 0.6, 0);
+            ctx.stroke();
+            ctx.strokeStyle = dark;
+            ctx.lineWidth = 0.6;
+            ctx.beginPath();
+            ctx.moveTo(lx + sw * 0.25, -2.6);
+            ctx.lineTo(lx + sw * 0.4, -1.7);
             ctx.stroke();
         });
 
-        // Pale body, warmed by the evening light
-        ctx.fillStyle = 'rgb(232,222,204)';   // the oryx's bright white coat
+        // Body: deep chest, level back, rounded rump
+        ctx.globalAlpha = 0.97;
+        ctx.fillStyle = coat;
         ctx.beginPath();
-        ctx.ellipse(0, -h * 0.78, Math.max(bodyR, h * 0.32), h * 0.27, 0, 0, 6.283);
+        ctx.moveTo(-3.4, -5.4);                       // rump top
+        ctx.quadraticCurveTo(0, -5.9, 2.6, -5.6);     // back to withers
+        ctx.quadraticCurveTo(3.6, -5.3, 3.6, -4.2);   // shoulder
+        ctx.quadraticCurveTo(3.4, -3.1, 2.4, -3.0);   // chest
+        ctx.quadraticCurveTo(0, -3.3, -2.6, -3.2);    // belly
+        ctx.quadraticCurveTo(-3.9, -3.4, -3.9, -4.4); // thigh
+        ctx.quadraticCurveTo(-3.9, -5.2, -3.4, -5.4);
         ctx.fill();
-
-        // Neck and head, lowered to graze
-        const hx = dir * (bodyR + h * 0.25 * ls);
-        const hy = -h * (1.15 - 0.75 * o.head);
-        ctx.strokeStyle = 'rgb(232,222,204)';
-        ctx.lineWidth = h * 0.18;
-        ctx.beginPath();
-        ctx.moveTo(dir * bodyR * 0.75, -h * 0.85);
-        ctx.lineTo(hx, hy);
-        ctx.stroke();
-        ctx.fillStyle = 'rgb(90,70,60)';   // the dark face markings
-        ctx.beginPath();
-        ctx.arc(hx, hy, h * 0.13, 0, 6.283);
-        ctx.fill();
-
-        // Long, straight, swept-back horns: the oryx's signature, so drawn clearly as a pair
-        ctx.strokeStyle = 'rgb(40,32,30)';
-        ctx.lineWidth = 0.42;
-        const hornLen = h * 1.0;
-        const hornAng = -Math.PI / 2 - dir * (0.5 + 0.85 * o.head);   // tilts back, lying along the back when grazing
-        [-0.45, 0.45].forEach(off => {
-            const bx = hx + off * 0.5 * ls;
-            ctx.beginPath();
-            ctx.moveTo(bx, hy - h * 0.06);
-            ctx.lineTo(bx + Math.cos(hornAng) * hornLen * ls, hy - h * 0.06 + Math.sin(hornAng) * hornLen);
-            ctx.stroke();
-        });
-
-        // Tail flick now and then
-        const flick = Math.sin(t * 0.7) > 0.95 ? Math.sin(t * 25) * 0.3 : 0;
+        // A faint dark flank stripe, as on a real oryx
+        ctx.strokeStyle = 'rgba(70,56,50,0.45)';
         ctx.lineWidth = 0.35;
         ctx.beginPath();
-        ctx.moveTo(-dir * bodyR, -h * 0.85);
-        ctx.lineTo(-dir * (bodyR + 0.4 * ls) + flick, -h * 0.45);
+        ctx.moveTo(-2.8, -3.35);
+        ctx.quadraticCurveTo(0, -3.55, 2.3, -3.2);
         ctx.stroke();
+
+        // Neck and head, lowered to graze
+        const hx = 4.5 + 0.6 * graze;
+        const hy = -6.6 + 4.6 * graze;
+        ctx.strokeStyle = coat;
+        ctx.lineWidth = 1.3;
+        ctx.beginPath();
+        ctx.moveTo(2.8, -5.0);
+        ctx.quadraticCurveTo(3.8, -6.2 + 3 * graze, hx, hy);
+        ctx.stroke();
+        // Head: long and narrow, with the dark face mask
+        ctx.save();
+        ctx.translate(hx, hy);
+        ctx.rotate(0.35 + 0.55 * graze);
+        ctx.fillStyle = coat;
+        ctx.beginPath();
+        ctx.ellipse(0.7, 0, 1.25, 0.6, 0, 0, 6.283);
+        ctx.fill();
+        ctx.fillStyle = dark;
+        ctx.globalAlpha = 0.8;
+        ctx.beginPath();
+        ctx.ellipse(1.0, 0.1, 0.75, 0.38, 0, 0, 6.283);
+        ctx.fill();
+        // Long, straight horns swept back from the crown: the oryx's signature, as a pair
+        ctx.globalAlpha = 0.95;
+        ctx.strokeStyle = 'rgb(34,28,26)';
+        ctx.lineWidth = 0.32;
+        [[-0.1, 0], [0.25, 0.25]].forEach(([ox, spread]) => {
+            ctx.beginPath();
+            ctx.moveTo(ox, -0.45);
+            ctx.lineTo(ox - 5.2, -2.6 - spread);
+            ctx.stroke();
+        });
+        ctx.restore();
+
+        // Tail with a dark tuft, flicking now and then
+        const flick = Math.sin(t * 0.7) > 0.95 ? Math.sin(t * 25) * 0.4 : 0;
+        ctx.globalAlpha = 0.95;
+        ctx.strokeStyle = coat;
+        ctx.lineWidth = 0.35;
+        ctx.beginPath();
+        ctx.moveTo(-3.6, -5.0);
+        ctx.quadraticCurveTo(-4.2 + flick, -4.3, -4.1 + flick, -3.3);
+        ctx.stroke();
+        ctx.fillStyle = dark;
+        ctx.beginPath();
+        ctx.ellipse(-4.1 + flick, -3.2, 0.25, 0.45, 0, 0, 6.283);
+        ctx.fill();
 
         ctx.restore();
     }
@@ -1877,7 +1924,7 @@
         if (inView(1380, 1520)) drawBoat(t);
         if (inView(1250, IMG_W)) { drawFish(t); drawAquarium(t); }
         if (inView(1240, 1300)) drawMonkeys(t);
-        if (inView(140, 260)) drawOryx(t);
+        if (inView(140, 230)) drawOryx(t);
         if (inView(430, 490)) drawSteam(t);
         if (inView(0, 70)) drawGecko(t);
         if (inView(1440, IMG_W)) {
