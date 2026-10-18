@@ -76,8 +76,7 @@
 
     // More party-goers: x, y (feet), jacket, trousers, hat (or null), dance style
     const DANCERS = [
-        [1476, 254, [214, 210, 200], [30, 28, 36], [40, 40, 48], 'jump'],
-        [1489, 252, [196, 160, 40], [26, 26, 34], null, 'sway']
+        [1489, 252, [168, 138, 58], [30, 30, 38], [52, 46, 44], 'sway']
     ];
     // People painted into the crowd who throw their hands up now and then:
     // shoulder x (left, right), shoulder y, sleeve colour
@@ -103,6 +102,12 @@
         [[1488, 742], [1500, 722], [1505, 700], [1530, 697], [1545, 705], [1575, 722], [1585, 740], [1560, 748], [1555, 775], [1580, 785], [1612, 800], [1600, 812], [1585, 830], [1570, 835], [1555, 812], [1540, 790], [1520, 780], [1505, 765]]
     ];
     const FISH_COLOURS = [[196, 186, 120], [120, 150, 190], [205, 150, 112], [170, 180, 190]];
+
+    // The laptop on the terrace desk shows the Medik8 home page (Crystal Retinal slide).
+    // Corners of the screen: top-left, top-right, bottom-left. The image is pre-muted.
+    const LAPTOP = { tl: [842, 537.5], tr: [921, 536.5], bl: [838.5, 578] };
+    const laptopImg = new Image();
+    laptopImg.src = 'assets/laptop-screen.jpg';
 
     // An Arabian oryx wandering a slow loop on the dunes: centre, radius across, radius in depth
     const ORYX_LOOP = { cx: 196, cy: 360, rx: 34, ry: 4.5 };
@@ -671,93 +676,14 @@
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
 
-        /* Dancer */
-        const [dx, dy] = PARTY.dancer;
-        ctx.translate(dx, dy);
-        const hipY = -16 + dip * 1.4;
-        const hipX = sway * 0.9;
-        const shY = -26.5 + dip * 1.1;
-        const shX = hipX * 0.4;
-
-        // Legs
-        ctx.globalAlpha = 0.97;
-        ctx.strokeStyle = 'rgb(24,22,30)';
-        ctx.lineWidth = 2.2;
-        [[-1, -2.3], [1, 2.3]].forEach(([side, foot]) => {
-            ctx.beginPath();
-            ctx.moveTo(hipX + side * 1.3, hipY);
-            ctx.lineTo(hipX * 0.5 + side * (1.8 + dip * 0.6), hipY / 2 + 0.5);
-            ctx.lineTo(foot, 0);
-            ctx.stroke();
+        /* Dancer with the champagne bottle */
+        const tip = drawFigure(t, {
+            x: PARTY.dancer[0], y: PARTY.dancer[1], phase: 0,
+            jacket: [40, 58, 84], trousers: [26, 26, 34], hat: [140, 40, 42], bobble: true,
+            arms: 'bottle'
         });
-
-        // Torso (a ski jacket)
-        ctx.fillStyle = 'rgb(36,54,80)';
-        ctx.beginPath();
-        ctx.moveTo(shX - 4, shY);
-        ctx.lineTo(shX + 4, shY);
-        ctx.lineTo(hipX + 3, hipY + 0.5);
-        ctx.lineTo(hipX - 3, hipY + 0.5);
-        ctx.closePath();
-        ctx.fill();
-
-        // Arms: bottle arm held high and pumping, the other waving
-        const pump = Math.sin(p * Math.PI * 2) * 1.6;
-        const handR = { x: shX + 5.5, y: shY - 11 + pump };
-        ctx.strokeStyle = 'rgb(36,54,80)';
-        ctx.lineWidth = 1.7;
-        ctx.beginPath();
-        ctx.moveTo(shX + 3.5, shY + 0.5);
-        ctx.lineTo(shX + 6.5, shY - 5 + pump * 0.5);
-        ctx.lineTo(handR.x, handR.y);
-        ctx.stroke();
-        const wave = Math.sin(b * Math.PI * 0.5);
-        ctx.beginPath();
-        ctx.moveTo(shX - 3.5, shY + 0.5);
-        ctx.lineTo(shX - 6.5, shY - 3 - wave * 2);
-        ctx.lineTo(shX - 7 - wave * 2, shY - 9 - wave * 2.5);
-        ctx.stroke();
-
-        // Champagne bottle, tipped back towards the crowd
-        const tipX = handR.x + 2.2;
-        const tipY = handR.y - 4.5;
-        ctx.strokeStyle = 'rgb(28,58,36)';
-        ctx.lineWidth = 1.6;
-        ctx.beginPath();
-        ctx.moveTo(handR.x - 0.6, handR.y + 1.2);
-        ctx.lineTo(tipX, tipY);
-        ctx.stroke();
-        ctx.fillStyle = 'rgb(214,180,96)';
-        ctx.fillRect(tipX - 0.6, tipY - 0.6, 1.2, 1.2);
-        // Remember where the bottle is, in image coordinates, for the spray
-        bottleTip.x = dx + tipX;
-        bottleTip.y = dy + tipY;
-
-        // Head and a red bobble hat
-        const headY = shY - 3.4;
-        ctx.fillStyle = 'rgb(40,30,26)';
-        ctx.beginPath();
-        ctx.arc(shX + sway * 0.3, headY, 2.4, 0, 6.283);
-        ctx.fill();
-        ctx.fillStyle = 'rgb(150,36,40)';
-        ctx.beginPath();
-        ctx.arc(shX + sway * 0.3, headY - 1, 2.45, Math.PI, 0);
-        ctx.fill();
-        ctx.beginPath();
-        ctx.arc(shX + sway * 0.3, headY - 3.7, 0.9, 0, 6.283);
-        ctx.fill();
-
-        // Warm rim light from the fire pit on the right
-        ctx.globalAlpha = 0.45;
-        ctx.strokeStyle = 'rgb(255,160,80)';
-        ctx.lineWidth = 0.5;
-        ctx.beginPath();
-        ctx.moveTo(shX + 4, shY + 0.5);
-        ctx.lineTo(hipX + 3, hipY + 0.5);
-        ctx.moveTo(hipX + 1.4, hipY + 1);
-        ctx.lineTo(2.6, 0);
-        ctx.stroke();
-        ctx.setTransform(k, 0, 0, k, 0, 0);
+        bottleTip.x = tip.x;
+        bottleTip.y = tip.y;
 
         /* Pole for the festoon lights */
         ctx.globalAlpha = 0.9;
@@ -839,79 +765,139 @@
 
     function rgb(c) { return `rgb(${c[0]},${c[1]},${c[2]})`; }
 
-    function drawDancer([x, y, jacket, trousers, hat, style], i, t) {
-        const b = beat(t) + i * 0.37;
+    function drawDancer([x, y, jacket, trousers, hat], i, t) {
+        drawFigure(t, { x, y, phase: 0.37 * (i + 1), jacket, trousers, hat, arms: 'sway' });
+    }
+
+    // A person in winter clothes, drawn as soft filled shapes rather than lines, moving gently
+    // to the beat. Returns the bottle tip (image coordinates) when holding one.
+    function drawFigure(t, o) {
+        const b = beat(t) + o.phase;
         const p = b % 1;
-        const dip = (1 - Math.cos(p * Math.PI * 2)) / 2;
-        const sway = Math.sin(b * Math.PI);
-        // 'jump' bounces right off the ground on the beat; 'sway' rocks side to side
-        const lift = style === 'jump' ? Math.max(0, Math.sin(p * Math.PI)) * 2.2 : 0;
-        const hipX = style === 'sway' ? sway * 1.6 : sway * 0.5;
-        const hipY = -15 + (style === 'jump' ? 0 : dip * 1.2) - lift;
-        const shX = hipX * (style === 'sway' ? 0.2 : 0.5);
-        const shY = hipY - 10;
+        const dip = (1 - Math.cos(p * Math.PI * 2)) / 2 * 0.7;   // a soft knee bounce
+        const sway = Math.sin(b * Math.PI) * 0.6;                 // weight shifting side to side
+        const hipX = sway * 0.7;
+        const hipY = -15.5 + dip;
+        const shX = hipX * 0.35;
+        const shY = hipY - 10.5 + dip * 0.2;
+        const fill = c => { ctx.fillStyle = rgb(c); ctx.fill(); };
+        let tip = null;
 
         ctx.save();
-        ctx.translate(x, y);
-        ctx.globalAlpha = 0.97;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
+        ctx.translate(o.x, o.y);
+        ctx.globalAlpha = 0.95;
+        // Soften the edges a touch so the figure sits in the painting
+        ctx.filter = `blur(${(0.35 * k).toFixed(2)}px)`;
 
-        ctx.strokeStyle = rgb(trousers);
-        ctx.lineWidth = 2.1;
+        // Legs: tapered trousers, knees slightly bent, then boots
         [-1, 1].forEach(side => {
+            const kx = hipX * 0.5 + side * (1.5 + dip * 0.4);
+            const ky = hipY * 0.5;
+            const fx = side * 1.8;
             ctx.beginPath();
-            ctx.moveTo(hipX + side * 1.2, hipY);
-            ctx.lineTo(hipX * 0.5 + side * (1.6 + dip * 0.5), hipY / 2 - lift * 0.5);
-            ctx.lineTo(side * 2.1, -lift);
-            ctx.stroke();
+            ctx.moveTo(hipX + side * 0.2, hipY);
+            ctx.lineTo(hipX + side * 2.4, hipY);
+            ctx.lineTo(kx + side * 1.1, ky);
+            ctx.lineTo(fx + side * 0.8, -1.2);
+            ctx.lineTo(fx - side * 0.8, -1.2);
+            ctx.lineTo(kx - side * 0.9, ky);
+            ctx.closePath();
+            fill(o.trousers);
+            ctx.beginPath();
+            ctx.ellipse(fx + side * 0.3, -0.7, 1.3, 0.8, 0, 0, 6.283);
+            fill([20, 18, 22]);
         });
 
-        ctx.fillStyle = rgb(jacket);
+        // Puffy ski jacket, wider at the shoulders and a little flared at the hem
         ctx.beginPath();
-        ctx.moveTo(shX - 3.8, shY);
-        ctx.lineTo(shX + 3.8, shY);
-        ctx.lineTo(hipX + 2.9, hipY + 0.5);
-        ctx.lineTo(hipX - 2.9, hipY + 0.5);
-        ctx.closePath();
-        ctx.fill();
+        ctx.moveTo(shX - 3.6, shY + 0.6);
+        ctx.quadraticCurveTo(shX - 4.6, (shY + hipY) / 2, hipX - 3.4, hipY + 1.2);
+        ctx.lineTo(hipX + 3.4, hipY + 1.2);
+        ctx.quadraticCurveTo(shX + 4.6, (shY + hipY) / 2, shX + 3.6, shY + 0.6);
+        ctx.quadraticCurveTo(shX, shY - 1, shX - 3.6, shY + 0.6);
+        fill(o.jacket);
 
-        ctx.strokeStyle = rgb(jacket);
-        ctx.lineWidth = 1.6;
-        if (style === 'jump') {
-            // Both arms punching up on the beat
-            const up = 8 + Math.sin(p * Math.PI) * 2;
-            [-1, 1].forEach(side => {
-                ctx.beginPath();
-                ctx.moveTo(shX + side * 3.3, shY + 0.5);
-                ctx.lineTo(shX + side * 4.8, shY - up * 0.55);
-                ctx.lineTo(shX + side * 3.8, shY - up);
-                ctx.stroke();
-            });
-        } else {
-            // Arms out, waving slowly over two bars
-            const w = Math.sin(b * Math.PI * 0.5);
-            [-1, 1].forEach(side => {
-                ctx.beginPath();
-                ctx.moveTo(shX + side * 3.3, shY + 0.5);
-                ctx.lineTo(shX + side * 6.5, shY - 1.5 - side * w * 2);
-                ctx.lineTo(shX + side * 9, shY - 4 - side * w * 3);
-                ctx.stroke();
-            });
-        }
-
-        const hx = shX + sway * 0.3;
-        ctx.fillStyle = 'rgb(48,34,28)';
-        ctx.beginPath();
-        ctx.arc(hx, shY - 3.3, 2.3, 0, 6.283);
-        ctx.fill();
-        if (hat) {
-            ctx.fillStyle = rgb(hat);
+        // Arms as tapered sleeves with a glove at the end
+        const sleeve = (sx, sy, ex, ey, hx, hy) => {
+            ctx.strokeStyle = rgb(o.jacket);
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.lineWidth = 2.3;
             ctx.beginPath();
-            ctx.arc(hx, shY - 4.2, 2.35, Math.PI, 0);
+            ctx.moveTo(sx, sy);
+            ctx.lineTo(ex, ey);
+            ctx.stroke();
+            ctx.lineWidth = 1.8;
+            ctx.beginPath();
+            ctx.moveTo(ex, ey);
+            ctx.lineTo(hx, hy);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(hx, hy, 0.95, 0, 6.283);
+            fill([24, 22, 26]);
+        };
+        const lift = Math.sin(p * Math.PI * 2) * 0.8;
+        if (o.arms === 'bottle') {
+            // Bottle held up, rising and falling a little on the beat; other hand by the chest
+            const hx = shX + 4.6;
+            const hy = shY - 9.5 + lift;
+            sleeve(shX + 3, shY + 1, shX + 5.2, shY - 4 + lift * 0.5, hx, hy);
+            sleeve(shX - 3, shY + 1, shX - 4.4, shY + 5, shX - 1.6, shY + 4.6 - lift * 0.3);
+            const tx = hx + 1.6;
+            const ty = hy - 4;
+            ctx.strokeStyle = 'rgb(26,52,34)';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(hx - 0.4, hy + 1);
+            ctx.lineTo(tx, ty);
+            ctx.stroke();
+            ctx.fillStyle = 'rgb(200,170,96)';
+            ctx.beginPath();
+            ctx.arc(tx, ty, 0.6, 0, 6.283);
             ctx.fill();
+            tip = { x: o.x + tx, y: o.y + ty };
+        } else {
+            // Drink raised in one hand, swaying gently; the other arm loose at the side
+            const w = Math.sin(b * Math.PI * 0.5) * 0.6;
+            const gx = shX + 4.2 + w * 0.4;
+            const gy = shY - 7.5 + lift * 0.6;
+            sleeve(shX + 3, shY + 1, shX + 5.4, shY - 3 + lift * 0.3, gx, gy);
+            sleeve(shX - 3, shY + 1, shX - 4.6, shY + 5, shX - 4.2 - w * 0.3, shY + 8.5);
+            ctx.fillStyle = 'rgba(230,220,200,0.8)';
+            ctx.fillRect(gx - 0.5, gy - 2.6, 1, 2);
         }
+
+        // Head, hat and (for the main dancer) a bobble
+        const hx = shX + sway * 0.25;
+        const hy = shY - 3.2;
+        ctx.beginPath();
+        ctx.arc(hx, hy, 2.2, 0, 6.283);
+        fill([46, 34, 28]);
+        if (o.hat) {
+            ctx.beginPath();
+            ctx.arc(hx, hy - 0.7, 2.3, Math.PI, 0);
+            ctx.lineTo(hx + 2.3, hy - 0.3);
+            ctx.lineTo(hx - 2.3, hy - 0.3);
+            fill(o.hat);
+            if (o.bobble) {
+                ctx.beginPath();
+                ctx.arc(hx, hy - 3.3, 0.85, 0, 6.283);
+                fill(o.hat);
+            }
+        }
+
+        // Warm rim light from the fire pit on the right
+        ctx.filter = 'none';
+        ctx.globalAlpha = 0.35;
+        ctx.strokeStyle = 'rgb(255,160,80)';
+        ctx.lineWidth = 0.45;
+        ctx.beginPath();
+        ctx.moveTo(shX + 3.8, shY + 1);
+        ctx.quadraticCurveTo(shX + 4.6, (shY + hipY) / 2, hipX + 3.4, hipY + 1);
+        ctx.stroke();
+
         ctx.restore();
+        return tip;
     }
 
     // Painted crowd members throw their hands up: each one for a couple of bars at a time
@@ -932,23 +918,38 @@
         ctx.save();
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
-        ctx.lineWidth = 1.7;
+        ctx.filter = `blur(${(0.35 * k).toFixed(2)}px)`;
         CROWD_ARMS.forEach(([lx, rx, sy, col], i) => {
             const s = crowdState[i];
-            const raise = Math.max(0, Math.min(1, (t - s.start) / 0.4, (s.end - t) / 0.4));
+            // Ease the arm up and down slowly rather than snapping
+            const r = Math.max(0, Math.min(1, (t - s.start) / 0.9, (s.end - t) / 0.9));
+            const raise = r * r * (3 - 2 * r);
             if (raise <= 0) return;
-            const pump = Math.sin((p + i * 0.25) * Math.PI * 2) * 1.2;
-            ctx.strokeStyle = rgb(col);
-            ctx.globalAlpha = 0.95;
+            const pump = Math.sin((p + i * 0.25) * Math.PI * 2) * 0.6;
+            ctx.globalAlpha = 0.93;
             // Mostly one hand up; some people put both up
             const sides = i % 2 ? [[rx, 1]] : [[lx, -1], [rx, 1]];
             sides.forEach(([x, side]) => {
-                const reach = raise * (9 + pump);
+                const reach = raise * (7 + pump);
+                const ex = x + side * 1.8;
+                const ey = sy - reach * 0.5;
+                const hx = x + side * 1.1;
+                const hy = sy - reach;
+                ctx.strokeStyle = rgb(col);
+                ctx.lineWidth = 2.2;
                 ctx.beginPath();
                 ctx.moveTo(x, sy + 1);
-                ctx.lineTo(x + side * 2, sy - reach * 0.5);
-                ctx.lineTo(x + side * 1, sy - reach);
+                ctx.lineTo(ex, ey);
                 ctx.stroke();
+                ctx.lineWidth = 1.8;
+                ctx.beginPath();
+                ctx.moveTo(ex, ey);
+                ctx.lineTo(hx, hy);
+                ctx.stroke();
+                ctx.fillStyle = 'rgb(24,22,26)';
+                ctx.beginPath();
+                ctx.arc(hx, hy, 0.9, 0, 6.283);
+                ctx.fill();
             });
         });
         ctx.restore();
@@ -1139,6 +1140,31 @@
             ctx.fill();
             ctx.restore();
         });
+        ctx.restore();
+    }
+
+    /* ---------- laptop screen ---------- */
+
+    function drawLaptop(t) {
+        if (!laptopImg.complete || !laptopImg.naturalWidth) return;
+        const { tl, tr, bl } = LAPTOP;
+        const w = laptopImg.naturalWidth;
+        const h = laptopImg.naturalHeight;
+        ctx.save();
+        ctx.globalCompositeOperation = 'source-over';
+        // Map the image onto the screen's corners (a slight perspective skew)
+        ctx.transform((tr[0] - tl[0]) / w, (tr[1] - tl[1]) / w, (bl[0] - tl[0]) / h, (bl[1] - tl[1]) / h, tl[0], tl[1]);
+        ctx.globalAlpha = 0.86;
+        ctx.drawImage(laptopImg, 0, 0);
+        // A faint diagonal glare across the glass, drifting very slowly
+        const g = ctx.createLinearGradient(0, 0, w, h);
+        const m = 0.35 + Math.sin(t * 0.05) * 0.05;
+        g.addColorStop(Math.max(0, m - 0.2), 'rgba(255,255,255,0)');
+        g.addColorStop(m, 'rgba(220,230,255,0.07)');
+        g.addColorStop(Math.min(1, m + 0.2), 'rgba(255,255,255,0)');
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, w, h);
         ctx.restore();
     }
 
@@ -1572,6 +1598,7 @@
         drawAquarium(t);
         drawMonkeys(t);
         drawOryx(t);
+        drawLaptop(t);
         drawSteam(t);
         drawGecko(t);
         drawParty(t);
