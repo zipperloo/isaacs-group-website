@@ -307,7 +307,14 @@
             display: block;
             width: min(170px, 50%);
             height: auto;
-            margin: 6px auto 18px;
+            margin: 6px auto 8px;
+        }
+        .panel-sub {
+            display: block;
+            width: min(145px, 43%);   /* the same proportion to the wordmark as the main logo */
+            height: auto;
+            margin: 0 auto;
+            opacity: 0.85;
         }
         .panel h2 {
             margin: 0;
@@ -442,7 +449,8 @@
         /* A more compact contact panel on phones */
         @media (max-width: 600px) {
             .panel { padding: 24px 24px 22px; }
-            .panel-logo { width: 130px; margin: 0 auto 12px; }
+            .panel-logo { width: 130px; margin: 0 auto 6px; }
+            .panel-sub { width: 110px; }
             .recipient { margin-bottom: 22px; }
             .recipient::before { margin: 16px auto 14px; }
             .recipient-name { font-size: 1.05rem; }
@@ -509,10 +517,10 @@
         <div class="panel">
             <button class="close" id="contact-close" type="button" aria-label="Close">&times;</button>
             <img class="panel-logo" src="assets/typography/isaacs-wordmark-ivory.png" alt="ISAACS">
-            <h2 id="contact-title">Contact</h2>
+            <img class="panel-sub" src="assets/typography/family-office-ivory.png" alt="Family Office">
             <p class="recipient">
-                <span class="recipient-name">Helen Molyneux</span>
-                <span class="recipient-role">Executive Assistant to the Family Office</span>
+                <span class="recipient-name" id="contact-title">Write to Helen Molyneux</span>
+                <span class="recipient-role">Executive Assistant to the Principal</span>
             </p>
             <form id="contact-form" action="https://formspree.io/f/xnpjrnja" method="POST">
                 <input type="hidden" name="_subject" value="Website enquiry for Helen">
