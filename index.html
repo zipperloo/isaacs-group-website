@@ -301,35 +301,49 @@
         }
         .dialog.open .panel { transform: none; }
 
-        .recipient {
-            margin: 0 0 32px;
+        /* Contact panel header: wordmark, title, then who the message goes to */
+        .panel-logo {
+            display: block;
+            width: min(170px, 50%);
+            height: auto;
+            margin: 6px auto 18px;
+        }
+        .panel h2 {
+            margin: 0;
+            font-weight: 300;
+            font-size: 0.72rem;
+            letter-spacing: 0.55em;
+            padding-left: 0.55em; /* balances the trailing letter-spacing */
+            text-transform: uppercase;
             text-align: center;
-            font-size: 0.8rem;
-            letter-spacing: 0.15em;
-            line-height: 1.6;
-            opacity: 0.8;
+            opacity: 0.85;
+        }
+        .recipient {
+            margin: 0 0 36px;
+            text-align: center;
+        }
+        .recipient::before {
+            content: '';
+            display: block;
+            width: 36px;
+            height: 1px;
+            margin: 26px auto 24px;
+            background: color-mix(in srgb, var(--ivory) 45%, transparent);
         }
         .recipient-name {
             display: block;
-            font-size: 1.1rem;
-            letter-spacing: 0.2em;
-            opacity: 1;
-        }
-
-        .panel-logo {
-            display: block;
-            width: min(200px, 55%);
-            height: auto;
-            margin: 4px auto 22px;
-        }
-
-        .panel h2 {
-            margin: 0 0 14px;
+            font-family: 'Source Sans 3', sans-serif;
             font-weight: 300;
-            font-size: 1rem;
-            letter-spacing: 0.4em;
+            font-size: 1.2rem;
+            letter-spacing: 0.14em;
+        }
+        .recipient-role {
+            display: block;
+            margin-top: 8px;
+            font-size: 0.66rem;
+            letter-spacing: 0.28em;
             text-transform: uppercase;
-            text-align: center;
+            opacity: 0.6;
         }
         .close {
             position: absolute;
@@ -340,9 +354,11 @@
             background: none;
             border: 0;
             color: inherit;
-            font-size: 1.5rem;
-            font-weight: 300;
+            font-family: 'Source Sans 3', sans-serif;
+            font-size: 1.7rem;
+            font-weight: 200;
             line-height: 1;
+            opacity: 0.75;
             cursor: pointer;
         }
 
@@ -403,7 +419,7 @@
         }
 
         .status {
-            margin: 20px 0 0;
+            margin: 16px 0 -8px;
             min-height: 1.4em;
             text-align: center;
             font-size: 0.95rem;
@@ -419,6 +435,7 @@
                 bottom: calc(var(--edge) + 44px);
             }
             .stage img { object-position: 42% 50%; }
+            .recipient-role { letter-spacing: 0.16em; }
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -476,9 +493,10 @@
         <div class="panel">
             <button class="close" id="contact-close" type="button" aria-label="Close">&times;</button>
             <img class="panel-logo" src="assets/typography/isaacs-wordmark-ivory.png" alt="ISAACS">
-            <h2 id="contact-title">Contact Helen</h2>
+            <h2 id="contact-title">Contact</h2>
             <p class="recipient">
-                Executive Assistant to the Family Office
+                <span class="recipient-name">Helen Molyneux</span>
+                <span class="recipient-role">Executive Assistant to the Family Office</span>
             </p>
             <form id="contact-form" action="https://formspree.io/f/xnpjrnja" method="POST">
                 <input type="hidden" name="_subject" value="Website enquiry for Helen">

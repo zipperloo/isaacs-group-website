@@ -67,7 +67,7 @@ The laptop on the terrace desk shows a screenshot of the medik8.com home page on
 
 ## Contact form
 
-The **Contact** link opens a form addressed to Helen, Executive Assistant to the Family Office. It posts to [Formspree](https://formspree.io) (endpoint `https://formspree.io/f/xnpjrnja`, set on the `<form>` tag's `action` attribute in `index.html`). Messages arrive at hello@isaacs.group. The form shows a confirmation or error message without leaving the page.
+The **Contact** link opens a form addressed to Helen Molyneux, Executive Assistant to the Family Office. It posts to [Formspree](https://formspree.io) (endpoint `https://formspree.io/f/xnpjrnja`, set on the `<form>` tag's `action` attribute in `index.html`). Messages arrive at hello@isaacs.group. The form shows a confirmation or error message without leaving the page.
 
 ## Deployment
 
