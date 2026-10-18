@@ -2,7 +2,7 @@
 
 The single-page website for ISAACS Family Office ("A world of perspective"), served at [isaacs.group](https://isaacs.group).
 
-The home page is a full-screen illustrated scene with the ISAACS logo, a tagline, a contact form and a **Day / Night** toggle. The toggle crossfades between the day and night backgrounds and swaps all the lettering between espresso (day) and ivory (night). The site remembers the visitor's last choice and starts in night mode the first time.
+The home page is a full-screen illustrated scene with the ISAACS logo, a tagline, a contact form and a **Day / Night** toggle. The toggle crossfades between the day and night backgrounds and swaps the lettering between espresso (day) and ivory (night). The tagline stays ivory in both, because it sits on the dark rug in both pictures. The site remembers the visitor's last choice and starts in night mode the first time.
 
 ## Files
 

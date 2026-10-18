@@ -84,9 +84,7 @@
                 linear-gradient(to top, rgba(10, 8, 6, 0.6) 0%, transparent 28%);
         }
         .shade-day {
-            background:
-                linear-gradient(to bottom, rgba(255, 255, 255, 0.25) 0%, transparent 22%),
-                linear-gradient(to top, rgba(240, 232, 220, 0.85) 0%, rgba(240, 232, 220, 0.5) 14%, transparent 30%);
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0.25) 0%, transparent 22%);
             opacity: 0;
         }
         html[data-mode="day"] .shade-night { opacity: 0; }
@@ -135,10 +133,11 @@
             transform: translateX(-50%);
             margin: 0;
             padding-left: 0.45em; /* balances the trailing letter-spacing so the line stays centred */
-            color: var(--ink);
+            /* Ivory in both modes: it sits on the dark rug in the day image too */
+            color: var(--ivory);
             font-family: 'Source Sans 3', sans-serif;
             font-weight: 200;
-            text-shadow: 0 0 14px var(--halo), 0 0 4px var(--halo);
+            text-shadow: 0 0 14px rgba(10, 8, 6, 0.55), 0 0 4px rgba(10, 8, 6, 0.55);
             font-size: clamp(14px, 2.4vw, 46px);
             letter-spacing: 0.45em;
             line-height: 1;
