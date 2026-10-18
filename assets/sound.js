@@ -100,6 +100,7 @@
         player.unMute();
         audible = true;
         setState('playing');
+        dispatchEvent(new Event('isaacs:music'));   // the scene takes a tour when the music starts
         fadeTo(VOLUME, FADE_IN_MS);
     }
 

@@ -1703,8 +1703,40 @@
 
     const panLimit = () => MARGIN / Math.max(1, overflowX);   // keep the overscan margin at each end
 
+    // When the music starts, take one slow tour of the scene: centre, left, across to the
+    // right, then back to centre. Any touch cancels it.
+    let tour = null;
+    addEventListener('isaacs:music', () => {
+        if (overflowX < innerWidth * 0.3) return;
+        const lo = panLimit(), hi = 1 - panLimit();
+        const stops = [pan.focal, lo, hi, pan.base];
+        const legs = stops.slice(1).map((f, i) => ({ from: stops[i], to: f, dur: 1.5 + Math.abs(f - stops[i]) * 14 }));
+        tour = { legs, start: performance.now() / 1000 };
+        pan.touched = true;   // no first-visit hint after this
+        pan.vel = 0;
+    });
+
+    function runTour() {
+        let el = performance.now() / 1000 - tour.start;
+        for (const leg of tour.legs) {
+            if (el < leg.dur) {
+                const f = el / leg.dur;
+                const e = f * f * (3 - 2 * f);
+                pan.focal = leg.from + (leg.to - leg.from) * e;
+                return;
+            }
+            el -= leg.dur;
+        }
+        tour = null;
+    }
+
     function updatePan(t) {
         const lo = panLimit(), hi = 1 - panLimit();
+        if (tour && !pan.dragging) {
+            runTour();
+            updateGeckoShift();
+            return;
+        }
         if (!pan.dragging) {
             if (!pan.touched && overflowX > innerWidth * 0.3 && t > 6 && t < 11) {
                 // A one-off drift on phones to show there is more to see, then back
@@ -1731,6 +1763,7 @@
         if (e.pointerType === 'mouse' || (overflowX < 40 && overflowY < 40)) return;
         pan.dragging = true;
         pan.touched = true;
+        tour = null;
         pan.vel = 0;
         pan.velY = 0;
         pan.lastX = e.clientX;
