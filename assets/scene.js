@@ -1881,7 +1881,7 @@
         { boxes: [[108, 800, 148, 838]], word: 'Sonder', def: 'the realization that everybody around you is living a life just as complex as yours, in which you are just a bit part.' },
         { boxes: [[1575, 400, 1608, 520]], word: 'Onism', def: 'the awareness of how little of the world you’ll experience, there is only so much time for curious minds.' },
         { boxes: [[1498, 220, 1512, 250]], word: 'Avenoir', def: AVENOIR },
-        { boxes: [[1510, 705, 1545, 760]], word: 'Patroagon', def: 'a father’s quiet, persistent dread about the future when he contemplates no longer being around to protect or guide his children. It is the weight of knowing you cannot shield them from life’s trials indefinitely.' },
+        { boxes: [[1510, 705, 1545, 760]], word: 'Patroagon', def: 'a father’s quiet, persistent dread about the future when he contemplates no longer being around to protect or guide his children.' },
         { boxes: [[1120, 643, 1140, 655]], word: 'Liberosis', def: 'the desire to care less about things.' },
         { boxes: [[145, 615, 190, 640]], word: 'Chrysalism', def: 'the amniotic tranquility of being indoors during a thunderstorm.' },
         { boxes: [[755, 240, 769, 330]], word: 'Anecdoche', def: 'a conversation in which everyone is talking, but nobody is listening.' },
