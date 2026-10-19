@@ -271,54 +271,46 @@
             pointer-events: none;
         }
 
-        /* Easter-egg panels: a hidden word glides in over certain objects */
+        /* Easter-egg notes: small and quiet, fading in beside an object */
         .egg {
             position: fixed;
             left: 0;
             top: 0;
             z-index: 6;
-            max-width: min(300px, calc(100vw - 28px));
-            padding: 16px 20px 18px;
-            background: color-mix(in srgb, var(--navy) 90%, transparent);
-            border: 1px solid color-mix(in srgb, var(--ivory) 28%, transparent);
+            max-width: min(220px, calc(100vw - 24px));
+            padding: 9px 12px 10px;
+            background: color-mix(in srgb, var(--navy) 72%, transparent);
+            border: 1px solid color-mix(in srgb, var(--ivory) 14%, transparent);
             color: var(--ivory);
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
-            backdrop-filter: blur(6px);
-            -webkit-backdrop-filter: blur(6px);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
             pointer-events: none;
             opacity: 0;
-            transform: translateY(8px);
-            transition: opacity 0.45s ease, transform 0.55s cubic-bezier(0.2, 0.7, 0.2, 1);
+            transition: opacity 0.9s ease;
         }
-        .egg.show { opacity: 1; transform: none; }
+        .egg.show { opacity: 0.92; }
         .egg p { margin: 0; }
         .egg-head {
             display: flex;
             align-items: baseline;
-            gap: 10px;
+            gap: 6px;
         }
         .egg-word {
             font-family: 'Source Sans 3', sans-serif;
             font-weight: 300;
-            font-size: 1.3rem;
-            letter-spacing: 0.12em;
+            font-size: 0.85rem;
+            letter-spacing: 0.1em;
         }
         .egg-pos {
-            font-size: 0.8rem;
+            font-size: 0.65rem;
             font-style: italic;
-            opacity: 0.6;
+            opacity: 0.55;
         }
         .egg-def {
-            margin-top: 8px !important;
-            font-size: 0.85rem;
-            line-height: 1.55;
-            opacity: 0.85;
-        }
-        .egg-is-quote { max-width: min(440px, calc(100vw - 28px)); padding: 18px 24px 20px; }
-        .egg-quote {
-            font-family: 'Great Vibes', 'Segoe Script', cursive;
-            font-size: 1.55rem;
-            line-height: 1.45;
+            margin-top: 4px !important;
+            font-size: 0.68rem;
+            line-height: 1.5;
+            opacity: 0.75;
         }
 
         /* Contact dialog */

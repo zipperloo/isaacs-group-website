@@ -17,7 +17,7 @@ The occasional moments run on random timers. There are enough of them that somet
 
 On touch screens, visitors can **swipe to explore** the whole picture (left and right on phones held upright, and up and down too when held sideways). The logo, tagline and buttons stay fixed while the scene slides underneath. On first visit the view drifts once to hint that there is more to see, and when a visitor turns the music on it takes one slow tour (centre, left, right, back to centre). Touching the screen stops the tour.
 
-**Easter eggs:** hovering over (or tapping, on touch screens) certain objects shows a hidden word from *The Dictionary of Obscure Sorrows*: the whisky glass (Sonder), backpacker (Onism), après-ski dancer (Avenoir), the child diver (a quote about rowing backwards, in script), the NPD post-it (Liberosis), the fireplaces (Chrysalism), the laptop (Anecdoche), the satellite (Ellipsism), the climbers (Lachesism), the gecko (Exulansis) and the headphones (Anemoia). The words and their hotspots are in the `EGGS` list in `assets/scene.js`.
+**Easter eggs:** resting the pointer on certain people and objects for about a second (or tapping them on touch screens) fades in a small note with a word from *The Dictionary of Obscure Sorrows*: the whisky glass (Sonder), backpacker (Onism), the après-ski dancer and the child diver (Avenoir), the NPD post-it (Liberosis), the fireplace (Chrysalism), the tall triangular tower (Anecdoche), the satellite (Ellipsism), the gecko (Exulansis) and any of the cricketers (Anemoia). The targets are deliberately small. The words and hotspots are in the `EGGS` list in `assets/scene.js`.
 
 Visitors who have "reduce motion" turned on in their device settings see the still image only.
 

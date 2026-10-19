@@ -1873,21 +1873,23 @@
 
     /* ---------- easter eggs ---------- */
 
-    // Hidden words: hover (or tap, on touch screens) over certain things in the picture and a
-    // small panel glides in. Boxes are x0, y0, x1, y1 in the picture; the gecko follows itself.
+    // Hidden words. Rest the pointer on certain things for a moment (or tap them on a touch
+    // screen) and a small note fades in beside the object. Boxes are x0, y0, x1, y1 in the
+    // picture; the gecko's follows the gecko.
+    const AVENOIR = 'the desire that memory could flow backward, not to change events but to experience – with experience.';
     const EGGS = [
-        { boxes: [[90, 775, 165, 850]], word: 'Sonder', def: 'the realization that everybody around you is living a life just as complex as yours, in which you are just a bit part.' },
-        { boxes: [[1550, 380, 1630, 555]], word: 'Onism', def: 'the awareness of how little of the world you’ll experience, there is only so much time for curious minds.' },
-        { boxes: [[1488, 210, 1522, 254]], word: 'Avenoir', def: 'the desire that memory could flow backward, not to change events but to experience – with experience.' },
-        { boxes: [[1490, 690, 1605, 830]], quote: 'We take it for granted that life moves forward. But you move as a rower moves, facing backwards: you can see where you’ve been, but not where you’re going. And your boat is steered by a younger version of you. It’s hard not to wonder what life would be like facing the other way…' },
-        { boxes: [[1110, 636, 1150, 660]], word: 'Liberosis', def: 'the desire to care less about things.' },
-        { boxes: [[118, 592, 215, 652], [0, 625, 45, 680]], word: 'Chrysalism', def: 'the amniotic tranquility of being indoors during a thunderstorm.' },
-        { boxes: [[832, 534, 921, 580]], word: 'Anecdoche', def: 'a conversation in which everyone is talking, but nobody is listening.' },
-        { boxes: [[1400, 8, 1530, 100]], word: 'Ellipsism', def: 'a sadness that you’ll never be able to know how history will turn out.' },
-        { boxes: [[871, 289, 915, 329]], word: 'Lachesism', def: 'the desire to be struck by disaster – to survive a plane crash, or to lose everything in a fire.' },
+        { boxes: [[108, 800, 148, 838]], word: 'Sonder', def: 'the realization that everybody around you is living a life just as complex as yours, in which you are just a bit part.' },
+        { boxes: [[1575, 400, 1608, 520]], word: 'Onism', def: 'the awareness of how little of the world you’ll experience, there is only so much time for curious minds.' },
+        { boxes: [[1498, 220, 1512, 250]], word: 'Avenoir', def: AVENOIR },
+        { boxes: [[1510, 705, 1545, 760]], word: 'Avenoir', def: AVENOIR },
+        { boxes: [[1120, 643, 1140, 655]], word: 'Liberosis', def: 'the desire to care less about things.' },
+        { boxes: [[145, 615, 190, 640]], word: 'Chrysalism', def: 'the amniotic tranquility of being indoors during a thunderstorm.' },
+        { boxes: [[755, 240, 769, 330]], word: 'Anecdoche', def: 'a conversation in which everyone is talking, but nobody is listening.' },
+        { boxes: [[1440, 35, 1495, 80]], word: 'Ellipsism', def: 'a sadness that you’ll never be able to know how history will turn out.' },
         { gecko: true, word: 'Exulansis', def: 'the tendency to give up trying to talk about an experience because people are unable to relate to it.' },
-        { boxes: [[1028, 606, 1098, 656]], word: 'Anemoia', def: 'a feeling of nostalgia for a time or a place that you have never personally known or experienced.' }
+        { boxes: [[600, 461, 610, 472], [541, 481, 550, 492], [626, 485, 635, 496], [669, 488, 678, 500]], word: 'Anemoia', def: 'a feeling of nostalgia for a time or a place that you have never personally known or experienced.' }
     ];
+    const DWELL_MS = 1100;   // how long the pointer must rest on an object
 
     const egg = document.createElement('div');
     egg.className = 'egg';
@@ -1896,7 +1898,7 @@
     document.body.appendChild(egg);
     let eggShown = null;
     let eggTimer = 0;
-    let scriptFontLoaded = false;
+    let dwell = { e: null, timer: 0 };
 
     // Screen position to picture position, following the parallax, panning and breathing zoom
     function toImage(cx, cy) {
@@ -1904,42 +1906,44 @@
         return [((cx - r.left) / r.width) * IMG_W, ((cy - r.top) / r.height) * IMG_H];
     }
 
-    function eggAt(cx, cy) {
-        const [x, y] = toImage(cx, cy);
-        return EGGS.find(e => {
-            if (e.gecko) return gecko.active && gecko.fade > 0.4 && Math.hypot(x - gecko.x, y - gecko.y) < 18;
-            return e.boxes.some(([x0, y0, x1, y1]) => x >= x0 && x <= x1 && y >= y0 && y <= y1);
-        });
+    // The object's box on screen right now
+    function boxOnScreen(e, box) {
+        const r = canvas.getBoundingClientRect();
+        const sx = r.width / IMG_W, sy = r.height / IMG_H;
+        if (e.gecko) box = [gecko.x - 10, gecko.y - 12, gecko.x + 10, gecko.y + 12];
+        return { l: r.left + box[0] * sx, t: r.top + box[1] * sy, r: r.left + box[2] * sx, b: r.top + box[3] * sy };
     }
 
-    function showEgg(e, cx, cy) {
-        clearTimeout(eggTimer);
-        if (eggShown !== e) {
-            if (e.quote && !scriptFontLoaded) {
-                scriptFontLoaded = true;
-                const l = document.createElement('link');
-                l.rel = 'stylesheet';
-                l.href = 'https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap';
-                document.head.appendChild(l);
+    function eggAt(cx, cy) {
+        const [x, y] = toImage(cx, cy);
+        for (const e of EGGS) {
+            if (e.gecko) {
+                if (gecko.active && gecko.fade > 0.4 && Math.hypot(x - gecko.x, y - gecko.y) < 14) return { e, box: null };
+                continue;
             }
-            egg.classList.toggle('egg-is-quote', !!e.quote);
-            egg.innerHTML = e.quote
-                ? `<p class="egg-quote">${e.quote}</p>`
-                : `<p class="egg-head"><span class="egg-word">${e.word}</span><span class="egg-pos">n.</span></p><p class="egg-def">${e.def}</p>`;
-            eggShown = e;
+            const box = e.boxes.find(([x0, y0, x1, y1]) => x >= x0 && x <= x1 && y >= y0 && y <= y1);
+            if (box) return { e, box };
         }
-        // Sit just above and to the right of the pointer, kept inside the screen
-        const pad = 14;
-        const w = egg.offsetWidth;
-        const h = egg.offsetHeight;
-        let x = cx + 18;
-        let y = cy - h - 18;
-        if (x + w > innerWidth - pad) x = cx - w - 18;
-        if (y < pad) y = cy + 22;
+        return null;
+    }
+
+    // Place the note beside the object (not the pointer), so it stays put once it appears
+    function showEgg(hit) {
+        clearTimeout(eggTimer);
+        if (eggShown !== hit.e) {
+            egg.innerHTML = `<p class="egg-head"><span class="egg-word">${hit.e.word}</span><span class="egg-pos">n.</span></p><p class="egg-def">${hit.e.def}</p>`;
+            eggShown = hit.e;
+        }
+        const o = boxOnScreen(hit.e, hit.box);
+        const pad = 12, gap = 10;
+        const w = egg.offsetWidth, h = egg.offsetHeight;
+        let x = o.r + gap;
+        if (x + w > innerWidth - pad) x = o.l - w - gap;
+        let y = (o.t + o.b) / 2 - h / 2;
         x = Math.max(pad, Math.min(innerWidth - w - pad, x));
         y = Math.max(pad, Math.min(innerHeight - h - pad, y));
-        egg.style.left = x + 'px';
-        egg.style.top = y + 'px';
+        egg.style.left = Math.round(x) + 'px';
+        egg.style.top = Math.round(y) + 'px';
         egg.classList.add('show');
     }
 
@@ -1953,13 +1957,18 @@
 
     const dialogOpen = () => document.querySelector('.dialog.open');
 
-    // Mouse: hover
+    // Mouse: only after resting on an object for a moment
     addEventListener('pointermove', e => {
         if (e.pointerType !== 'mouse') return;
-        const found = dialogOpen() || e.target.closest('button') ? null : eggAt(e.clientX, e.clientY);
-        stage.style.cursor = found ? 'help' : '';
-        if (found) showEgg(found, e.clientX, e.clientY);
-        else if (eggShown) hideEgg(180);
+        const hit = dialogOpen() || e.target.closest('button') ? null : eggAt(e.clientX, e.clientY);
+        const id = hit ? hit.e : null;
+        if (id !== dwell.e) {
+            clearTimeout(dwell.timer);
+            dwell.e = id;
+            if (hit) dwell.timer = setTimeout(() => showEgg(hit), DWELL_MS);
+        }
+        if (!hit && eggShown) hideEgg(400);
+        else if (hit && eggShown === hit.e) clearTimeout(eggTimer);
     });
 
     // Touch: a tap (not a swipe) shows the word; it fades by itself after a while
@@ -1979,10 +1988,10 @@
         const quick = performance.now() - tapStart.t < 450;
         tapStart = null;
         if (!quick || dialogOpen()) return;
-        const found = eggAt(e.clientX, e.clientY);
-        if (found) {
-            showEgg(found, e.clientX, e.clientY);
-            hideEgg(found.quote ? 12000 : 8000);
+        const hit = eggAt(e.clientX, e.clientY);
+        if (hit) {
+            showEgg(hit);
+            hideEgg(7000);
         } else if (eggShown) {
             hideEgg(0);
         }
