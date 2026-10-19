@@ -2257,6 +2257,7 @@
     // village, then everything. Pressing it again lets it all settle back to normal.
     const CHAOS_RISE = 32;   // seconds to total chaos
     const CHAOS_FALL = 5;    // seconds to return to calm
+    const CHAOS_MAX = 10 / CHAOS_RISE;   // the fire stops spreading after 10 seconds
     let chaos = 0;           // 0 calm .. 1 total chaos
 
     // Fire sources: x, y, size, the chaos level at which each one catches
@@ -2311,7 +2312,8 @@
     }
 
     function updateChaos(t, dt) {
-        chaos = chaosOn ? Math.min(1, chaos + dt / CHAOS_RISE) : Math.max(0, chaos - dt / CHAOS_FALL);
+        // it builds for 10 seconds and then holds there, rather than running on to total chaos
+        chaos = chaosOn ? Math.min(CHAOS_MAX, chaos + dt / CHAOS_RISE) : Math.max(0, chaos - dt / CHAOS_FALL);
         if (chaos <= 0 && !smoke.length && !ash.length) return;
         const smokeCap = LITE ? 90 : 240;
         FIRES.forEach(([x, y, size, th]) => {
@@ -2487,6 +2489,8 @@
     }
 
     function toggleChaos() {
+        // A double safeguard: the button only arms while the word light switch is on
+        if (!chaosOn && !eggsOn) return;
         chaosOn = !chaosOn;
         drawLaptop();
     }
