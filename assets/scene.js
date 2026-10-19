@@ -1871,6 +1871,123 @@
         ui.style.transform = `translate3d(${(-current.x * UI_PARALLAX).toFixed(2)}px, ${(-current.y * UI_PARALLAX).toFixed(2)}px, 0)`;
     }
 
+    /* ---------- easter eggs ---------- */
+
+    // Hidden words: hover (or tap, on touch screens) over certain things in the picture and a
+    // small panel glides in. Boxes are x0, y0, x1, y1 in the picture; the gecko follows itself.
+    const EGGS = [
+        { boxes: [[90, 775, 165, 850]], word: 'Sonder', def: 'the realization that everybody around you is living a life just as complex as yours, in which you are just a bit part.' },
+        { boxes: [[1550, 380, 1630, 555]], word: 'Onism', def: 'the awareness of how little of the world you’ll experience, there is only so much time for curious minds.' },
+        { boxes: [[1488, 210, 1522, 254]], word: 'Avenoir', def: 'the desire that memory could flow backward, not to change events but to experience – with experience.' },
+        { boxes: [[1490, 690, 1605, 830]], quote: 'We take it for granted that life moves forward. But you move as a rower moves, facing backwards: you can see where you’ve been, but not where you’re going. And your boat is steered by a younger version of you. It’s hard not to wonder what life would be like facing the other way…' },
+        { boxes: [[1110, 636, 1150, 660]], word: 'Liberosis', def: 'the desire to care less about things.' },
+        { boxes: [[118, 592, 215, 652], [0, 625, 45, 680]], word: 'Chrysalism', def: 'the amniotic tranquility of being indoors during a thunderstorm.' },
+        { boxes: [[832, 534, 921, 580]], word: 'Anecdoche', def: 'a conversation in which everyone is talking, but nobody is listening.' },
+        { boxes: [[1400, 8, 1530, 100]], word: 'Ellipsism', def: 'a sadness that you’ll never be able to know how history will turn out.' },
+        { boxes: [[871, 289, 915, 329]], word: 'Lachesism', def: 'the desire to be struck by disaster – to survive a plane crash, or to lose everything in a fire.' },
+        { gecko: true, word: 'Exulansis', def: 'the tendency to give up trying to talk about an experience because people are unable to relate to it.' },
+        { boxes: [[1028, 606, 1098, 656]], word: 'Anemoia', def: 'a feeling of nostalgia for a time or a place that you have never personally known or experienced.' }
+    ];
+
+    const egg = document.createElement('div');
+    egg.className = 'egg';
+    egg.setAttribute('role', 'tooltip');
+    egg.setAttribute('aria-live', 'polite');
+    document.body.appendChild(egg);
+    let eggShown = null;
+    let eggTimer = 0;
+    let scriptFontLoaded = false;
+
+    // Screen position to picture position, following the parallax, panning and breathing zoom
+    function toImage(cx, cy) {
+        const r = canvas.getBoundingClientRect();
+        return [((cx - r.left) / r.width) * IMG_W, ((cy - r.top) / r.height) * IMG_H];
+    }
+
+    function eggAt(cx, cy) {
+        const [x, y] = toImage(cx, cy);
+        return EGGS.find(e => {
+            if (e.gecko) return gecko.active && gecko.fade > 0.4 && Math.hypot(x - gecko.x, y - gecko.y) < 18;
+            return e.boxes.some(([x0, y0, x1, y1]) => x >= x0 && x <= x1 && y >= y0 && y <= y1);
+        });
+    }
+
+    function showEgg(e, cx, cy) {
+        clearTimeout(eggTimer);
+        if (eggShown !== e) {
+            if (e.quote && !scriptFontLoaded) {
+                scriptFontLoaded = true;
+                const l = document.createElement('link');
+                l.rel = 'stylesheet';
+                l.href = 'https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap';
+                document.head.appendChild(l);
+            }
+            egg.classList.toggle('egg-is-quote', !!e.quote);
+            egg.innerHTML = e.quote
+                ? `<p class="egg-quote">${e.quote}</p>`
+                : `<p class="egg-head"><span class="egg-word">${e.word}</span><span class="egg-pos">n.</span></p><p class="egg-def">${e.def}</p>`;
+            eggShown = e;
+        }
+        // Sit just above and to the right of the pointer, kept inside the screen
+        const pad = 14;
+        const w = egg.offsetWidth;
+        const h = egg.offsetHeight;
+        let x = cx + 18;
+        let y = cy - h - 18;
+        if (x + w > innerWidth - pad) x = cx - w - 18;
+        if (y < pad) y = cy + 22;
+        x = Math.max(pad, Math.min(innerWidth - w - pad, x));
+        y = Math.max(pad, Math.min(innerHeight - h - pad, y));
+        egg.style.left = x + 'px';
+        egg.style.top = y + 'px';
+        egg.classList.add('show');
+    }
+
+    function hideEgg(delay) {
+        clearTimeout(eggTimer);
+        eggTimer = setTimeout(() => {
+            egg.classList.remove('show');
+            eggShown = null;
+        }, delay || 0);
+    }
+
+    const dialogOpen = () => document.querySelector('.dialog.open');
+
+    // Mouse: hover
+    addEventListener('pointermove', e => {
+        if (e.pointerType !== 'mouse') return;
+        const found = dialogOpen() || e.target.closest('button') ? null : eggAt(e.clientX, e.clientY);
+        stage.style.cursor = found ? 'help' : '';
+        if (found) showEgg(found, e.clientX, e.clientY);
+        else if (eggShown) hideEgg(180);
+    });
+
+    // Touch: a tap (not a swipe) shows the word; it fades by itself after a while
+    let tapStart = null;
+    stage.addEventListener('pointerdown', e => {
+        if (e.pointerType === 'mouse') return;
+        tapStart = { x: e.clientX, y: e.clientY, t: performance.now() };
+    });
+    addEventListener('pointermove', e => {
+        if (tapStart && e.pointerType !== 'mouse' && Math.hypot(e.clientX - tapStart.x, e.clientY - tapStart.y) > 10) {
+            tapStart = null;
+            if (eggShown) hideEgg(0);
+        }
+    });
+    addEventListener('pointerup', e => {
+        if (!tapStart || e.pointerType === 'mouse') return;
+        const quick = performance.now() - tapStart.t < 450;
+        tapStart = null;
+        if (!quick || dialogOpen()) return;
+        const found = eggAt(e.clientX, e.clientY);
+        if (found) {
+            showEgg(found, e.clientX, e.clientY);
+            hideEgg(found.quote ? 12000 : 8000);
+        } else if (eggShown) {
+            hideEgg(0);
+        }
+    });
+
     /* ---------- main loop ---------- */
 
     let start = 0;
