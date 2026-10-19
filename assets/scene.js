@@ -129,9 +129,9 @@
     ];
     let eggsOn = false;
     let chaosOn = false;  // the red button on the desk
-    const RED_BUTTON = { x: 470, y: 688 };   // tucked in the shadow under the desk
+    const RED_BUTTON = { x: 560, y: 637 };   // on the underside of the desk's front lip, pressed from below
     let rainOn = false;   // the weather switch on the front edge of the desk
-    const RAIN_SWITCH = { x: 985, y: 662 };   // the hidden words, switched by the light switch on the column (off on every load)
+    const RAIN_SWITCH = { x: 470, y: 613 };   // an inline switch on the desk lamp's cord   // the hidden words, switched by the light switch on the column (off on every load)
     const CLIMBER_PATCH = [871, 289, 44, 40, 203];
     const CLIMBER_MUTE = 0.55;   // how much of the bare rock shows through the climbers
     const patchImg = new Image();
@@ -325,12 +325,8 @@
         w.clearRect(0, 0, r.work.width, r.work.height);
         for (let y = r.by; y < r.by + r.bh; y++) {
             const depth = (y - r.by) / r.bh;
-            // the sea swells and gets rough as the chaos builds
-            const storm = r.water ? chaos : 0;
-            const amp = (r.amp[0] + (r.amp[1] - r.amp[0]) * depth) * (1 + storm * 4.5);
-            const sp = r.speed * (1 + storm * 1.6);
-            const fr = r.freq * (1 - storm * 0.45);
-            const dx = amp * (0.6 * Math.sin(y * fr + t * sp) + 0.4 * Math.sin(y * fr * 0.37 - t * sp * 0.66 + 1.7));
+            const amp = r.amp[0] + (r.amp[1] - r.amp[0]) * depth;
+            const dx = amp * (0.6 * Math.sin(y * r.freq + t * r.speed) + 0.4 * Math.sin(y * r.freq * 0.37 - t * r.speed * 0.66 + 1.7));
             w.drawImage(img, r.bx, y, r.bw, 1, dx * k, (y - r.by) * k, r.bw * k, k);
         }
         w.globalCompositeOperation = 'destination-in';
@@ -1339,85 +1335,86 @@
         c.restore();
     }
 
-    // A muted red push button on the left end of the desk; it glows when pressed
+    // A muted red push button fixed to the underside of the desk's front lip, so it is pressed
+    // upward with the fingers; it glows when pressed
     function drawRedButton() {
         const { x, y } = RED_BUTTON;
         const c = sctx;
-        c.save();
-        // shadow and dark metal base, seen at a low angle
-        c.globalAlpha = 0.5;
-        c.fillStyle = 'rgb(8,6,6)';
-        c.beginPath();
-        c.ellipse(x + 0.6, y + 1.2, 5.6, 2, 0, 0, 6.283);
-        c.fill();
-        c.globalAlpha = 0.95;
-        c.fillStyle = 'rgb(34,32,32)';
-        c.beginPath();
-        c.ellipse(x, y + 0.5, 5, 1.8, 0, 0, 6.283);
-        c.fill();
-        c.fillStyle = 'rgb(48,45,44)';
-        c.fillRect(x - 5, y - 0.6, 10, 1.1);
-        c.beginPath();
-        c.ellipse(x, y - 0.6, 5, 1.8, 0, 0, 6.283);
-        c.fill();
-        // the cap: muted brick red, much brighter when on
         const on = chaosOn;
+        c.save();
+        // the dark mounting ring against the underside of the lip
+        c.globalAlpha = 0.95;
+        c.fillStyle = 'rgb(18,16,16)';
+        c.beginPath();
+        c.ellipse(x, y - 1.4, 4.2, 1.2, 0, 0, 6.283);
+        c.fill();
         if (on) {
-            const glow = c.createRadialGradient(x, y - 1.5, 0, x, y - 1.5, 12);
-            glow.addColorStop(0, 'rgba(255,40,20,0.55)');
+            const glow = c.createRadialGradient(x, y, 0, x, y, 11);
+            glow.addColorStop(0, 'rgba(255,40,20,0.5)');
             glow.addColorStop(1, 'rgba(255,40,20,0)');
-            c.globalAlpha = 1;
             c.fillStyle = glow;
-            c.fillRect(x - 12, y - 13.5, 24, 24);
+            c.fillRect(x - 11, y - 11, 22, 22);
         }
-        const g = c.createRadialGradient(x - 1.2, y - 2.6, 0.2, x, y - 1.5, 4);
-        g.addColorStop(0, on ? 'rgb(255,120,100)' : 'rgb(78,34,32)');
-        g.addColorStop(1, on ? 'rgb(210,20,10)' : 'rgb(44,16,16)');
-        c.globalAlpha = 1;
+        // the cap, hanging down as a shallow dome, lit faintly from the room below
+        const g = c.createLinearGradient(0, y - 1.4, 0, y + 1.8);
+        g.addColorStop(0, on ? 'rgb(200,20,10)' : 'rgb(40,14,14)');
+        g.addColorStop(1, on ? 'rgb(255,110,90)' : 'rgb(82,32,30)');
         c.fillStyle = g;
         c.beginPath();
-        c.ellipse(x, y - 1.3, 3.4, 1.5, 0, 0, 6.283);
-        c.fill();
-        c.beginPath();
-        c.ellipse(x, y - 1.8 + (on ? 0.4 : 0), 3.4, 1.9, 0, Math.PI, 0);
+        c.ellipse(x, y - 1.2, 3, 0.9, 0, 0, Math.PI);
+        c.ellipse(x, y - 0.4 + (on ? -0.4 : 0), 3, 2.1, 0, 0, Math.PI);
         c.fill();
         c.restore();
     }
 
-    // A small brushed-metal toggle on the desk's front edge, with a pin-prick white LED
+    // An inline rocker switch on the desk lamp's cord, lying on the desk top
     function drawRainSwitch() {
         const { x, y } = RAIN_SWITCH;
         const c = sctx;
         const on = rainOn;
         c.save();
-        c.globalAlpha = 0.95;
-        c.fillStyle = 'rgb(22,20,20)';
-        c.beginPath();
-        c.roundRect(x - 4, y - 2.6, 8, 5.2, 0.8);
-        c.fill();
-        c.strokeStyle = 'rgba(190,180,165,0.25)';
-        c.lineWidth = 0.3;
-        c.stroke();
-        // the lever, tipped left (off) or right (on)
-        c.strokeStyle = 'rgb(150,145,140)';
-        c.lineWidth = 0.9;
+        // the cord: out of the switch, curling back to the brass lamp, and away to the edge
+        c.strokeStyle = 'rgba(16,14,14,0.9)';
+        c.lineWidth = 0.7;
         c.lineCap = 'round';
         c.beginPath();
-        c.moveTo(x, y + 0.3);
-        c.lineTo(x + (on ? 2.2 : -2.2), y - 1.8);
+        c.moveTo(x + 4, y - 0.4);
+        c.bezierCurveTo(x + 14, y - 1.5, x + 30, y - 6, 523, 594);
+        c.moveTo(x - 4, y + 0.4);
+        c.bezierCurveTo(x - 12, y + 1.5, x - 26, y + 2, 425, 619);
         c.stroke();
-        // LED
-        if (on) {
-            const glow = c.createRadialGradient(x + 2.7, y + 1.2, 0, x + 2.7, y + 1.2, 4);
-            glow.addColorStop(0, 'rgba(200,230,255,0.8)');
-            glow.addColorStop(1, 'rgba(200,230,255,0)');
-            c.fillStyle = glow;
-            c.fillRect(x - 1.3, y - 2.8, 8, 8);
-        }
-        c.fillStyle = on ? 'rgb(235,245,255)' : 'rgb(40,44,48)';
+        // shadow
+        c.globalAlpha = 0.45;
+        c.fillStyle = 'rgb(6,5,5)';
         c.beginPath();
-        c.arc(x + 2.7, y + 1.2, 0.45, 0, 6.283);
+        c.ellipse(x + 0.5, y + 1.2, 4.6, 1.4, -0.08, 0, 6.283);
         c.fill();
+        // body: a small rounded oblong in dark bakelite
+        c.globalAlpha = 1;
+        const g = c.createLinearGradient(0, y - 1.6, 0, y + 1.6);
+        g.addColorStop(0, 'rgb(58,54,52)');
+        g.addColorStop(1, 'rgb(22,20,20)');
+        c.fillStyle = g;
+        c.beginPath();
+        c.ellipse(x, y, 4.2, 1.6, -0.08, 0, 6.283);
+        c.fill();
+        // the rocker, pressed down on one side or the other, with a faint highlight
+        c.fillStyle = 'rgb(30,28,28)';
+        c.beginPath();
+        c.ellipse(x + (on ? 0.9 : -0.9), y - 0.5, 1.9, 0.7, -0.08, 0, 6.283);
+        c.fill();
+        c.fillStyle = 'rgba(210,200,185,0.35)';
+        c.beginPath();
+        c.ellipse(x + (on ? -0.6 : 0.6), y - 0.9, 1.1, 0.3, -0.08, 0, 6.283);
+        c.fill();
+        // a tiny warm indicator when on
+        if (on) {
+            const glow = c.createRadialGradient(x + 2.4, y - 0.4, 0, x + 2.4, y - 0.4, 3);
+            glow.addColorStop(0, 'rgba(255,190,120,0.9)');
+            glow.addColorStop(1, 'rgba(255,190,120,0)');
+            c.fillStyle = glow;
+            c.fillRect(x - 0.6, y - 3.4, 6, 6);
+        }
         c.restore();
     }
 
@@ -2031,7 +2028,7 @@
     const FLOWERS = Array.from({ length: 50 }, (_, i) => [100 + hash(i * 8.1) * 320, 360 + hash(i * 3.9) * 64, i % 4]);
     const FLOWER_COLOURS = ['rgb(230,200,90)', 'rgb(220,120,150)', 'rgb(240,240,230)', 'rgb(170,140,220)'];
     const birds = [];
-    let nextBird = 0;
+    let nextBird = 4;
 
     // The desert recoloured to grassland: sandy pixels become green, keeping the dune shading,
     // with soft edges. Made once from the painting, then faded in as the land comes to life.
@@ -2082,23 +2079,24 @@
         }
         const fade = rainOn ? 1 : 1 - w.off;
         const T = w.t;
-        // drizzle 0-10s, harder to 20s, downpour to 34s, easing off by 46s
-        const rain = T < 10 ? 0.25 * ramp(T, 0, 10) : T < 20 ? 0.25 + 0.35 * ramp(T, 10, 20) : T < 34 ? 0.6 + 0.4 * ramp(T, 20, 26) : 1 - ramp(T, 34, 46);
+        // drizzle at once, harder by 5s, a downpour 8-18s, easing off by 26s, then new life
+        const rain = T < 4 ? 0.3 * ramp(T, 0, 1.5) : T < 8 ? 0.3 + 0.35 * ramp(T, 4, 8) : T < 18 ? 0.65 + 0.35 * ramp(T, 8, 11) : 1 - ramp(T, 18, 26);
         w.rain = rain * fade;
-        w.cloud = Math.min(1, ramp(T, 0, 12) * (1 - ramp(T, 40, 52))) * fade;
-        w.sun = ramp(T, 42, 54) * fade;
-        w.grow = ramp(T, 46, 80) * fade;
+        w.cloud = Math.min(1, ramp(T, 0, 5) * (1 - ramp(T, 22, 30))) * fade;
+        w.sun = ramp(T, 24, 32) * fade;
+        w.grow = ramp(T, 26, 48) * fade;
         if (!rainOn && w.off >= 1) { w.t = 0; w.start = null; }
         // thunder in the downpour
         if (w.rain > 0.85 && t >= w.nextBolt) { w.flash = 1; w.nextBolt = t + 4 + Math.random() * 7; }
         w.flash = Math.max(0, w.flash - dt * 3);
         // birds once the sun is out
-        if (w.sun > 0.6 && t >= nextBird && birds.length < 10) {
+        // birds come and go all the time, more of them once the rain has cleared
+        if (t >= nextBird && birds.length < 10 && w.rain < 0.3) {
             const ltr = Math.random() < 0.5;
             const n = 1 + Math.floor(Math.random() * 4);
-            const y = 60 + Math.random() * 180;
+            const y = 40 + Math.random() * 200;
             for (let i = 0; i < n; i++) birds.push({ x: ltr ? -10 - i * 14 : IMG_W + 10 + i * 14, y: y + (Math.random() - 0.5) * 20, vx: (ltr ? 1 : -1) * (25 + Math.random() * 15), ph: Math.random() * 6, s: 2 + Math.random() * 1.5 });
-            nextBird = t + 4 + Math.random() * 6;
+            nextBird = t + (w.sun > 0.6 ? 3 + Math.random() * 5 : 8 + Math.random() * 12);
         }
         for (let i = birds.length - 1; i >= 0; i--) {
             const b = birds[i];
@@ -2158,31 +2156,55 @@
             ctx.restore();
         }
 
-        // Rain: slanting streaks outside, with rings on the water
+        // Rain: three depths of streaks, from fine distant rain over the landscape to a few nearer
+        // drops, plus mist that softens the far view. Each drop starts somewhere new on every
+        // fall, so the pattern never repeats and the motion reads clearly downward.
         if (w.rain > 0.01) {
             ctx.save();
             ctx.clip(OUTSIDE);
             ctx.beginPath();
             ctx.rect(MAN[0], MAN[1], MAN[2] - MAN[0], MAN[3] - MAN[1]);
+            ctx.rect(0, 430, 470, 130);       // the covered terrace
             ctx.rect(0, 0, IMG_W, IMG_H);
             ctx.clip('evenodd');
-            const n = Math.round((LITE ? 300 : 900) * w.rain);
-            const len = 6 + 12 * w.rain;
-            const speed = 380 + 300 * w.rain;
-            ctx.strokeStyle = 'rgb(205,215,230)';
-            ctx.lineWidth = 0.6 + 0.25 * w.rain;
-            ctx.globalAlpha = 0.2 + 0.4 * w.rain;
-            ctx.beginPath();
-            for (let i = 0; i < n; i++) {
-                const x = (hash(i * 1.3) * (IMG_W + 200) + t * speed * 0.18) % (IMG_W + 200) - 100;
-                const y = (hash(i * 4.7) * IMG_H + t * speed * (0.8 + hash(i) * 0.4)) % IMG_H;
-                if (x < view.x0 || x > view.x1) continue;
-                ctx.moveTo(x, y);
-                ctx.lineTo(x - len * 0.18, y - len);
-            }
-            ctx.stroke();
+
+            // mist: distance fades into grey rain
+            const mist = ctx.createLinearGradient(0, 200, 0, 520);
+            mist.addColorStop(0, `rgba(150,160,175,${(0.05 * w.rain).toFixed(3)})`);
+            mist.addColorStop(0.45, `rgba(150,160,175,${(0.32 * w.rain).toFixed(3)})`);
+            mist.addColorStop(1, `rgba(150,160,175,${(0.08 * w.rain).toFixed(3)})`);
+            ctx.globalAlpha = 1;
+            ctx.fillStyle = mist;
+            ctx.fillRect(0, 200, IMG_W, 330);
+
+            const LAYERS = [
+                { n: LITE ? 400 : 1200, len: 5, speed: 260, w: 0.4, a: 0.34, y0: 150, y1: 560 },   // far
+                { n: LITE ? 180 : 420, len: 9, speed: 420, w: 0.55, a: 0.38, y0: 0, y1: 560 },      // middle
+                { n: LITE ? 35 : 80, len: 16, speed: 700, w: 0.75, a: 0.28, y0: 0, y1: 560 }       // near
+            ];
+            ctx.strokeStyle = 'rgb(200,210,225)';
+            LAYERS.forEach((L, li) => {
+                const n = Math.round(L.n * w.rain);
+                const len = L.len * (0.8 + 0.6 * w.rain);
+                const span = L.y1 - L.y0;
+                ctx.lineWidth = L.w;
+                ctx.globalAlpha = L.a * (0.5 + 0.5 * w.rain);
+                ctx.beginPath();
+                for (let i = 0; i < n; i++) {
+                    const sp = L.speed * (0.8 + 0.4 * hash(i * 2.9 + li));
+                    const fall = (t * sp / span + hash(i * 4.7 + li * 31)) ;
+                    const cyc = Math.floor(fall);
+                    const f = fall - cyc;
+                    const x = hash(i * 1.3 + cyc * 7.1 + li * 13) * IMG_W - f * span * 0.12;
+                    const y = L.y0 + f * span;
+                    if (x < view.x0 || x > view.x1) continue;
+                    ctx.moveTo(x, y);
+                    ctx.lineTo(x + len * 0.12, y - len);
+                }
+                ctx.stroke();
+            });
             ctx.restore();
-            // little rings where drops hit the lake and the bay
+        // little rings where drops hit the lake and the bay
             ctx.save();
             ctx.globalAlpha = 0.35 * w.rain;
             ctx.strokeStyle = 'rgb(200,215,235)';
@@ -2209,33 +2231,9 @@
             ctx.fillRect(0, 0, IMG_W, 560);
         }
 
-        // The sun breaks through: warm light and a rainbow
-        if (w.sun > 0) {
-            ctx.globalCompositeOperation = 'lighter';
-            const sg = ctx.createRadialGradient(560, 230, 0, 560, 230, 520);
-            sg.addColorStop(0, `rgba(255,210,140,${(0.28 * w.sun).toFixed(3)})`);
-            sg.addColorStop(1, 'rgba(255,210,140,0)');
-            ctx.globalAlpha = 1;
-            ctx.fillStyle = sg;
-            ctx.fillRect(0, 0, IMG_W, IMG_H);
-            const rb = w.sun * (1 - ramp(weather.t, 70, 95) * 0.7);
-            if (rb > 0) {
-                ctx.save();
-                ctx.beginPath();
-                ctx.rect(0, 0, 940, 350);
-                ctx.clip();
-                ['255,60,60', '255,150,40', '255,235,80', '80,200,90', '70,140,255', '120,80,220'].forEach((c, k) => {
-                    ctx.strokeStyle = `rgba(${c},${(0.13 * rb).toFixed(3)})`;
-                    ctx.lineWidth = 4;
-                    ctx.beginPath();
-                    ctx.arc(520, 560, 330 - k * 4, Math.PI * 1.05, Math.PI * 1.95);
-                    ctx.stroke();
-                });
-                ctx.restore();
-            }
-        }
-
-        // Birds
+        // Birds, only seen through the windows
+        ctx.save();
+        ctx.clip(OUTSIDE);
         ctx.globalCompositeOperation = 'source-over';
         ctx.globalAlpha = 0.85;
         ctx.strokeStyle = 'rgb(30,26,26)';
@@ -2249,6 +2247,7 @@
             ctx.quadraticCurveTo(b.x + b.s * 0.4, b.y - f * 0.3 - 0.4, b.x + b.s, b.y - f);
             ctx.stroke();
         });
+        ctx.restore();
         ctx.restore();
     }
 
@@ -2360,36 +2359,6 @@
         sky.addColorStop(1, `rgba(50,8,4,${(0.3 * e).toFixed(3)})`);
         ctx.fillStyle = sky;
         ctx.fillRect(0, 0, IMG_W, IMG_H);
-
-        // Whitecaps breaking across the lake and the bay
-        if (chaos > 0.15) {
-            const caps = Math.round((LITE ? 40 : 90) * ramp(chaos, 0.15, 0.8));
-            WATER.forEach(({ poly }, wi) => {
-                const xs = poly.map(q => q[0]), ys = poly.map(q => q[1]);
-                const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
-                if (!inView(x0, x1)) return;
-                ctx.save();
-                ctx.clip(pathFrom(poly));
-                ctx.globalCompositeOperation = 'source-over';
-                ctx.strokeStyle = 'rgb(225,232,240)';
-                ctx.lineCap = 'round';
-                for (let i = 0; i < caps; i++) {
-                    const cyc = (t * 0.6 + hash(i * 3.1 + wi * 50)) % 1;
-                    const seed = Math.floor(t * 0.6 + hash(i * 3.1 + wi * 50)) * 17 + i + wi * 999;
-                    const x = x0 + hash(seed) * (x1 - x0);
-                    const y = y0 + hash(seed * 1.7) * (y1 - y0);
-                    const depth = (y - y0) / (y1 - y0);   // nearer water: bigger waves
-                    const len = (2 + 6 * depth) * (0.6 + chaos);
-                    ctx.globalAlpha = 0.55 * Math.sin(cyc * Math.PI) * chaos;
-                    ctx.lineWidth = 0.4 + 0.6 * depth;
-                    ctx.beginPath();
-                    ctx.moveTo(x - len / 2, y);
-                    ctx.quadraticCurveTo(x, y - 0.8 - depth, x + len / 2, y + 0.2);
-                    ctx.stroke();
-                }
-                ctx.restore();
-            });
-        }
 
         // Smoke, drawn first so the flames show through it
         smoke.forEach(p => {
@@ -2508,7 +2477,7 @@
 
     function onRainSwitch(cx, cy) {
         const [x, y] = toImage(cx, cy);
-        return Math.abs(x - RAIN_SWITCH.x) <= 6 && Math.abs(y - RAIN_SWITCH.y) <= 5;
+        return Math.abs(x - RAIN_SWITCH.x) <= 6 && Math.abs(y - RAIN_SWITCH.y) <= 4;
     }
 
     function toggleRain() {
