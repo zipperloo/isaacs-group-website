@@ -159,8 +159,6 @@
     // It appears from behind the potted plant's leaves and climbs out of the top of the frame.
     const GECKO_PATH = [[49, 292], [48, 240], [50, 160], [48.5, 80], [49, -20]];
     const GECKO_WALL_EDGE = 56;   // the wall's right-hand edge
-    // On screens where that wall is cropped off, it climbs the dark window pillar instead
-    const GECKO_PILLAR = [[958, 520], [956, 420], [959, 320], [957, 220], [958, 120]];
     let geckoShift = 0;           // set in layout() to keep the gecko on the visible strip of wall
 
     // Sky region a distant plane can cross (the left-hand window)
@@ -244,7 +242,8 @@
     function updateGeckoShift() {
         const visibleLeft = (overflowX * pan.focal) / stageScale + IMG_W * 0.0075 + PARALLAX_X / stageScale;
         const geckoX = Math.max(GECKO_PATH[0][0] - 10, visibleLeft + 5);
-        geckoShift = geckoX <= GECKO_WALL_EDGE - 3 ? geckoX - GECKO_PATH[0][0] : null;
+        // nudge it onto the visible strip of wall where there is one; otherwise it keeps to its usual line
+        geckoShift = geckoX <= GECKO_WALL_EDGE - 3 ? geckoX - GECKO_PATH[0][0] : 0;
     }
 
     function layout() {
@@ -1754,8 +1753,8 @@
         const g = gecko;
         if (!g.active) {
             if (t >= g.next) {
-                // The stone wall if it is on screen, otherwise the window pillar
-                g.route = geckoShift === null ? GECKO_PILLAR : GECKO_PATH;
+                // Always the stone wall on the far left, even where it is cropped off screen
+                g.route = GECKO_PATH;
                 g.length = routeLength(g.route);
                 Object.assign(g, { active: true, s: 0, side: 0, sideAim: 0, moving: true, until: t + 1, phase: 0, fade: 0, turn: 0 });
             }
@@ -1800,7 +1799,7 @@
         ctx.globalCompositeOperation = 'source-over';
         ctx.globalAlpha = 0.8 * g.fade;
         // Camouflaged: only a shade lighter than whatever it is climbing
-        const skin = g.route === GECKO_PATH ? 'rgb(138,122,104)' : 'rgb(104,92,80)';
+        const skin = 'rgb(138,122,104)';
         ctx.fillStyle = skin;
         ctx.strokeStyle = skin;
         ctx.lineCap = 'round';
@@ -2645,7 +2644,7 @@
         if (inView(1240, 1300)) drawMonkeys(t);
         if (inView(140, 230)) drawOryx(t);
         if (inView(430, 490)) drawSteam(t);
-        if (inView(0, 70) || inView(940, 980)) drawGecko(t);
+        if (inView(0, 70)) drawGecko(t);
         if (inView(1440, IMG_W)) {
             drawParty(t);
             DANCERS.forEach((d, i) => drawDancer(d, i, t));
