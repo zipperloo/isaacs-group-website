@@ -26,6 +26,7 @@ Visitors who have "reduce motion" turned on in their device settings see the sti
 | `index.html` | The page, its styles and the contact form script. |
 | `assets/scene.js` | The scene animation: layout, parallax and the canvas effects. |
 | `assets/sound.js` | The sound toggle and background music. |
+| `assets/scene-patches.png` | Small pieces of the earlier painting: the centre hut lights (switched on and off by the animation) and the bare rock used to mute the two climbers. Must be regenerated if those parts of the painting change. |
 | `assets/laptop-screen.jpg` | The Medik8 home page (Crystal Retinal slide), pre-muted, shown on the terrace laptop. |
 | `assets/background-night.jpg` | Full-screen background. |
 | `assets/typography/` | Ivory lettering as transparent PNGs: wordmark, "family office" and contact. The tagline "A World of Perspective" is live text instead, set in Source Sans 3 ExtraLight (the supplied artwork's typeface at a lighter weight, to match the wordmark). |

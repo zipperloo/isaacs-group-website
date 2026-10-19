@@ -118,9 +118,20 @@
     // The four corners of the screen panel, measured from the picture: top-left, top-right,
     // bottom-right, bottom-left. The screen is slightly rotated and seen in perspective.
     const LAPTOP = [[838.5, 534], [920.5, 536], [912.5, 579.5], [832.5, 577.5]];
-    // The post-it's four corners on the desk (top-left, top-right, bottom-right, bottom-left
-    // of the note itself). It lies flat and turned, so it reads as a diamond-ish shape.
-    const POSTIT = [[1115, 645.6], [1140, 646.9], [1125.5, 658], [1100, 654.6]];
+    // Small pieces cut from the original painting (assets/scene-patches.png): the centre hut
+    // windows and lanterns with their lights on (painted out in the current picture so they
+    // can switch on and off), and the bare rock behind the two climbers (laid over them at
+    // partial strength to mute their bright jackets). x, y, w, h in the picture; ax in the atlas.
+    const HUT_PATCHES = [
+        [1188, 370, 15, 16, 0], [1019, 374, 26, 24, 17], [1160, 380, 14, 11, 45], [1125, 404, 15, 13, 61],
+        [1144, 406, 18, 11, 78], [1164, 410, 26, 25, 98], [1193, 416, 14, 21, 126], [1134, 424, 30, 28, 142],
+        [1179, 440, 27, 11, 174]
+    ];
+    const CLIMBER_PATCH = [871, 289, 44, 40, 203];
+    const CLIMBER_MUTE = 0.55;   // how much of the bare rock shows through the climbers
+    const patchImg = new Image();
+    patchImg.src = 'assets/scene-patches.png';
+
     const laptopImg = new Image();
     laptopImg.src = 'assets/laptop-screen.jpg';
 
@@ -1233,7 +1244,7 @@
         sctx.setTransform(1, 0, 0, 1, 0, 0);
         sctx.clearRect(0, 0, screenCanvas.width, screenCanvas.height);
         sctx.setTransform(k, 0, 0, k, 0, 0);
-        drawPostIt();
+        drawClimbers();
         if (!laptopImg.complete || !laptopImg.naturalWidth) return;
         const w = laptopImg.naturalWidth;
         const h = laptopImg.naturalHeight;
@@ -1263,80 +1274,49 @@
         sctx.fill();
     }
     laptopImg.addEventListener('load', drawLaptop);
+    patchImg.addEventListener('load', drawLaptop);
+
+    function drawPatch(c, [x, y, w, h, ax], alpha) {
+        if (!patchImg.complete || !patchImg.naturalWidth || alpha <= 0) return;
+        c.globalAlpha = alpha;
+        c.drawImage(patchImg, ax, 0, w, h, x, y, w, h);
+        c.globalAlpha = 1;
+    }
+
+    // Static, on the instant layer: the climbers are muted from the first moment
+    function drawClimbers() {
+        drawPatch(sctx, CLIMBER_PATCH, CLIMBER_MUTE);
+    }
+
+    // Centre hut lights switching on and off at random; most start off
+    const hutPatchState = HUT_PATCHES.map((_, i) => ({ on: hash(i + 1300) > 0.7, since: -10, next: 2 + hash(i + 1400) * 10 }));
+
+    function updateHutPatches(t) {
+        hutPatchState.forEach(s => {
+            if (t >= s.next) {
+                s.on = !s.on;
+                s.since = t;
+                s.next = t + (s.on ? 8 + Math.random() * 20 : 5 + Math.random() * 15);
+            }
+        });
+    }
+
+    function drawHutPatches(t) {
+        ctx.save();
+        ctx.globalCompositeOperation = 'source-over';
+        HUT_PATCHES.forEach((patch, i) => {
+            const s = hutPatchState[i];
+            const ramp = Math.min(1, (t - s.since) / 1.2);
+            let level = s.on ? ramp : 1 - ramp;
+            // A brief flicker as a light comes on
+            if (s.on && t - s.since < 0.5) level *= 0.6 + 0.4 * hash(Math.floor(t * 20) + i);
+            drawPatch(ctx, patch, level);
+        });
+        ctx.restore();
+    }
 
     // A yellow post-it on the desk by the headphones, "NPD" in black marker. It lies flat on
     // the desk, so it is foreshortened, and it is turned a little off square.
-    // The note is drawn flat on a small canvas, then warped onto its corners on the desk
-    const postItTex = document.createElement('canvas');
-    postItTex.width = postItTex.height = 192;
-    function paintPostIt() {
-        const c = postItTex;
-        const x = c.getContext('2d');
-        x.setTransform(2, 0, 0, 2, 0, 0);   // drawn at 2x for crisp lettering
-        x.clearRect(0, 0, 96, 96);
-        const g = x.createLinearGradient(0, 0, 96, 96);
-        g.addColorStop(0, 'rgb(218,194,88)');
-        g.addColorStop(1, 'rgb(178,152,60)');
-        x.fillStyle = g;
-        x.beginPath();
-        x.moveTo(0, 0);
-        x.lineTo(96, 0);
-        x.lineTo(96, 84);
-        x.lineTo(84, 96);       // the bottom corner curls up slightly
-        x.lineTo(0, 96);
-        x.closePath();
-        x.fill();
-        x.fillStyle = 'rgba(120,96,30,0.6)';
-        x.beginPath();
-        x.moveTo(96, 84);
-        x.lineTo(84, 96);
-        x.lineTo(86, 86);
-        x.closePath();
-        x.fill();
-        // Sticky strip along the top, very faintly darker
-        x.fillStyle = 'rgba(150,120,40,0.18)';
-        x.fillRect(0, 0, 96, 16);
-        // "NPD" handwritten in black marker
-        x.fillStyle = 'rgba(24,22,28,0.9)';
-        x.font = '44px "Gochi Hand", "Segoe Print", cursive';
-        x.textAlign = 'center';
-        x.textBaseline = 'middle';
-        x.translate(47, 54);
-        x.rotate(-0.08);
-        x.fillText('NPD', 0, 0);
-    }
-    paintPostIt();
-    // Repaint once the handwriting font has loaded
-    if (document.fonts && document.fonts.load) {
-        document.fonts.load('44px "Gochi Hand"').then(() => { paintPostIt(); drawLaptop(); }).catch(() => {});
-    }
-
-    function drawPostIt() {
-        // Soft contact shadow just below and right of the note
-        sctx.save();
-        sctx.globalAlpha = 0.3;
-        sctx.fillStyle = 'rgb(10,8,8)';
-        sctx.beginPath();
-        POSTIT.forEach(([x, y], i) => (i ? sctx.lineTo(x + 0.6, y + 0.8) : sctx.moveTo(x + 0.6, y + 0.8)));
-        sctx.closePath();
-        sctx.fill();
-        sctx.restore();
-
-        const map = homography(POSTIT);
-        const N = 4;
-        const w = postItTex.width;
-        sctx.save();
-        sctx.globalAlpha = 0.95;
-        for (let i = 0; i < N; i++) {
-            for (let j = 0; j < N; j++) {
-                const u0 = i / N, u1 = (i + 1) / N, v0 = j / N, v1 = (j + 1) / N;
-                const s00 = [u0 * w, v0 * w], s10 = [u1 * w, v0 * w], s11 = [u1 * w, v1 * w], s01 = [u0 * w, v1 * w];
-                drawTriangle(sctx, postItTex, s00, s10, s11, map(u0, v0), map(u1, v0), map(u1, v1));
-                drawTriangle(sctx, postItTex, s00, s11, s01, map(u0, v0), map(u1, v1), map(u0, v1));
-            }
-        }
-        sctx.restore();
-    }
 
     /* ---------- oryx ---------- */
 
@@ -1914,6 +1894,7 @@
         updateCityEvents(t);
         updateEmbers(t, dt);
         updateHutLights(t);
+        updateHutPatches(t);
         updateLanterns(t);
         updateBoat(t, dt);
         updateGecko(t, dt);
@@ -1932,6 +1913,7 @@
         ctx.setTransform(k, 0, 0, k, 0, 0);
         ctx.clearRect(0, 0, IMG_W, IMG_H);
         regions.forEach(r => drawDistort(r, t));
+        if (inView(1015, 1210)) drawHutPatches(t);
         if (inView(1380, 1520)) drawBoat(t);
         if (inView(1250, IMG_W)) { drawFish(t); drawAquarium(t); }
         if (inView(1240, 1300)) drawMonkeys(t);
