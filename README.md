@@ -29,7 +29,7 @@ Visitors who have "reduce motion" turned on in their device settings see the sti
 | `assets/laptop-screen.jpg` | The Medik8 home page (Crystal Retinal slide), pre-muted, shown on the terrace laptop. |
 | `assets/background-night.jpg` | Full-screen background. |
 | `assets/typography/` | Ivory lettering as transparent PNGs: wordmark, "family office" and contact. The tagline "A World of Perspective" is live text instead, set in Source Sans 3 ExtraLight (the supplied artwork's typeface at a lighter weight, to match the wordmark). |
-| `favicon.ico` | Browser tab icon. |
+| `favicon.ico`, `favicon.svg`, `apple-touch-icon.png`, `icon-512.png` | Site icons: the A from the ISAACS wordmark in ivory on navy. |
 | `logo.png` | Old yellow logo mark. Not used by the current site. |
 | `CNAME` | Custom domain for GitHub Pages (`isaacs.group`). |
 | `server.js` | Small Node.js static server for local preview only. |
