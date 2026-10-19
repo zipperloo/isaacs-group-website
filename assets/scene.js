@@ -1886,6 +1886,8 @@
         { boxes: [[145, 615, 190, 640]], word: 'Chrysalism', def: 'the amniotic tranquility of being indoors during a thunderstorm.' },
         { boxes: [[755, 240, 769, 330]], word: 'Anecdoche', def: 'a conversation in which everyone is talking, but nobody is listening.' },
         { boxes: [[1440, 35, 1495, 80]], word: 'Ellipsism', def: 'a sadness that you’ll never be able to know how history will turn out.' },
+        { boxes: [[420, 470, 446, 520]], thought: 'Why is he just staring at the same screen for 2 days?' },
+        { boxes: [[728, 478, 770, 545]], thought: 'I wonder if anyone likes the music I am listening to now.' },
         { gecko: true, word: 'Exulansis', def: 'the tendency to give up trying to talk about an experience because people are unable to relate to it.' },
         { boxes: [[600, 461, 610, 472], [541, 481, 550, 492], [626, 485, 635, 496], [669, 488, 678, 500]], word: 'Anemoia', def: 'a feeling of nostalgia for a time or a place that you have never personally known or experienced.' }
     ];
@@ -1931,7 +1933,7 @@
     function showEgg(hit) {
         clearTimeout(eggTimer);
         if (eggShown !== hit.e) {
-            egg.innerHTML = `<p class="egg-head"><span class="egg-word">${hit.e.word}</span><span class="egg-pos">n.</span></p><p class="egg-def">${hit.e.def}</p>`;
+            egg.innerHTML = hit.e.thought ? `<p class="egg-thought">“${hit.e.thought}”</p>` : `<p class="egg-head"><span class="egg-word">${hit.e.word}</span><span class="egg-pos">n.</span></p><p class="egg-def">${hit.e.def}</p>`;
             eggShown = hit.e;
         }
         const o = boxOnScreen(hit.e, hit.box);
