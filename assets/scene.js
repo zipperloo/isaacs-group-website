@@ -127,6 +127,7 @@
         [1144, 406, 18, 11, 78], [1164, 410, 26, 25, 98], [1193, 416, 14, 21, 126], [1134, 424, 30, 28, 142],
         [1179, 440, 27, 11, 174]
     ];
+    let eggsOn = false;   // the hidden words, switched by the light switch on the column (off on every load)
     const CLIMBER_PATCH = [871, 289, 44, 40, 203];
     const CLIMBER_MUTE = 0.55;   // how much of the bare rock shows through the climbers
     const patchImg = new Image();
@@ -1245,6 +1246,7 @@
         sctx.clearRect(0, 0, screenCanvas.width, screenCanvas.height);
         sctx.setTransform(k, 0, 0, k, 0, 0);
         drawClimbers();
+        drawSwitch();
         if (!laptopImg.complete || !laptopImg.naturalWidth) return;
         const w = laptopImg.naturalWidth;
         const h = laptopImg.naturalHeight;
@@ -1284,6 +1286,49 @@
     }
 
     // Static, on the instant layer: the climbers are muted from the first moment
+    // A small brushed-dark switch plate with a rocker; when on, a thin blue LED strip glows
+    function drawSwitch() {
+        const { x, y, w, h } = SWITCH;
+        const c = sctx;
+        c.save();
+        // plate, very slightly lighter than the black column, with a fine edge highlight
+        c.globalAlpha = 0.95;
+        c.fillStyle = 'rgb(26,24,26)';
+        c.beginPath();
+        c.roundRect(x - w / 2, y - h / 2, w, h, 0.8);
+        c.fill();
+        c.strokeStyle = 'rgba(200,190,175,0.22)';
+        c.lineWidth = 0.35;
+        c.stroke();
+        // rocker
+        const on = eggsOn;
+        const rw = w * 0.42, rh = h * 0.5;
+        const g = c.createLinearGradient(0, y - rh / 2, 0, y + rh / 2);
+        g.addColorStop(0, on ? 'rgb(30,28,30)' : 'rgb(58,54,56)');
+        g.addColorStop(1, on ? 'rgb(58,54,56)' : 'rgb(30,28,30)');
+        c.fillStyle = g;
+        c.beginPath();
+        c.roundRect(x - rw / 2, y - rh / 2, rw, rh, 0.5);
+        c.fill();
+        // LED strip under the rocker
+        const ly = y + h / 2 - 2.1;
+        if (on) {
+            c.globalAlpha = 0.55;
+            const glow = c.createRadialGradient(x, ly, 0, x, ly, 7);
+            glow.addColorStop(0, 'rgba(70,150,255,0.9)');
+            glow.addColorStop(1, 'rgba(70,150,255,0)');
+            c.fillStyle = glow;
+            c.fillRect(x - 7, ly - 7, 14, 14);
+            c.globalAlpha = 1;
+            c.fillStyle = 'rgb(150,205,255)';
+        } else {
+            c.globalAlpha = 0.8;
+            c.fillStyle = 'rgb(20,30,44)';
+        }
+        c.fillRect(x - w * 0.3, ly - 0.35, w * 0.6, 0.7);
+        c.restore();
+    }
+
     function drawClimbers() {
         drawPatch(sctx, CLIMBER_PATCH, CLIMBER_MUTE);
     }
@@ -1893,6 +1938,10 @@
     ];
     const DWELL_MS = 1100;   // how long the pointer must rest on an object
 
+    // The words only appear once the little light switch on the column in front of the desk
+    // has been flicked on. It is off every time the page loads.
+    const SWITCH = { x: 1078, y: 468, w: 9, h: 14 };   // centre and size in the picture
+
     const egg = document.createElement('div');
     egg.className = 'egg';
     egg.setAttribute('role', 'tooltip');
@@ -1916,7 +1965,19 @@
         return { l: r.left + box[0] * sx, t: r.top + box[1] * sy, r: r.left + box[2] * sx, b: r.top + box[3] * sy };
     }
 
+    function onSwitch(cx, cy) {
+        const [x, y] = toImage(cx, cy);
+        return Math.abs(x - SWITCH.x) <= SWITCH.w / 2 + 2 && Math.abs(y - SWITCH.y) <= SWITCH.h / 2 + 2;
+    }
+
+    function toggleSwitch() {
+        eggsOn = !eggsOn;
+        if (!eggsOn) { clearTimeout(dwell.timer); dwell.e = null; hideEgg(0); }
+        drawLaptop();   // the switch lives on the static layer
+    }
+
     function eggAt(cx, cy) {
+        if (!eggsOn) return null;
         const [x, y] = toImage(cx, cy);
         for (const e of EGGS) {
             if (e.gecko) {
@@ -1959,6 +2020,11 @@
 
     const dialogOpen = () => document.querySelector('.dialog.open');
 
+    stage.addEventListener('click', e => {
+        if (e.pointerType !== 'mouse' && e.pointerType !== '') return;
+        if (onSwitch(e.clientX, e.clientY)) toggleSwitch();
+    });
+
     // Mouse: only after resting on an object for a moment
     addEventListener('pointermove', e => {
         if (e.pointerType !== 'mouse') return;
@@ -1990,6 +2056,7 @@
         const quick = performance.now() - tapStart.t < 450;
         tapStart = null;
         if (!quick || dialogOpen()) return;
+        if (onSwitch(e.clientX, e.clientY)) { toggleSwitch(); return; }
         const hit = eggAt(e.clientX, e.clientY);
         if (hit) {
             showEgg(hit);
