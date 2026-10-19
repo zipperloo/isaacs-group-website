@@ -1682,11 +1682,11 @@
         ctx.save();
         ctx.translate(g.x, g.y);
         ctx.rotate(g.heading + Math.PI / 2);   // the drawing below faces "up"
-        ctx.scale(1.1, 1.1);
+        ctx.scale(1.6, 1.6);
         ctx.globalCompositeOperation = 'source-over';
         ctx.globalAlpha = 0.8 * g.fade;
         // Camouflaged: only a shade lighter than whatever it is climbing
-        const skin = g.route === GECKO_PATH ? 'rgb(96,84,74)' : 'rgb(46,40,38)';
+        const skin = g.route === GECKO_PATH ? 'rgb(138,122,104)' : 'rgb(104,92,80)';
         ctx.fillStyle = skin;
         ctx.strokeStyle = skin;
         ctx.lineCap = 'round';
