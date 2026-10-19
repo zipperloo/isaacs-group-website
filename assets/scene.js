@@ -43,8 +43,8 @@
 
     // Water, as polygons; ripple amplitude (px) grows towards the viewer
     const WATER = [
-        { poly: [[612, 404], [700, 401], [760, 409], [860, 403], [940, 400], [940, 468], [840, 470], [760, 466], [700, 452], [640, 445], [612, 430]], amp: [1.0, 2.6], freq: 0.6, speed: 2.2 },
-        { poly: [[1345, 352], [1520, 350], [1515, 420], [1440, 440], [1392, 470], [1385, 528], [1240, 530], [1240, 446], [1300, 440], [1362, 420]], amp: [1.2, 3.0], freq: 0.55, speed: 2.0 }
+        { poly: [[612, 404], [700, 401], [760, 409], [860, 403], [922, 401], [922, 468], [840, 470], [760, 466], [700, 452], [640, 445], [612, 430]], amp: [0.6, 1.6], freq: 0.6, speed: 2.2 },
+        { poly: [[1345, 352], [1520, 350], [1515, 420], [1440, 440], [1392, 470], [1385, 528], [1240, 530], [1240, 446], [1300, 440], [1362, 420]], amp: [0.7, 1.8], freq: 0.55, speed: 2.0 }
     ];
 
     // Heat haze over the flames
@@ -143,6 +143,8 @@
     // It appears from behind the potted plant's leaves and climbs out of the top of the frame.
     const GECKO_PATH = [[49, 292], [48, 240], [50, 160], [48.5, 80], [49, -20]];
     const GECKO_WALL_EDGE = 56;   // the wall's right-hand edge
+    // On screens where that wall is cropped off, it climbs the dark window pillar instead
+    const GECKO_PILLAR = [[958, 520], [956, 420], [959, 320], [957, 220], [958, 120]];
     let geckoShift = 0;           // set in layout() to keep the gecko on the visible strip of wall
 
     // Sky region a distant plane can cross (the left-hand window)
@@ -1266,11 +1268,11 @@
     // the desk, so it is foreshortened, and it is turned a little off square.
     // The note is drawn flat on a small canvas, then warped onto its corners on the desk
     const postItTex = document.createElement('canvas');
-    postItTex.width = postItTex.height = 96;
+    postItTex.width = postItTex.height = 192;
     function paintPostIt() {
         const c = postItTex;
         const x = c.getContext('2d');
-        x.setTransform(1, 0, 0, 1, 0, 0);
+        x.setTransform(2, 0, 0, 2, 0, 0);   // drawn at 2x for crisp lettering
         x.clearRect(0, 0, 96, 96);
         const g = x.createLinearGradient(0, 0, 96, 96);
         g.addColorStop(0, 'rgb(218,194,88)');
@@ -1296,7 +1298,7 @@
         x.fillRect(0, 0, 96, 16);
         // "NPD" handwritten in black marker
         x.fillStyle = 'rgba(24,22,28,0.9)';
-        x.font = '40px "Permanent Marker", "Segoe Print", cursive';
+        x.font = '44px "Gochi Hand", "Segoe Print", cursive';
         x.textAlign = 'center';
         x.textBaseline = 'middle';
         x.translate(47, 54);
@@ -1306,7 +1308,7 @@
     paintPostIt();
     // Repaint once the handwriting font has loaded
     if (document.fonts && document.fonts.load) {
-        document.fonts.load('40px "Permanent Marker"').then(() => { paintPostIt(); drawLaptop(); }).catch(() => {});
+        document.fonts.load('44px "Gochi Hand"').then(() => { paintPostIt(); drawLaptop(); }).catch(() => {});
     }
 
     function drawPostIt() {
@@ -1611,20 +1613,26 @@
 
     /* ---------- gecko ---------- */
 
-    const gecko = { active: false, next: 8 };
-    const geckoSegs = GECKO_PATH.slice(1).map((p, i) => Math.hypot(p[0] - GECKO_PATH[i][0], p[1] - GECKO_PATH[i][1]));
-    const geckoLength = geckoSegs.reduce((a, b) => a + b, 0);
+    const gecko = { active: false, next: 3, route: GECKO_PATH };
+    function routeLength(route) {
+        let len = 0;
+        for (let i = 1; i < route.length; i++) len += Math.hypot(route[i][0] - route[i - 1][0], route[i][1] - route[i - 1][1]);
+        return len;
+    }
 
-    // Position and heading at a distance along the trunk
+    // Position and heading at a distance along the current route
     function geckoAt(s) {
-        for (let i = 0; i < geckoSegs.length; i++) {
-            if (s <= geckoSegs[i] || i === geckoSegs.length - 1) {
-                const [x0, y0] = GECKO_PATH[i];
-                const [x1, y1] = GECKO_PATH[i + 1];
-                const f = Math.min(1, s / geckoSegs[i]);
-                return { x: x0 + (x1 - x0) * f + geckoShift, y: y0 + (y1 - y0) * f, heading: Math.atan2(y1 - y0, x1 - x0) };
+        const route = gecko.route;
+        const shift = route === GECKO_PATH ? geckoShift || 0 : 0;
+        for (let i = 1; i < route.length; i++) {
+            const [x0, y0] = route[i - 1];
+            const [x1, y1] = route[i];
+            const seg = Math.hypot(x1 - x0, y1 - y0);
+            if (s <= seg || i === route.length - 1) {
+                const f = Math.min(1, s / seg);
+                return { x: x0 + (x1 - x0) * f + shift, y: y0 + (y1 - y0) * f, heading: Math.atan2(y1 - y0, x1 - x0) };
             }
-            s -= geckoSegs[i];
+            s -= seg;
         }
     }
 
@@ -1632,8 +1640,9 @@
         const g = gecko;
         if (!g.active) {
             if (t >= g.next) {
-                // Only climb when some of the wall is actually on screen
-                if (geckoShift === null) { g.next = t + 10; return; }
+                // The stone wall if it is on screen, otherwise the window pillar
+                g.route = geckoShift === null ? GECKO_PILLAR : GECKO_PATH;
+                g.length = routeLength(g.route);
                 Object.assign(g, { active: true, s: 0, side: 0, sideAim: 0, moving: true, until: t + 1, phase: 0, fade: 0, turn: 0 });
             }
             return;
@@ -1658,7 +1667,7 @@
         g.heading = p.heading + g.turn;
         // Emerge from the bushes at the bottom, disappear into the fronds at the top
         g.fade = Math.min(1, g.s / 20);
-        if (g.s >= geckoLength) {
+        if (g.s >= g.length) {
             g.active = false;
             g.next = t + 30 + Math.random() * 30;
         }
@@ -1676,8 +1685,10 @@
         ctx.scale(1.1, 1.1);
         ctx.globalCompositeOperation = 'source-over';
         ctx.globalAlpha = 0.8 * g.fade;
-        ctx.fillStyle = 'rgb(96,84,74)';   // camouflaged: only a shade lighter than the stone
-        ctx.strokeStyle = 'rgb(96,84,74)';
+        // Camouflaged: only a shade lighter than whatever it is climbing
+        const skin = g.route === GECKO_PATH ? 'rgb(96,84,74)' : 'rgb(46,40,38)';
+        ctx.fillStyle = skin;
+        ctx.strokeStyle = skin;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
 
@@ -1926,7 +1937,7 @@
         if (inView(1240, 1300)) drawMonkeys(t);
         if (inView(140, 230)) drawOryx(t);
         if (inView(430, 490)) drawSteam(t);
-        if (inView(0, 70)) drawGecko(t);
+        if (inView(0, 70) || inView(940, 980)) drawGecko(t);
         if (inView(1440, IMG_W)) {
             drawParty(t);
             DANCERS.forEach((d, i) => drawDancer(d, i, t));
