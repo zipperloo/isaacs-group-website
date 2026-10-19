@@ -127,7 +127,9 @@
         [1144, 406, 18, 11, 78], [1164, 410, 26, 25, 98], [1193, 416, 14, 21, 126], [1134, 424, 30, 28, 142],
         [1179, 440, 27, 11, 174]
     ];
-    let eggsOn = false;   // the hidden words, switched by the light switch on the column (off on every load)
+    let eggsOn = false;
+    let chaosOn = false;  // the red button on the desk
+    const RED_BUTTON = { x: 440, y: 610 };   // the hidden words, switched by the light switch on the column (off on every load)
     const CLIMBER_PATCH = [871, 289, 44, 40, 203];
     const CLIMBER_MUTE = 0.55;   // how much of the bare rock shows through the climbers
     const patchImg = new Image();
@@ -1247,6 +1249,7 @@
         sctx.setTransform(k, 0, 0, k, 0, 0);
         drawClimbers();
         drawSwitch();
+        drawRedButton();
         if (!laptopImg.complete || !laptopImg.naturalWidth) return;
         const w = laptopImg.naturalWidth;
         const h = laptopImg.naturalHeight;
@@ -1326,6 +1329,51 @@
             c.fillStyle = 'rgb(20,30,44)';
         }
         c.fillRect(x - w * 0.3, ly - 0.35, w * 0.6, 0.7);
+        c.restore();
+    }
+
+    // A muted red push button on the left end of the desk; it glows when pressed
+    function drawRedButton() {
+        const { x, y } = RED_BUTTON;
+        const c = sctx;
+        c.save();
+        // shadow and dark metal base, seen at a low angle
+        c.globalAlpha = 0.5;
+        c.fillStyle = 'rgb(8,6,6)';
+        c.beginPath();
+        c.ellipse(x + 0.6, y + 1.2, 5.6, 2, 0, 0, 6.283);
+        c.fill();
+        c.globalAlpha = 0.95;
+        c.fillStyle = 'rgb(34,32,32)';
+        c.beginPath();
+        c.ellipse(x, y + 0.5, 5, 1.8, 0, 0, 6.283);
+        c.fill();
+        c.fillStyle = 'rgb(48,45,44)';
+        c.fillRect(x - 5, y - 0.6, 10, 1.1);
+        c.beginPath();
+        c.ellipse(x, y - 0.6, 5, 1.8, 0, 0, 6.283);
+        c.fill();
+        // the cap: muted brick red, much brighter when on
+        const on = chaosOn;
+        if (on) {
+            const glow = c.createRadialGradient(x, y - 1.5, 0, x, y - 1.5, 12);
+            glow.addColorStop(0, 'rgba(255,40,20,0.55)');
+            glow.addColorStop(1, 'rgba(255,40,20,0)');
+            c.globalAlpha = 1;
+            c.fillStyle = glow;
+            c.fillRect(x - 12, y - 13.5, 24, 24);
+        }
+        const g = c.createRadialGradient(x - 1.2, y - 2.6, 0.2, x, y - 1.5, 4);
+        g.addColorStop(0, on ? 'rgb(255,120,100)' : 'rgb(150,62,56)');
+        g.addColorStop(1, on ? 'rgb(210,20,10)' : 'rgb(92,26,24)');
+        c.globalAlpha = 1;
+        c.fillStyle = g;
+        c.beginPath();
+        c.ellipse(x, y - 1.3, 3.4, 1.5, 0, 0, 6.283);
+        c.fill();
+        c.beginPath();
+        c.ellipse(x, y - 1.8 + (on ? 0.4 : 0), 3.4, 1.9, 0, Math.PI, 0);
+        c.fill();
         c.restore();
     }
 
@@ -1916,6 +1964,171 @@
         ui.style.transform = `translate3d(${(-current.x * UI_PARALLAX).toFixed(2)}px, ${(-current.y * UI_PARALLAX).toFixed(2)}px, 0)`;
     }
 
+    /* ---------- the red button: chaos ---------- */
+
+    // Pressing the button sets the scene alight in stages: the city first, then the hills and
+    // village, then everything. Pressing it again lets it all settle back to normal.
+    const CHAOS_RISE = 32;   // seconds to total chaos
+    const CHAOS_FALL = 5;    // seconds to return to calm
+    let chaos = 0;           // 0 calm .. 1 total chaos
+
+    // Fire sources: x, y, size, the chaos level at which each one catches
+    const FIRES = (() => {
+        const f = [];
+        // city skyline: catches first, building by building
+        CITY_LIGHTS.filter(([, y]) => y < 345).forEach(([x, y], i) => {
+            if (i % 3 === 0) f.push([x, y - 4, 14 + hash(i) * 10, 0.04 + hash(i + 7) * 0.4]);
+        });
+        // then it spreads across the land outside (never on water, never inside the room).
+        // Regions: x0, y0, x1, y1, size, catch from, catch to, count
+        const LAND = [
+            [350, 362, 700, 380, 16, 0.25, 0.55, 7],     // far shore treeline
+            [420, 425, 700, 472, 22, 0.3, 0.6, 8],      // village
+            [90, 385, 380, 470, 32, 0.45, 0.8, 8],      // desert palms
+            [1000, 340, 1300, 450, 26, 0.35, 0.7, 8],   // Thai huts
+            [1380, 290, 1600, 335, 20, 0.4, 0.7, 6],     // hills behind the bay
+            [1500, 195, 1672, 245, 22, 0.45, 0.7, 4],    // the chalet and terrace
+            [1440, 420, 1560, 520, 32, 0.55, 0.85, 5],   // the bridge and jungle
+            [860, 300, 990, 410, 26, 0.5, 0.8, 4]        // the rock
+        ];
+        LAND.forEach(([x0, y0, x1, y1, size, from, to, n], r) => {
+            for (let i = 0; i < n; i++) {
+                const q = r * 31 + i;
+                const x = x0 + hash(q * 5.1) * (x1 - x0);
+                const y = y0 + hash(q * 9.7) * (y1 - y0);
+                f.push([x, y, size * (0.7 + 0.6 * hash(q * 2.3)), from + hash(q * 4.4) * (to - from)]);
+            }
+        });
+        return f;
+    })();
+
+    const smoke = [];
+    const ash = [];
+    let flash = 0;
+    let nextBoom = 0;
+    const smokeSprite = (() => {
+        const c = document.createElement('canvas');
+        c.width = c.height = 64;
+        const x = c.getContext('2d');
+        const g = x.createRadialGradient(32, 32, 0, 32, 32, 32);
+        g.addColorStop(0, 'rgba(70,50,42,1)');
+        g.addColorStop(0.5, 'rgba(62,44,38,0.5)');
+        g.addColorStop(1, 'rgba(55,40,35,0)');
+        x.fillStyle = g;
+        x.fillRect(0, 0, 64, 64);
+        return c;
+    })();
+
+    function fireLevel(threshold) {
+        return Math.max(0, Math.min(1, (chaos - threshold) / 0.12));
+    }
+
+    function updateChaos(t, dt) {
+        chaos = chaosOn ? Math.min(1, chaos + dt / CHAOS_RISE) : Math.max(0, chaos - dt / CHAOS_FALL);
+        if (chaos <= 0 && !smoke.length && !ash.length) return;
+        const smokeCap = LITE ? 90 : 240;
+        FIRES.forEach(([x, y, size, th]) => {
+            const lv = fireLevel(th);
+            if (lv > 0 && smoke.length < smokeCap && Math.random() < dt * 2.5 * lv) {
+                smoke.push({ x: x + (Math.random() - 0.5) * size * 0.6, y: y - size * 1.2, r: size * 1.1, vy: -(8 + Math.random() * 10), vx: 3 + Math.random() * 5, born: t, life: 7 + Math.random() * 6 });
+            }
+        });
+        const ashCap = LITE ? 60 : 140;
+        if (chaos > 0.2 && ash.length < ashCap && Math.random() < dt * 60 * chaos) {
+            ash.push({ x: Math.random() * IMG_W, y: Math.random() * IMG_H * 0.9, vx: 4 + Math.random() * 8, vy: -(3 + Math.random() * 10), born: t, life: 3 + Math.random() * 4, hot: Math.random() < 0.6 });
+        }
+        if (chaos > 0.6 && chaosOn && t >= nextBoom) {
+            const src = FIRES[Math.floor(Math.random() * FIRES.length)];
+            if (fireLevel(src[3]) > 0.5) {
+                flash = 1;
+                for (let i = 0; i < 25; i++) ash.push({ x: src[0], y: src[1], vx: (Math.random() - 0.5) * 60, vy: -(10 + Math.random() * 50), born: t, life: 1.5 + Math.random() * 2, hot: true });
+            }
+            nextBoom = t + 1.5 + Math.random() * 4;
+        }
+        flash = Math.max(0, flash - dt * 2.5);
+        for (let i = smoke.length - 1; i >= 0; i--) {
+            const p = smoke[i];
+            p.x += p.vx * dt; p.y += p.vy * dt; p.r += dt * 9;
+            if (t - p.born > p.life) smoke.splice(i, 1);
+        }
+        for (let i = ash.length - 1; i >= 0; i--) {
+            const p = ash[i];
+            p.vy += 6 * dt; p.x += p.vx * dt; p.y += p.vy * dt;
+            if (t - p.born > p.life) ash.splice(i, 1);
+        }
+    }
+
+    function drawChaos(t) {
+        if (chaos <= 0 && !smoke.length && !ash.length) return;
+        const e = chaos * chaos * (3 - 2 * chaos);
+        ctx.save();
+        // A burning sky and a red cast over everything
+        ctx.globalCompositeOperation = 'source-over';
+        const sky = ctx.createLinearGradient(0, 0, 0, IMG_H);
+        const pulse = 0.9 + 0.1 * noise(t * 1.5);
+        sky.addColorStop(0, `rgba(110,28,10,${(0.6 * e * pulse).toFixed(3)})`);
+        sky.addColorStop(0.3, `rgba(190,55,15,${(0.5 * e * pulse).toFixed(3)})`);
+        sky.addColorStop(0.55, `rgba(150,40,10,${(0.35 * e).toFixed(3)})`);
+        sky.addColorStop(1, `rgba(50,8,4,${(0.3 * e).toFixed(3)})`);
+        ctx.fillStyle = sky;
+        ctx.fillRect(0, 0, IMG_W, IMG_H);
+
+        // Smoke, drawn first so the flames show through it
+        smoke.forEach(p => {
+            const life = (t - p.born) / p.life;
+            drawSprite(smokeSprite, p.x, p.y, p.r * 2, 0.5 * Math.sin(life * Math.PI) * Math.max(0.35, e));
+        });
+
+        // Flames: each fire is a stream of soft, rising sparks of heat that shrink and cool
+        // from white-yellow at the base to orange and dull red as they lift
+        ctx.globalCompositeOperation = 'lighter';
+        const N = LITE ? 7 : 12;
+        FIRES.forEach(([x, y, size, th], i) => {
+            const lv = fireLevel(th);
+            if (lv <= 0 || x + size * 2 < view.x0 || x - size * 2 > view.x1) return;
+            drawSprite(SPRITES.fire, x, y - size * 0.5, size * 4.5, 0.2 * lv);   // light thrown on the surroundings
+            // the bed of burning embers the flames rise from
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(1, 0.4);
+            drawSprite(SPRITES.warm, 0, 0, size * 1.8, 0.45 * lv * (0.8 + 0.2 * noise(t * 6 + i)));
+            ctx.restore();
+            const h = size * (2.6 + 0.9 * noise(t * 0.7 + i)) * lv;
+            const rate = 1.1 + hash(i) * 0.6;
+            for (let k = 0; k < N; k++) {
+                const ph = (t * rate + k / N + hash(i * 3 + k)) % 1;
+                const wob = Math.sin(ph * 6 + t * 3 + i + k) * size * 0.18 * ph;
+                const spread = (hash(i * 7 + k) - 0.5) * size * 0.9 * (1 - ph * 0.6);
+                const px = x + spread + wob;
+                const py = y - ph * h;
+                const r = size * (1.05 - ph * 0.6);
+                const a = lv * Math.pow(1 - ph, 1.3);
+                ctx.globalAlpha = Math.min(1, a * 0.8);
+                ctx.drawImage(SPRITES.fire, px - r * 0.38, py - r * 0.65, r * 0.76, r * 1.3);   // tall, like a lick of flame
+                if (ph < 0.35) {
+                    const c = r * 0.6;
+                    ctx.globalAlpha = Math.min(1, a * 0.7);
+                    ctx.drawImage(SPRITES.warm, px - c * 0.35, py - c * 0.6, c * 0.7, c * 1.2);
+                }
+            }
+        });
+
+        // Embers and ash
+        ash.forEach(p => {
+            const life = (t - p.born) / p.life;
+            drawSprite(p.hot ? SPRITES.fire : SPRITES.white, p.x, p.y, p.hot ? 2.4 : 1.6, (p.hot ? 0.9 : 0.25) * (1 - life));
+        });
+
+        // The flash of an explosion
+        if (flash > 0) {
+            ctx.globalCompositeOperation = 'lighter';
+            ctx.globalAlpha = 0.28 * flash;
+            ctx.fillStyle = 'rgb(255,140,60)';
+            ctx.fillRect(0, 0, IMG_W, IMG_H);
+        }
+        ctx.restore();
+    }
+
     /* ---------- easter eggs ---------- */
 
     // Hidden words. Rest the pointer on certain things for a moment (or tap them on a touch
@@ -1968,6 +2181,16 @@
     function onSwitch(cx, cy) {
         const [x, y] = toImage(cx, cy);
         return Math.abs(x - SWITCH.x) <= SWITCH.w / 2 + 2 && Math.abs(y - SWITCH.y) <= SWITCH.h / 2 + 2;
+    }
+
+    function onRedButton(cx, cy) {
+        const [x, y] = toImage(cx, cy);
+        return Math.abs(x - RED_BUTTON.x) <= 7 && Math.abs(y - RED_BUTTON.y) <= 5;
+    }
+
+    function toggleChaos() {
+        chaosOn = !chaosOn;
+        drawLaptop();
     }
 
     function toggleSwitch() {
@@ -2023,6 +2246,7 @@
     stage.addEventListener('click', e => {
         if (e.pointerType !== 'mouse' && e.pointerType !== '') return;
         if (onSwitch(e.clientX, e.clientY)) toggleSwitch();
+        else if (onRedButton(e.clientX, e.clientY)) toggleChaos();
     });
 
     // Mouse: only after resting on an object for a moment
@@ -2057,6 +2281,7 @@
         tapStart = null;
         if (!quick || dialogOpen()) return;
         if (onSwitch(e.clientX, e.clientY)) { toggleSwitch(); return; }
+        if (onRedButton(e.clientX, e.clientY)) { toggleChaos(); return; }
         const hit = eggAt(e.clientX, e.clientY);
         if (hit) {
             showEgg(hit);
@@ -2099,6 +2324,7 @@
         updateMonkeys(t, dt);
         updateFish(t, dt);
         updateOryx(t, dt);
+        updateChaos(t, dt);
 
         // Work out which part of the picture is on screen
         const m = 40;
@@ -2121,6 +2347,7 @@
             drawCrowd(t);
         }
         drawLights(t);
+        drawChaos(t);
 
         // Effects ease in once the entrance has settled
         canvas.style.opacity = Math.min(1, Math.max(0, (t - 0.8) / 3)).toFixed(3);
