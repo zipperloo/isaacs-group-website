@@ -21,6 +21,9 @@
     // The painted Halloween version of the scene, loaded only once the light switch is on
     const hwImg = document.getElementById('scene-hw');
     function loadHalloween() { if (!hwImg.getAttribute('src')) hwImg.src = 'assets/background-halloween.jpg'; }
+    // ...and the painted Christmas version
+    const xmImg = document.getElementById('scene-xmas');
+    function loadChristmas() { if (!xmImg.getAttribute('src')) xmImg.src = 'assets/background-christmas.jpg'; }
     // The laptop screen has its own layer, so it appears with the picture rather than
     // waiting for the effects to fade in
     const screenCanvas = document.getElementById('screen');
@@ -133,7 +136,10 @@
     let eggsOn = false;
     let chaosOn = false;  // the red button on the desk
     const RED_BUTTON = { x: 560, y: 637 };   // on the underside of the desk's front lip, pressed from below
-    let rainOn = false;   // the weather switch on the front edge of the desk
+    let rainOn = false;   // the weather switch on the desk lamp's cord
+    let xmasOn = false;   // the Christmas button on the front edge of the desk
+    let xmas = 0;         // 0 normal .. 1 Christmas (2-second fade)
+    const XMAS_BUTTON = { x: 905, y: 641 };
     const RAIN_SWITCH = { x: 470, y: 613 };   // an inline switch on the desk lamp's cord   // the hidden words, switched by the light switch on the column (off on every load)
     const CLIMBER_PATCH = [871, 289, 44, 40, 203];
     const CLIMBER_MUTE = 0.55;   // how much of the bare rock shows through the climbers
@@ -329,7 +335,7 @@
             const depth = (y - r.by) / r.bh;
             const amp = r.amp[0] + (r.amp[1] - r.amp[0]) * depth;
             const dx = amp * (0.6 * Math.sin(y * r.freq + t * r.speed) + 0.4 * Math.sin(y * r.freq * 0.37 - t * r.speed * 0.66 + 1.7));
-            w.drawImage(chaos > 0.5 && hwImg.complete && hwImg.naturalWidth ? hwImg : img, r.bx, y, r.bw, 1, dx * k, (y - r.by) * k, r.bw * k, k);
+            w.drawImage(chaos > 0.5 && hwImg.complete && hwImg.naturalWidth ? hwImg : xmas > 0.5 && xmImg.complete && xmImg.naturalWidth ? xmImg : img, r.bx, y, r.bw, 1, dx * k, (y - r.by) * k, r.bw * k, k);
         }
         w.globalCompositeOperation = 'destination-in';
         w.drawImage(r.mask, 0, 0);
@@ -1255,12 +1261,13 @@
         drawSwitch();
         drawRedButton();
         drawRainSwitch();
+        drawXmasButton();
         if (!laptopImg.complete || !laptopImg.naturalWidth) return;
         const w = laptopImg.naturalWidth;
         const h = laptopImg.naturalHeight;
         const map = homography(LAPTOP);
         const N = 8;
-        sctx.globalAlpha = 0.88 * (1 - chaos);
+        sctx.globalAlpha = 0.88 * (1 - Math.max(chaos, xmas));
         for (let i = 0; i < N; i++) {
             for (let j = 0; j < N; j++) {
                 const u0 = i / N, u1 = (i + 1) / N, v0 = j / N, v1 = (j + 1) / N;
@@ -1276,7 +1283,7 @@
         g.addColorStop(0.15, 'rgba(255,255,255,0)');
         g.addColorStop(0.35, 'rgba(220,230,255,0.07)');
         g.addColorStop(0.55, 'rgba(255,255,255,0)');
-        sctx.globalAlpha = 1 - chaos;
+        sctx.globalAlpha = 1 - Math.max(chaos, xmas);
         sctx.fillStyle = g;
         sctx.beginPath();
         LAPTOP.forEach(([x, y], i) => (i ? sctx.lineTo(x, y) : sctx.moveTo(x, y)));
@@ -1420,8 +1427,39 @@
         c.restore();
     }
 
+    // A small round push button set into the desk's front edge: a brushed brass rim around a
+    // deep green cap, which glows warm when Christmas is on
+    function drawXmasButton() {
+        const { x, y } = XMAS_BUTTON;
+        const c = sctx;
+        const on = xmasOn;
+        c.save();
+        if (on) {
+            const glow = c.createRadialGradient(x, y, 0, x, y, 9);
+            glow.addColorStop(0, 'rgba(255,215,140,0.5)');
+            glow.addColorStop(1, 'rgba(255,215,140,0)');
+            c.fillStyle = glow;
+            c.fillRect(x - 9, y - 9, 18, 18);
+        }
+        const rim = c.createLinearGradient(0, y - 3, 0, y + 3);
+        rim.addColorStop(0, 'rgb(170,140,90)');
+        rim.addColorStop(1, 'rgb(90,70,40)');
+        c.fillStyle = rim;
+        c.beginPath();
+        c.ellipse(x, y, 4, 3.2, 0, 0, 6.283);
+        c.fill();
+        const cap = c.createRadialGradient(x - 0.7, y - 0.8, 0.2, x, y, 2.2);
+        cap.addColorStop(0, on ? 'rgb(120,200,130)' : 'rgb(56,92,62)');
+        cap.addColorStop(1, on ? 'rgb(30,110,50)' : 'rgb(22,44,28)');
+        c.fillStyle = cap;
+        c.beginPath();
+        c.ellipse(x, y + (on ? 0.3 : 0), 2.8, 2.3, 0, 0, 6.283);
+        c.fill();
+        c.restore();
+    }
+
     function drawClimbers() {
-        drawPatch(sctx, CLIMBER_PATCH, CLIMBER_MUTE * (1 - chaos));
+        drawPatch(sctx, CLIMBER_PATCH, CLIMBER_MUTE * (1 - Math.max(chaos, xmas)));
     }
 
     // Centre hut lights switching on and off at random; most start off
@@ -1446,7 +1484,7 @@
             let level = s.on ? ramp : 1 - ramp;
             // A brief flicker as a light comes on
             if (s.on && t - s.since < 0.5) level *= 0.6 + 0.4 * hash(Math.floor(t * 20) + i);
-            drawPatch(ctx, patch, level * (1 - chaos));
+            drawPatch(ctx, patch, level * (1 - Math.max(chaos, xmas)));
         });
         ctx.restore();
     }
@@ -2593,6 +2631,147 @@
         ctx.restore();
     }
 
+    /* ---------- the Christmas button ---------- */
+
+    // The picture fades to the painted Christmas scene, and on top of it: snow falling at
+    // several depths, the fairy lights twinkling, snowballs splatting on the glass now and
+    // then, and Santa's sleigh and reindeer crossing the sky.
+    const XMAS_LIGHTS = [[875,4],[966,5],[913,6],[1141,8],[904,9],[856,12],[1136,13],[985,14],[981,20],[969,24],[928,26],[975,32],[994,33],[1145,33],[1162,37],[988,41],[993,45],[1021,45],[1159,45],[1009,46],[980,48],[1001,51],[1160,55],[1177,57],[1015,58],[1024,58],[1044,59],[1183,59],[1009,63],[1034,63],[1027,69],[1187,69],[1053,70],[1170,71],[1033,75],[1178,76],[1046,80],[1192,81],[1202,82],[1653,84],[30,88],[44,88],[1184,89],[1646,90],[1200,92],[1664,92],[13,94],[56,94],[1638,96],[20,97],[35,98],[1588,99],[8,101],[1239,102],[55,103],[1200,103],[61,106],[1254,106],[4,108],[1566,108],[1597,108],[1644,108],[50,110],[1237,110],[21,111],[1277,111],[1308,111],[41,112],[1258,112],[1231,113],[1318,113],[1331,113],[1362,115],[1579,115],[1347,117],[1312,118],[1341,118],[1566,118],[4,120],[16,120],[1243,120],[1406,120],[1526,120],[1382,121],[1549,122],[1308,123],[1400,123],[1359,124],[1419,124],[1559,124],[1372,125],[1515,125],[1499,126],[1529,126],[8,127],[1440,127],[1426,129],[1386,130],[1472,130],[1488,131],[1507,131],[68,132],[8,133],[71,140],[1486,140],[1475,141],[68,146],[4,148],[10,148],[58,148],[73,155],[6,158],[60,159],[16,161],[2,163],[67,165],[25,169],[55,169],[18,170],[68,171],[1594,175],[12,177],[63,178],[28,180],[5,181],[1590,181],[21,185],[1597,185],[1669,185],[67,187],[1642,188],[1602,189],[18,192],[1594,192],[1659,192],[1651,193],[30,194],[1586,194],[59,195],[1636,195],[5,196],[1601,197],[1620,197],[1600,203],[23,204],[1591,205],[51,206],[1600,210],[1590,212],[1608,214],[1581,217],[1595,219],[50,276],[31,278],[59,285],[72,294],[25,303],[41,305],[58,310],[30,311]];
+    const sleigh = { active: false, next: 4 };
+    const splats = [];
+    let nextSplat = 3, xmasSince = 0;
+    const FLAKE_LAYERS = [
+        { n: LITE ? 380 : 1000, r: 0.9, speed: 18, a: 0.75, y0: 0, y1: 560 },   // far
+        { n: LITE ? 140 : 340, r: 1.5, speed: 30, a: 0.85, y0: 0, y1: 560 },     // middle
+        { n: LITE ? 30 : 70, r: 2.6, speed: 50, a: 0.75, y0: 0, y1: 560 }       // near, soft
+    ];
+
+    function updateXmas(t, dt) {
+        const before = xmas;
+        if (xmasOn && xmas === 0) xmasSince = t;
+        xmas = xmasOn ? Math.min(1, xmas + dt / 2) : Math.max(0, xmas - dt / 2);
+        if (xmas !== before) drawLaptop();
+        if (!xmasOn) { if (xmas === 0) { splats.length = 0; sleigh.active = false; sleigh.next = 4; } return; }
+        if (!sleigh.active && t - xmasSince >= sleigh.next) Object.assign(sleigh, { active: true, born: t, dur: 14, ltr: Math.random() < 0.5, y: 70 + Math.random() * 90 });
+        if (sleigh.active && t - sleigh.born > sleigh.dur) { sleigh.active = false; sleigh.next = t - xmasSince + 18 + Math.random() * 16; }
+        if (t - xmasSince >= nextSplat && splats.length < 4) {
+            const left = Math.random() < 0.6;
+            splats.push({ x: left ? 120 + Math.random() * 760 : 1150 + Math.random() * 480, y: left ? 120 + Math.random() * 360 : 130 + Math.random() * 330, born: t, life: 7, r: 5 + Math.random() * 4, seed: Math.random() * 50 });
+            nextSplat = t - xmasSince + 4 + Math.random() * 6;
+        }
+        for (let i = splats.length - 1; i >= 0; i--) if (t - splats[i].born > splats[i].life) splats.splice(i, 1);
+    }
+
+    function drawXmas(t) {
+        if (!xmas) return;
+        const e = xmas * xmas * (3 - 2 * xmas);
+        ctx.save();
+
+        // Fairy lights twinkling on the tree, the garlands and the huts
+        ctx.globalCompositeOperation = 'lighter';
+        XMAS_LIGHTS.forEach(([x, y], i) => {
+            if (x < view.x0 || x > view.x1) return;
+            const n = noise(t * (0.8 + hash(i) * 1.6) + i * 5.3);
+            drawSprite(hash(i * 2.7) > 0.7 ? SPRITES.white : SPRITES.warm, x, y, 5 + n * 4, e * 0.55 * n * n);
+        });
+
+        ctx.save();
+        ctx.clip(OUTSIDE);
+
+        // Snow falling outside at three depths, each flake drifting on its own sway
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.fillStyle = 'rgb(240,244,250)';
+        FLAKE_LAYERS.forEach((L, li) => {
+            const span = L.y1 - L.y0;
+            ctx.globalAlpha = L.a * e;
+            ctx.beginPath();
+            for (let i = 0; i < L.n; i++) {
+                const sp = L.speed * (0.7 + 0.6 * hash(i * 2.9 + li));
+                const fall = t * sp / span + hash(i * 4.7 + li * 31);
+                const cyc = Math.floor(fall), f = fall - cyc;
+                const x = hash(i * 1.3 + cyc * 7.1 + li * 13) * IMG_W + Math.sin(t * (0.6 + hash(i) * 0.8) + i) * (3 + li * 3) + f * 20;
+                const y = L.y0 + f * span;
+                if (x < view.x0 || x > view.x1) continue;
+                const r = L.r * (0.7 + 0.6 * hash(i * 9.1 + li));
+                ctx.moveTo(x + r, y);
+                ctx.arc(x, y, r, 0, 6.283);
+            }
+            ctx.fill();
+        });
+
+        // Santa's sleigh and reindeer crossing the sky, with Rudolph's nose glowing
+        if (sleigh.active) {
+            const f = (t - sleigh.born) / sleigh.dur;
+            const dir = sleigh.ltr ? 1 : -1;
+            const x = sleigh.ltr ? -60 + f * (IMG_W + 120) : IMG_W + 60 - f * (IMG_W + 120);
+            const y = sleigh.y - Math.sin(f * Math.PI) * 30;
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(dir, 1);
+            ctx.globalAlpha = 0.9 * e;
+            ctx.fillStyle = 'rgb(12,10,14)';
+            ctx.strokeStyle = 'rgb(12,10,14)';
+            ctx.lineCap = 'round';
+            // sleigh with Santa
+            ctx.beginPath();
+            ctx.moveTo(-6, 0); ctx.lineTo(5, 0); ctx.quadraticCurveTo(7, 0, 7, -2); ctx.lineTo(6, -4); ctx.lineTo(-3, -4); ctx.quadraticCurveTo(-6, -4, -6, -1.5); ctx.closePath(); ctx.fill();
+            ctx.lineWidth = 0.5;
+            ctx.beginPath(); ctx.moveTo(-7, 1.4); ctx.lineTo(7.5, 1.4); ctx.quadraticCurveTo(9.5, 1.4, 9.2, -0.4); ctx.stroke();
+            ctx.beginPath(); ctx.arc(-1, -6, 2.3, 0, 6.283); ctx.fill();          // Santa
+            ctx.beginPath(); ctx.arc(-4.2, -4.6, 2, 0, 6.283); ctx.fill();        // sack
+            // reins and four reindeer, legs galloping
+            const gal = Math.sin(t * 9);
+            ctx.lineWidth = 0.35;
+            ctx.beginPath(); ctx.moveTo(6, -3); ctx.lineTo(46, -5); ctx.stroke();
+            for (let r = 0; r < 4; r++) {
+                const rx = 14 + r * 9, ry = -5 - Math.sin(t * 4 + r) * 0.8;
+                ctx.beginPath(); ctx.ellipse(rx, ry, 3, 1.3, -0.05, 0, 6.283); ctx.fill();         // body
+                ctx.lineWidth = 0.6;
+                ctx.beginPath(); ctx.moveTo(rx + 2.4, ry - 0.6); ctx.lineTo(rx + 3.6, ry - 3); ctx.stroke();   // neck
+                ctx.beginPath(); ctx.ellipse(rx + 4.1, ry - 3.2, 1, 0.6, 0.2, 0, 6.283); ctx.fill();         // head
+                ctx.lineWidth = 0.3;
+                ctx.beginPath(); ctx.moveTo(rx + 3.7, ry - 3.7); ctx.lineTo(rx + 3, ry - 5.6); ctx.lineTo(rx + 2.2, ry - 6); ctx.moveTo(rx + 3.2, ry - 5); ctx.lineTo(rx + 4, ry - 5.8); ctx.stroke();   // antlers
+                ctx.lineWidth = 0.45;
+                ctx.beginPath();
+                ctx.moveTo(rx + 2, ry + 0.8); ctx.lineTo(rx + 2.8 + gal, ry + 3);
+                ctx.moveTo(rx - 2, ry + 0.8); ctx.lineTo(rx - 2.8 - gal, ry + 3);
+                ctx.stroke();
+            }
+            ctx.restore();
+            ctx.globalCompositeOperation = 'lighter';
+            drawSprite(SPRITES.red, x + dir * 46.1, y - 8.2 - Math.sin(t * 4 + 3) * 0.8, 6, 0.9 * e);
+            ctx.globalCompositeOperation = 'source-over';
+        }
+        ctx.restore();
+
+        // Snowballs splatting on the window glass, then slowly sliding and melting away
+        splats.forEach(sp => {
+            const age = t - sp.born, f = age / sp.life;
+            const a = e * Math.min(1, age / 0.05) * (1 - Math.pow(f, 2));
+            const y = sp.y + Math.pow(f, 1.5) * 22;
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.globalAlpha = 0.75 * a;
+            ctx.fillStyle = 'rgb(236,240,246)';
+            ctx.beginPath();
+            for (let k2 = 0; k2 < 14; k2++) {
+                const ang = (k2 / 14) * 6.283;
+                const rr = sp.r * (0.65 + 0.5 * hash(sp.seed + k2));
+                const px = sp.x + Math.cos(ang) * rr, py = y + Math.sin(ang) * rr * 0.9;
+                k2 ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
+            }
+            ctx.closePath();
+            ctx.fill();
+            // flecks thrown out by the impact, and a melt trickle
+            for (let k2 = 0; k2 < 8; k2++) {
+                const ang = hash(sp.seed * 3 + k2) * 6.283, d = sp.r * (1.3 + hash(sp.seed + k2 * 7) * 1.2);
+                ctx.beginPath(); ctx.arc(sp.x + Math.cos(ang) * d, y + Math.sin(ang) * d, 0.5 + hash(k2 + sp.seed) * 0.8, 0, 6.283); ctx.fill();
+            }
+            ctx.globalAlpha = 0.4 * a;
+            ctx.fillRect(sp.x - 0.6, y, 1.2, Math.pow(f, 1.2) * 26);
+        });
+        ctx.restore();
+    }
+
     /* ---------- easter eggs ---------- */
 
     // Hidden words. Rest the pointer on certain things for a moment (or tap them on a touch
@@ -2657,25 +2836,44 @@
         return Math.abs(x - RAIN_SWITCH.x) <= 6 && Math.abs(y - RAIN_SWITCH.y) <= 4;
     }
 
-    function toggleRain() {
-        rainOn = !rainOn;
+    // Only one scene at a time, and none at all unless the light switch is on
+    function setScene(name) {
+        chaosOn = name === 'halloween';
+        rainOn = name === 'rain';
+        xmasOn = name === 'christmas';
         if (rainOn) weather.start = null;   // starts on the next frame
+        if (chaosOn) loadHalloween();
+        if (xmasOn) loadChristmas();
+        hwImg.classList.toggle('on', chaosOn);
+        xmImg.classList.toggle('on', xmasOn);
         drawLaptop();
+    }
+
+    function toggleRain() {
+        if (!rainOn && !eggsOn) return;
+        setScene(rainOn ? null : 'rain');
+    }
+
+    function toggleXmas() {
+        if (!xmasOn && !eggsOn) return;
+        setScene(xmasOn ? null : 'christmas');
+    }
+
+    function onXmasButton(cx, cy) {
+        const [x, y] = toImage(cx, cy);
+        return Math.abs(x - XMAS_BUTTON.x) <= 6 && Math.abs(y - XMAS_BUTTON.y) <= 5;
     }
 
     function toggleChaos() {
         // A double safeguard: the button only arms while the word light switch is on
         if (!chaosOn && !eggsOn) return;
-        chaosOn = !chaosOn;
-        loadHalloween();
-        hwImg.classList.toggle('on', chaosOn);
-        drawLaptop();
+        setScene(chaosOn ? null : 'halloween');
     }
 
     function toggleSwitch() {
         eggsOn = !eggsOn;
-        if (eggsOn) loadHalloween();
-        if (!eggsOn) { clearTimeout(dwell.timer); dwell.e = null; hideEgg(0); }
+        if (eggsOn) { loadHalloween(); loadChristmas(); }
+        if (!eggsOn) { clearTimeout(dwell.timer); dwell.e = null; hideEgg(0); setScene(null); }
         drawLaptop();   // the switch lives on the static layer
     }
 
@@ -2728,6 +2926,7 @@
         if (onSwitch(e.clientX, e.clientY)) toggleSwitch();
         else if (onRedButton(e.clientX, e.clientY)) toggleChaos();
         else if (onRainSwitch(e.clientX, e.clientY)) toggleRain();
+        else if (onXmasButton(e.clientX, e.clientY)) toggleXmas();
     });
 
     // Mouse: only after resting on an object for a moment
@@ -2764,6 +2963,7 @@
         if (onSwitch(e.clientX, e.clientY)) { toggleSwitch(); return; }
         if (onRedButton(e.clientX, e.clientY)) { toggleChaos(); return; }
         if (onRainSwitch(e.clientX, e.clientY)) { toggleRain(); return; }
+        if (onXmasButton(e.clientX, e.clientY)) { toggleXmas(); return; }
         const hit = eggAt(e.clientX, e.clientY);
         if (hit) {
             showEgg(hit);
@@ -2808,6 +3008,7 @@
         updateOryx(t, dt);
         updateChaos(t, dt);
         updateWeather(t, dt);
+        updateXmas(t, dt);
 
         // Work out which part of the picture is on screen
         const m = 40;
@@ -2831,6 +3032,7 @@
         }
         drawLights(t);
         drawWeather(t);
+        drawXmas(t);
         drawChaos(t);
 
         // Effects ease in once the entrance has settled

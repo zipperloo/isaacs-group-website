@@ -21,6 +21,10 @@ On touch screens, visitors can **swipe to explore** the whole picture (left and 
 
 **The weather switch:** the small inline switch on the desk lamp’s cord, on the desk top at the left. Clicking it starts a drizzle at once, which builds to a downpour within about 10 seconds (rain falls at three depths across the landscape, with mist in the distance and rings on the water), then eases off; the desert turns gently green with grass and flowers. It stays like that until the switch is clicked off, then fades back to normal. Birds also fly past now and then at all times, more often after the rain.
 
+**The Christmas button:** a small round button with a brass rim and a deep green cap, set into the front edge of the desk (right of the chair, below the papers). Pressing it fades the picture to the painted Christmas version (`assets/background-christmas.jpg`, downloaded only once the light switch is on), with snow falling at three depths, the fairy lights twinkling, snowballs splatting on the window glass and slowly sliding away, and Santa’s sleigh and reindeer crossing the sky with Rudolph’s nose glowing. Pressing it again fades back.
+
+**Scene rules:** the Halloween button, the weather switch and the Christmas button all only work while the light switch is on. Only one scene runs at a time: starting one stops any other, and turning the light switch off stops them all.
+
 **Easter eggs:** these only work once the small light switch on the black column in front of the desk has been clicked or tapped on (a thin blue LED lights up). It is off every time the page loads. Then resting the pointer on certain people and objects for about a second (or tapping them on touch screens) fades in a small note with a word from *The Dictionary of Obscure Sorrows*: the whisky glass (Sonder), backpacker (Onism), the après-ski dancer (Avenoir), the child diver (Patroagon), the woman on the terrace (Symphoric), the NPD post-it (Liberosis), the fireplace (Chrysalism), the tall triangular tower (Anecdoche), the satellite (Ellipsism), the gecko (Exulansis) and any of the cricketers (Anemoia). The man at the desk shows Suerza. The targets are deliberately small. The words and hotspots are in the `EGGS` list in `assets/scene.js`.
 
 Visitors who have "reduce motion" turned on in their device settings see the still image only.
@@ -35,6 +39,7 @@ Visitors who have "reduce motion" turned on in their device settings see the sti
 | `assets/scene-patches.png` | Small pieces of the earlier painting: the centre hut lights (switched on and off by the animation) and the bare rock used to mute the two climbers. Must be regenerated if those parts of the painting change. |
 | `assets/laptop-screen.jpg` | The Medik8 home page (Crystal Retinal slide), pre-muted, shown on the terrace laptop. |
 | `assets/background-night.jpg` | Full-screen background. |
+| `assets/background-christmas.jpg` | The painted Christmas version of the background, pixel-aligned with it. |
 | `assets/background-halloween.jpg` | The painted Halloween version of the background, pixel-aligned with it. |
 | `assets/typography/` | Ivory lettering as transparent PNGs: wordmark, "family office" and contact. The tagline "A World of Perspective" is live text instead, set in Source Sans 3 ExtraLight (the supplied artwork's typeface at a lighter weight, to match the wordmark). |
 | `favicon.ico`, `favicon.svg`, `apple-touch-icon.png`, `icon-512.png` | Site icons: the A from the ISAACS wordmark in ivory on navy. |
