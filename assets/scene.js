@@ -579,7 +579,7 @@
     function updateEmbers(t, dt) {
         while (t >= nextEmber) {
             embers.push({ x: APRES_FIRE[0] + (Math.random() - 0.5) * 6, y: APRES_FIRE[1] - 2, vy: -(12 + Math.random() * 14), born: t, life: 1 + Math.random() * 1.8, seed: Math.random() * 50 });
-            nextEmber += (chaos > 0.5 ? 0.03 : 0.15) - Math.log(1 - Math.random()) * (chaos > 0.5 ? 0.08 : 0.45);
+            nextEmber += 0.15 - Math.log(1 - Math.random()) * 0.45;
         }
         for (let i = embers.length - 1; i >= 0; i--) {
             const e = embers[i];
@@ -2271,37 +2271,26 @@
     // A witch on a broomstick: a small silhouette that crosses in front of the moon now and then
     const witch = { active: false, next: 3 };
 
-    // Blurred, muted jack-o'-lanterns in the mid-ground, sitting where they could really be:
-    // on the terrace wall, the hut decks, the jetty and the bridge. x, y (base), size
-    const PUMPKINS = [[300, 553, 9], [338, 550, 7.5], [470, 572, 9], [1145, 460, 5], [1212, 452, 5.5],
-        [1262, 432, 4.5], [1022, 428, 4.5], [1458, 492, 7], [1555, 510, 8.5], [1628, 516, 9], [1505, 251, 4.5]];
     // Sky lanterns drifting slowly up from the huts and the bay
-    const skyLanterns = Array.from({ length: 34 }, (_, i) => ({
-        x0: 1000 + hash(i * 3.1) * 560, y0: 470, sp: 4 + hash(i * 5.3) * 4, ph: hash(i * 7.7), sway: hash(i * 2.9) * 6.28
-    }));
+    // Lights dancing far off over the water and hills, each in its own wandering loop
+    const skyLanterns = Array.from({ length: 40 }, (_, i) => {
+        const far = i % 2 === 0;
+        return {
+            cx: far ? 1300 + hash(i * 3.1) * 260 : 620 + hash(i * 3.1) * 300,
+            cy: far ? 300 + hash(i * 5.3) * 70 : 360 + hash(i * 5.3) * 60,
+            r: 4 + hash(i * 7.7) * 10, w1: 0.25 + hash(i * 2.9) * 0.5, w2: 0.6 + hash(i * 4.1) * 0.9, ph: hash(i * 6.2) * 6.28
+        };
+    });
     // Drifting smoke and haze, low over the land
-    const HAZE = Array.from({ length: 18 }, (_, i) => ({ x: hash(i * 4.4) * IMG_W, y: 260 + hash(i * 6.6) * 260, r: 80 + hash(i * 1.9) * 110, sp: 5 + hash(i * 8.8) * 7 }));
+    // Banks of pale fog, grouped so there are clear gaps between them
+    const HAZE = Array.from({ length: 30 }, (_, i) => {
+        const bank = i % 5;
+        return { x: bank * 380 + hash(i * 4.4) * 160, y: 330 + hash(i * 6.6) * 200, r: 70 + hash(i * 1.9) * 80, sp: 4 + (bank % 3) * 2 };
+    });
+    // A skull on the bar top above the aquarium
+    const SKULL = [1188, 549, 6];
     // Faint cobwebs strung between the columns and frames: anchor A, anchor B, sag
     const WEBS2 = [[[1040, 118], [1132, 108], 18], [[938, 40], [1040, 52], 14], [[1132, 560], [1235, 548], 12]];
-    const blurPumpkin = (() => {
-        // a single soft, out-of-focus pumpkin glow, pre-drawn once
-        const c = document.createElement('canvas');
-        c.width = c.height = 64;
-        const x = c.getContext('2d');
-        x.filter = 'blur(3px)';
-        const g = x.createRadialGradient(28, 30, 2, 32, 34, 22);
-        g.addColorStop(0, 'rgb(255,190,90)');
-        g.addColorStop(0.45, 'rgb(220,110,30)');
-        g.addColorStop(0.8, 'rgb(120,50,14)');
-        g.addColorStop(1, 'rgba(70,30,10,0)');
-        x.fillStyle = g;
-        x.beginPath();
-        x.ellipse(32, 36, 20, 15, 0, 0, 6.283);
-        x.fill();
-        x.fillStyle = 'rgba(40,40,20,0.8)';
-        x.fillRect(30, 17, 4, 6);
-        return c;
-    })();
 
     const cloudSprite = (() => {
         const c = document.createElement('canvas');
@@ -2334,12 +2323,12 @@
         if (!chaosOn) { if (chaos === 0) { bats.length = 0; witch.active = false; witch.next = 3; } return; }
         if (!witch.active && t - spookSince >= witch.next) Object.assign(witch, { active: true, born: t, dur: 9 });
         if (witch.active && t - witch.born > witch.dur) { witch.active = false; witch.next = t - spookSince + 14 + Math.random() * 14; }
-        if (t >= nextBat && bats.length < 40) {
+        if (t >= nextBat && bats.length < 70) {
             const ltr = Math.random() < 0.5;
             const n = 3 + Math.floor(Math.random() * 6);
             const y = 30 + Math.random() * 200;
             for (let i = 0; i < n; i++) bats.push({ x: ltr ? -10 - i * 10 : IMG_W + 10 + i * 10, y: y + (Math.random() - 0.5) * 24, vx: (ltr ? 1 : -1) * (35 + Math.random() * 20), ph: Math.random() * 6, s: 1.1 + Math.random() * 0.7 });
-            nextBat = t + 0.8 + Math.random() * 1.8;
+            nextBat = t + 0.4 + Math.random() * 1.0;
         }
         for (let i = bats.length - 1; i >= 0; i--) {
             const b = bats[i];
@@ -2350,23 +2339,6 @@
     }
 
         // Bonfire night on the apres-ski terrace when it is Halloween
-    function drawBonfire(t) {
-        {
-            const [bx, by] = APRES_FIRE;
-            const k2 = chaos * chaos * (3 - 2 * chaos);
-            drawSprite(SPRITES.fire, bx, by - 10, 150, 0.45 * k2 * (0.7 + 0.3 * flicker(t, 77)));
-            for (let i = 0; i < 16; i++) {
-                const ph = (t * 1.3 + i / 10 + hash(i)) % 1;
-                const px = bx + (hash(i * 7) - 0.5) * 20 + Math.sin(ph * 6 + t * 3 + i) * 2 * ph;
-                const py = by - ph * 40;
-                const r = 20 * (1 - ph * 0.6);
-                ctx.globalAlpha = Math.min(1, 0.85 * k2 * Math.pow(1 - ph, 1.3));
-                ctx.drawImage(SPRITES.fire, px - r * 0.38, py - r * 0.65, r * 0.76, r * 1.3);
-                if (ph < 0.35) ctx.drawImage(SPRITES.warm, px - r * 0.2, py - r * 0.35, r * 0.4, r * 0.7);
-            }
-        }
-    }
-
     function drawChaos(t) {
         if (!chaos) return;
         const since = t - spookSince;
@@ -2440,26 +2412,24 @@
             ctx.restore();
         });
 
-        // Smoky haze drifting slowly across the land
+        // Fog banks drifting slowly across the land, with gaps between them
         HAZE.forEach(h => {
-            const x = ((h.x + t * h.sp) % (IMG_W + 300)) - 150;
+            const x = ((h.x + t * h.sp) % (IMG_W + 400)) - 200;
             ctx.save();
             ctx.translate(x, h.y);
-            ctx.scale(1, 0.4);
-            drawSprite(mistSprite, 0, 0, h.r * 2, 0.18 * e);
+            ctx.scale(1, 0.32);
+            drawSprite(mistSprite, 0, 0, h.r * 2, 0.42 * e);
             ctx.restore();
         });
 
-        // Sky lanterns rising and swaying
+        // Fireflies dancing far off, in loose, wandering circles
         ctx.globalCompositeOperation = 'lighter';
         skyLanterns.forEach((l, i) => {
-            const ph = (l.ph + t * 0.012 * l.sp) % 1;
-            const y = l.y0 - ph * 470;
-            const x = l.x0 + ph * 60 + Math.sin(t * 0.5 + l.sway) * 4;
-            const sz = 4.2 - ph * 2.4;
-            const a = e * Math.min(1, ph / 0.1) * (1 - ph) * (0.8 + 0.2 * flicker(t, i + 90));
-            drawSprite(SPRITES.fire, x, y, sz * 6, 0.5 * a);
-            drawSprite(SPRITES.warm, x, y, sz * 1.2, a);
+            const x = l.cx + Math.cos(t * l.w1 + l.ph) * l.r + Math.sin(t * l.w2 + l.ph * 2) * l.r * 0.4;
+            const y = l.cy + Math.sin(t * l.w1 * 1.3 + l.ph) * l.r * 0.6 + Math.cos(t * l.w2 * 0.8 + l.ph) * l.r * 0.3;
+            const a = e * (0.4 + 0.6 * noise(t * 1.5 + i * 3.7));
+            drawSprite(SPRITES.fire, x, y, 6, 0.35 * a);
+            drawSprite(SPRITES.warm, x, y, 1.6, 0.9 * a);
         });
 
         // Faint lantern glows flickering by the huts and the bridge
@@ -2468,17 +2438,6 @@
             const fl = 0.6 + 0.4 * flicker(t, i + 60);
             drawSprite(SPRITES.fire, x, y, 16, 0.35 * fl * e);
             drawSprite(SPRITES.warm, x, y, 4, 0.7 * fl * e);
-        });
-
-        // Blurred jack-o'-lanterns glowing softly in the mid-ground
-        PUMPKINS.forEach(([x, y, r], i) => {
-            if (x + r * 4 < view.x0 || x - r * 4 > view.x1) return;
-            const fl = 0.75 + 0.25 * flicker(t, i + 40);
-            ctx.globalCompositeOperation = 'source-over';
-            ctx.globalAlpha = 0.95 * e;
-            ctx.drawImage(blurPumpkin, x - r * 1.6, y - r * 2.2, r * 3.2, r * 3.2);
-            ctx.globalCompositeOperation = 'lighter';
-            drawSprite(SPRITES.fire, x, y - r * 0.7, r * 7, 0.4 * fl * e);
         });
 
         // The witch, flying a gentle arc that passes across the moon's face
@@ -2532,6 +2491,35 @@
         });
         ctx.restore();
 
+        // A skull on the bar top, shaded and muted so it sits in the scene
+        {
+            const [sx, sy, sr] = SKULL;
+            if (inView(sx - 10, sx + 10)) {
+                ctx.save();
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.globalAlpha = 0.5 * e;
+                ctx.fillStyle = 'rgb(8,6,6)';
+                ctx.beginPath(); ctx.ellipse(sx + 0.8, sy + 0.6, sr * 1.2, sr * 0.35, 0, 0, 6.283); ctx.fill();
+                const g = ctx.createRadialGradient(sx - sr * 0.35, sy - sr * 1.25, sr * 0.1, sx, sy - sr * 0.9, sr * 1.1);
+                g.addColorStop(0, 'rgb(196,186,166)');
+                g.addColorStop(0.6, 'rgb(140,130,114)');
+                g.addColorStop(1, 'rgb(70,64,56)');
+                ctx.globalAlpha = 0.9 * e;
+                ctx.fillStyle = g;
+                ctx.beginPath(); ctx.ellipse(sx, sy - sr * 1.0, sr * 0.82, sr * 0.78, 0, 0, 6.283); ctx.fill();   // cranium
+                ctx.beginPath(); ctx.ellipse(sx, sy - sr * 0.3, sr * 0.55, sr * 0.36, 0, 0, 6.283); ctx.fill();   // jaw
+                ctx.fillStyle = 'rgba(20,16,14,0.9)';
+                ctx.beginPath();
+                ctx.ellipse(sx - sr * 0.3, sy - sr * 0.85, sr * 0.2, sr * 0.17, 0.2, 0, 6.283);
+                ctx.ellipse(sx + sr * 0.3, sy - sr * 0.85, sr * 0.2, sr * 0.17, -0.2, 0, 6.283);
+                ctx.fill();
+                ctx.beginPath(); ctx.moveTo(sx, sy - sr * 0.62); ctx.lineTo(sx - sr * 0.08, sy - sr * 0.48); ctx.lineTo(sx + sr * 0.08, sy - sr * 0.48); ctx.fill();
+                ctx.strokeStyle = 'rgba(30,26,22,0.7)'; ctx.lineWidth = 0.25;
+                ctx.beginPath(); for (let k = -2; k <= 2; k++) { ctx.moveTo(sx + k * sr * 0.12, sy - sr * 0.38); ctx.lineTo(sx + k * sr * 0.12, sy - sr * 0.22); } ctx.stroke();
+                ctx.restore();
+            }
+        }
+
         // Faint cobwebs strung between the columns, barely there
         ctx.globalCompositeOperation = 'source-over';
         ctx.strokeStyle = 'rgb(190,195,205)';
@@ -2553,7 +2541,6 @@
             ctx.stroke();
         });
         ctx.globalCompositeOperation = 'lighter';
-        if (inView(1480, 1580)) drawBonfire(t);
         ctx.restore();
     }
 
