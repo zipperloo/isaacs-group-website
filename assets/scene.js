@@ -135,11 +135,11 @@
     ];
     let eggsOn = false;
     let chaosOn = false;  // the red button on the desk
-    const RED_BUTTON = { x: 893, y: 641 };   // the Halloween button, beside the Christmas one on the desk's front edge
+    const RED_BUTTON = { x: 868, y: 657 };   // the Halloween button, beside the Christmas one on the desk's front edge
     let rainOn = false;   // the weather switch on the desk lamp's cord
     let xmasOn = false;   // the Christmas button on the front edge of the desk
     let xmas = 0;         // 0 normal .. 1 Christmas (2-second fade)
-    const XMAS_BUTTON = { x: 905, y: 641 };   // its neighbour on the front edge
+    const XMAS_BUTTON = { x: 882, y: 657 };   // its neighbour on the front edge
     const RAIN_SWITCH = { x: 470, y: 613 };   // an inline switch on the desk lamp's cord
     const CLIMBER_PATCH = [871, 289, 44, 40, 203];
     const CLIMBER_MUTE = 0.55;   // how much of the bare rock shows through the climbers
