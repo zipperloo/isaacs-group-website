@@ -19,9 +19,9 @@ On touch screens, visitors can **swipe to explore** the whole picture (left and 
 
 **Day and night:** the light switch on the black column in front of the desk now switches between night (off, the default) and day (on), fading over 2 seconds to the daytime painting (`assets/background-day.jpg`, downloaded only when first needed). By day the city, hut, party and lantern lights fade out, sunlight glints on the water, soft cloud wisps drift across the sky and more birds fly past. The lettering turns a deep near-black brown, with a faint pale halo.
 
-**The secret switch:** the inline switch on the desk lamp’s cord (desk top, left) is the master switch. While it is off, none of the scenes and none of the hidden words work; turning it off stops whatever scene is running.
+**The secret switch:** the inline switch on the desk lamp’s cord (desk top, left) is the master switch. It can only be switched on at night. While it is off, none of the scenes and none of the hidden words work; turning it off stops whatever scene is running, and switching to day turns it off.
 
-**The scene plate:** a slim plate with three rocker switches set into the front face of the desk, just right of the man’s chair: Halloween (orange LED), Christmas (red LED) and weather (blue LED). Only one scene runs at a time. Halloween always turns the scene to night; switching to day ends Halloween. Christmas works by night (the painted Christmas scene) and by day (`assets/background-day-christmas.jpg`: the Christmas decorations, hats and tree lifted onto the daytime painting, leaving out the stocking and presents where the dog sits, with snow, and the dog wears a Santa hat).
+**The scene plate:** a slim plate with three rocker switches set into the front face of the desk, just right of the man’s chair: Halloween (orange LED), Christmas (red LED) and weather (blue LED). Only one scene runs at a time, and the scenes are night-only (nothing switches day or night automatically).
 
 **The Halloween switch:** the left rocker on the small two-switch plate set into the front face of the desk, just right of the man’s chair (a thin orange LED strip lights beneath it when on). As a safeguard it only works while the light switch on the column is on. Pressing it glows orange and, over 2 seconds, fades the picture to the painted Halloween version (`assets/background-halloween.jpg`), which is only downloaded once the light switch is turned on. On top of it: the moon shimmers, a witch on a broomstick crosses it now and then, swarms of bats gather and wheel around, distant lightning flickers, thick mist drifts through the air in banks with ground fog creeping across the terrace and floor, fog moves on the water, a shark glides through the back of the aquarium past a skeleton on the seabed, the pumpkins and fires flicker and light catches the cobwebs. Pressing it again fades back over 2 seconds.
 
@@ -45,7 +45,7 @@ Visitors who have "reduce motion" turned on in their device settings see the sti
 | `assets/scene-patches.png` | Small pieces of the earlier painting: the centre hut lights (switched on and off by the animation) and the bare rock used to mute the two climbers. Must be regenerated if those parts of the painting change. |
 | `assets/laptop-screen.jpg` | The Medik8 home page (Crystal Retinal slide), pre-muted, shown on the terrace laptop. |
 | `assets/background-night.jpg` | Full-screen background. |
-| `assets/background-day.jpg`, `assets/background-day-christmas.jpg` | The daytime painting, and the daytime Christmas version made from it (regenerate the latter if either painting changes). |
+| `assets/background-day.jpg` | The daytime painting, pixel-aligned with the night one. |
 | `assets/background-christmas.jpg` | The painted Christmas version of the background, pixel-aligned with it. |
 | `assets/background-halloween.jpg` | The painted Halloween version of the background, pixel-aligned with it. |
 | `assets/typography/` | Ivory lettering as transparent PNGs: wordmark, "family office" and contact. The tagline "A World of Perspective" is live text instead, set in Source Sans 3 ExtraLight (the supplied artwork's typeface at a lighter weight, to match the wordmark). |
@@ -93,6 +93,6 @@ The **Contact** link opens a form addressed to Helen Molyneux, Executive Assista
 
 ## Deployment
 
-The page links its files with a version tag (`?v=81`). Bump the number in `index.html` and `assets/scene.js` after changing any asset, so browsers fetch the new copy instead of one saved for up to 10 minutes.
+The page links its files with a version tag (`?v=83`). Bump the number in `index.html` and `assets/scene.js` after changing any asset, so browsers fetch the new copy instead of one saved for up to 10 minutes.
 
 The site is hosted on GitHub Pages from the `main` branch, at the custom domain in `CNAME`. Pushing to `main` publishes the changes.
