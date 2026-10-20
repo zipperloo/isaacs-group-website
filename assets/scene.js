@@ -135,11 +135,12 @@
     ];
     let eggsOn = false;
     let chaosOn = false;  // the red button on the desk
-    const RED_BUTTON = { x: 870, y: 649 };   // the Halloween button, beside the Christmas one on the desk's front edge
+    const SCENE_PLATE = { x: 878, y: 650 };   // a two-rocker module set into the desk's front face
+    const RED_BUTTON = { x: 873, y: 649.5 };   // the Halloween button, beside the Christmas one on the desk's front edge
     let rainOn = false;   // the weather switch on the desk lamp's cord
     let xmasOn = false;   // the Christmas button on the front edge of the desk
     let xmas = 0;         // 0 normal .. 1 Christmas (2-second fade)
-    const XMAS_BUTTON = { x: 886, y: 650.6 };   // its neighbour on the front edge
+    const XMAS_BUTTON = { x: 883, y: 650.5 };   // its neighbour on the front edge
     const RAIN_SWITCH = { x: 470, y: 613 };   // an inline switch on the desk lamp's cord
     const CLIMBER_PATCH = [871, 289, 44, 40, 203];
     const CLIMBER_MUTE = 0.55;   // how much of the bare rock shows through the climbers
@@ -1347,7 +1348,7 @@
 
     // The Halloween button: brass-rimmed, with a muted orange cap that glows when on
     function drawRedButton() {
-        drawDeskButton(RED_BUTTON, chaosOn, ['rgb(96,56,28)', 'rgb(44,24,12)'], ['rgb(240,170,90)', 'rgb(190,96,24)'], 'rgba(255,150,60,0.5)');
+        drawScenePlate();   // the Halloween and Christmas rockers share one plate
     }
 
     // An inline rocker switch on the desk lamp's cord, lying on the desk top
@@ -1401,44 +1402,49 @@
         c.restore();
     }
 
-    function drawXmasButton() {
-        drawDeskButton(XMAS_BUTTON, xmasOn, ['rgb(92,34,32)', 'rgb(40,14,14)'], ['rgb(235,110,100)', 'rgb(170,30,30)'], 'rgba(255,90,80,0.5)');
-    }
+    function drawXmasButton() {}   // drawn as part of the shared plate
 
-    // A small flush push button set into the desk's front face: a dark bronze bezel around a deep
-    // enamel centre, tilted to sit along the desk's perspective. It only warms up when on.
-    const DESK_TILT = Math.atan(0.1);   // the front edge drops about 1px for every 10px to the right
-    function drawDeskButton({ x, y }, on, offCap, onCap, glowCol) {
+    // One slim plate set into the desk's front face holding two small rocker switches, each with
+    // a thin LED strip beneath it (orange for Halloween, red for Christmas). It is drawn in the
+    // desk's own perspective: top and bottom follow the slope of the desk edge (about 1px down
+    // for every 10px across) while the sides stay vertical, so it sits flush in the face.
+    function drawScenePlate() {
         const c = sctx;
+        const { x, y } = SCENE_PLATE;
         c.save();
-        c.translate(x, y);
-        c.rotate(DESK_TILT);
-        if (on) {
-            const glow = c.createRadialGradient(0, 0, 0, 0, 0, 7);
-            glow.addColorStop(0, glowCol.replace(/[\d.]+\)$/, '0.3)'));
-            glow.addColorStop(1, glowCol.replace(/[\d.]+\)$/, '0)'));
-            c.fillStyle = glow;
-            c.fillRect(-7, -7, 14, 14);
-        }
-        // recess shadow, then a satin bronze bezel with a fine highlight on its upper lip
+        c.transform(1, 0.1, 0, 1, x, y);   // shear to match the desk
+        // recess shadow and a dark satin plate with a fine bronze edge
         c.fillStyle = 'rgba(0,0,0,0.55)';
-        c.beginPath(); c.ellipse(0, 0.3, 3.3, 3, 0, 0, 6.283); c.fill();
-        const bezel = c.createLinearGradient(0, -3, 0, 3);
-        bezel.addColorStop(0, 'rgb(118,96,66)');
-        bezel.addColorStop(0.5, 'rgb(72,58,40)');
-        bezel.addColorStop(1, 'rgb(40,32,24)');
-        c.fillStyle = bezel;
-        c.beginPath(); c.ellipse(0, 0, 3, 2.7, 0, 0, 6.283); c.fill();
-        c.strokeStyle = 'rgba(220,190,140,0.25)';
-        c.lineWidth = 0.25;
-        c.beginPath(); c.ellipse(0, 0, 2.9, 2.6, 0, Math.PI * 1.1, Math.PI * 1.9); c.stroke();
-        // the enamel centre, slightly dished
-        const [c0, c1] = on ? onCap : offCap;
-        const cap = c.createRadialGradient(-0.5, -0.6, 0.1, 0, 0, 1.9);
-        cap.addColorStop(0, c0);
-        cap.addColorStop(1, c1);
-        c.fillStyle = cap;
-        c.beginPath(); c.ellipse(0, 0.1, 1.9, 1.7, 0, 0, 6.283); c.fill();
+        c.fillRect(-10.6, -4.4, 21.2, 9.2);
+        const plate = c.createLinearGradient(0, -4, 0, 4);
+        plate.addColorStop(0, 'rgb(40,36,34)');
+        plate.addColorStop(1, 'rgb(22,20,20)');
+        c.fillStyle = plate;
+        c.fillRect(-10, -4, 20, 8);
+        c.strokeStyle = 'rgba(160,130,90,0.4)';
+        c.lineWidth = 0.3;
+        c.strokeRect(-10, -4, 20, 8);
+        [[-5, chaosOn, '255,140,40'], [5, xmasOn, '255,60,50']].forEach(([cx, on, col]) => {
+            // the rocker: pressed in at the bottom when on, at the top when off
+            const g = c.createLinearGradient(0, -3, 0, 1.6);
+            g.addColorStop(0, on ? 'rgb(30,28,28)' : 'rgb(62,58,56)');
+            g.addColorStop(1, on ? 'rgb(60,56,54)' : 'rgb(28,26,26)');
+            c.fillStyle = g;
+            c.fillRect(cx - 3, -3, 6, 4.6);
+            c.strokeStyle = 'rgba(0,0,0,0.6)';
+            c.lineWidth = 0.25;
+            c.strokeRect(cx - 3, -3, 6, 4.6);
+            // the LED strip below it
+            if (on) {
+                const glow = c.createRadialGradient(cx, 2.8, 0, cx, 2.8, 6);
+                glow.addColorStop(0, `rgba(${col},0.45)`);
+                glow.addColorStop(1, `rgba(${col},0)`);
+                c.fillStyle = glow;
+                c.fillRect(cx - 6, -3.2, 12, 12);
+            }
+            c.fillStyle = on ? `rgb(${col})` : `rgba(${col},0.18)`;
+            c.fillRect(cx - 2.4, 2.4, 4.8, 0.7);
+        });
         c.restore();
     }
 
@@ -2812,7 +2818,7 @@
 
     function onRedButton(cx, cy) {
         const [x, y] = toImage(cx, cy);
-        return Math.abs(x - RED_BUTTON.x) <= 5 && Math.abs(y - RED_BUTTON.y) <= 5;
+        return Math.abs(x - RED_BUTTON.x) <= 4.5 && Math.abs(y - RED_BUTTON.y) <= 5;
     }
 
     function onRainSwitch(cx, cy) {
@@ -2845,7 +2851,7 @@
 
     function onXmasButton(cx, cy) {
         const [x, y] = toImage(cx, cy);
-        return Math.abs(x - XMAS_BUTTON.x) <= 5 && Math.abs(y - XMAS_BUTTON.y) <= 5;
+        return Math.abs(x - XMAS_BUTTON.x) <= 4.5 && Math.abs(y - XMAS_BUTTON.y) <= 5;
     }
 
     function toggleChaos() {
