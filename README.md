@@ -93,4 +93,6 @@ The **Contact** link opens a form addressed to Helen Molyneux, Executive Assista
 
 ## Deployment
 
+The page links its files with a version tag (`?v=81`). Bump the number in `index.html` and `assets/scene.js` after changing any asset, so browsers fetch the new copy instead of one saved for up to 10 minutes.
+
 The site is hosted on GitHub Pages from the `main` branch, at the custom domain in `CNAME`. Pushing to `main` publishes the changes.

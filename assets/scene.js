@@ -28,11 +28,11 @@
     function loadDay() {
         if (!dayImg.getAttribute('src')) {
             dayImg.addEventListener('load', applyImages);
-            dayImg.src = 'assets/background-day.jpg';
+            dayImg.src = 'assets/background-day.jpg?v=81';
         }
         if (!dayXmImg.getAttribute('src')) {
             dayXmImg.addEventListener('load', applyImages);
-            dayXmImg.src = 'assets/background-day-christmas.jpg';
+            dayXmImg.src = 'assets/background-day-christmas.jpg?v=81';
         }
     }
     // Which painting is showing: day under everything, then Halloween or Christmas on top
@@ -45,10 +45,10 @@
         document.documentElement.classList.toggle('daytime', dayOn);
     }
     const hwImg = document.getElementById('scene-hw');
-    function loadHalloween() { if (!hwImg.getAttribute('src')) hwImg.src = 'assets/background-halloween.jpg'; }
+    function loadHalloween() { if (!hwImg.getAttribute('src')) hwImg.src = 'assets/background-halloween.jpg?v=81'; }
     // ...and the painted Christmas version
     const xmImg = document.getElementById('scene-xmas');
-    function loadChristmas() { if (!xmImg.getAttribute('src')) xmImg.src = 'assets/background-christmas.jpg'; }
+    function loadChristmas() { if (!xmImg.getAttribute('src')) xmImg.src = 'assets/background-christmas.jpg?v=81'; }
     // The laptop screen has its own layer, so it appears with the picture rather than
     // waiting for the effects to fade in
     const screenCanvas = document.getElementById('screen');
@@ -171,10 +171,10 @@
     const CLIMBER_PATCH = [871, 289, 44, 40, 203];
     const CLIMBER_MUTE = 0.55;   // how much of the bare rock shows through the climbers
     const patchImg = new Image();
-    patchImg.src = 'assets/scene-patches.png';
+    patchImg.src = 'assets/scene-patches.png?v=81';
 
     const laptopImg = new Image();
-    laptopImg.src = 'assets/laptop-screen.jpg';
+    laptopImg.src = 'assets/laptop-screen.jpg?v=81';
 
     // An Arabian oryx wandering a slow loop on the dunes: centre, radius across, radius in depth
     const ORYX_LOOP = { cx: 184, cy: 369, rx: 24, ry: 3 };
