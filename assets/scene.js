@@ -139,8 +139,8 @@
     let rainOn = false;   // the weather switch on the desk lamp's cord
     let xmasOn = false;   // the Christmas button on the front edge of the desk
     let xmas = 0;         // 0 normal .. 1 Christmas (2-second fade)
-    const XMAS_BUTTON = { x: 905, y: 641 };
-    const RAIN_SWITCH = { x: 470, y: 613 };   // an inline switch on the desk lamp's cord   // the hidden words, switched by the light switch on the column (off on every load)
+    const XMAS_BUTTON = { x: 905, y: 641 };   // its neighbour on the front edge
+    const RAIN_SWITCH = { x: 893, y: 641 };   // a button on the desk's front edge, beside the Christmas button
     const CLIMBER_PATCH = [871, 289, 44, 40, 203];
     const CLIMBER_MUTE = 0.55;   // how much of the bare rock shows through the climbers
     const patchImg = new Image();
@@ -1376,68 +1376,27 @@
         c.restore();
     }
 
-    // An inline rocker switch on the desk lamp's cord, lying on the desk top
+    // The weather button: the same brass-rimmed push button as its Christmas neighbour, with a
+    // muted blue cap that glows cool when the rain is on
     function drawRainSwitch() {
-        const { x, y } = RAIN_SWITCH;
-        const c = sctx;
-        const on = rainOn;
-        c.save();
-        // the cord: out of the switch, curling back to the brass lamp, and away to the edge
-        c.strokeStyle = 'rgba(16,14,14,0.9)';
-        c.lineWidth = 0.7;
-        c.lineCap = 'round';
-        c.beginPath();
-        c.moveTo(x + 4, y - 0.4);
-        c.bezierCurveTo(x + 14, y - 1.5, x + 30, y - 6, 523, 594);
-        c.moveTo(x - 4, y + 0.4);
-        c.bezierCurveTo(x - 12, y + 1.5, x - 26, y + 2, 425, 619);
-        c.stroke();
-        // shadow
-        c.globalAlpha = 0.45;
-        c.fillStyle = 'rgb(6,5,5)';
-        c.beginPath();
-        c.ellipse(x + 0.5, y + 1.2, 4.6, 1.4, -0.08, 0, 6.283);
-        c.fill();
-        // body: a small rounded oblong in dark bakelite
-        c.globalAlpha = 1;
-        const g = c.createLinearGradient(0, y - 1.6, 0, y + 1.6);
-        g.addColorStop(0, 'rgb(58,54,52)');
-        g.addColorStop(1, 'rgb(22,20,20)');
-        c.fillStyle = g;
-        c.beginPath();
-        c.ellipse(x, y, 4.2, 1.6, -0.08, 0, 6.283);
-        c.fill();
-        // the rocker, pressed down on one side or the other, with a faint highlight
-        c.fillStyle = 'rgb(30,28,28)';
-        c.beginPath();
-        c.ellipse(x + (on ? 0.9 : -0.9), y - 0.5, 1.9, 0.7, -0.08, 0, 6.283);
-        c.fill();
-        c.fillStyle = 'rgba(210,200,185,0.35)';
-        c.beginPath();
-        c.ellipse(x + (on ? -0.6 : 0.6), y - 0.9, 1.1, 0.3, -0.08, 0, 6.283);
-        c.fill();
-        // a tiny warm indicator when on
-        if (on) {
-            const glow = c.createRadialGradient(x + 2.4, y - 0.4, 0, x + 2.4, y - 0.4, 3);
-            glow.addColorStop(0, 'rgba(255,190,120,0.9)');
-            glow.addColorStop(1, 'rgba(255,190,120,0)');
-            c.fillStyle = glow;
-            c.fillRect(x - 0.6, y - 3.4, 6, 6);
-        }
-        c.restore();
+        drawDeskButton(RAIN_SWITCH, rainOn, ['rgb(52,74,104)', 'rgb(20,30,46)'], ['rgb(150,190,240)', 'rgb(40,80,150)'], 'rgba(150,200,255,0.5)');
     }
 
     // A small round push button set into the desk's front edge: a brushed brass rim around a
     // deep green cap, which glows warm when Christmas is on
     function drawXmasButton() {
-        const { x, y } = XMAS_BUTTON;
+        drawDeskButton(XMAS_BUTTON, xmasOn, ['rgb(56,92,62)', 'rgb(22,44,28)'], ['rgb(120,200,130)', 'rgb(30,110,50)'], 'rgba(255,215,140,0.5)');
+    }
+
+    // A small round push button set into the desk's front edge: a brushed brass rim around a
+    // coloured cap that brightens and glows when on
+    function drawDeskButton({ x, y }, on, offCap, onCap, glowCol) {
         const c = sctx;
-        const on = xmasOn;
         c.save();
         if (on) {
             const glow = c.createRadialGradient(x, y, 0, x, y, 9);
-            glow.addColorStop(0, 'rgba(255,215,140,0.5)');
-            glow.addColorStop(1, 'rgba(255,215,140,0)');
+            glow.addColorStop(0, glowCol);
+            glow.addColorStop(1, glowCol.replace(/[\d.]+\)$/, '0)'));
             c.fillStyle = glow;
             c.fillRect(x - 9, y - 9, 18, 18);
         }
@@ -1448,9 +1407,10 @@
         c.beginPath();
         c.ellipse(x, y, 4, 3.2, 0, 0, 6.283);
         c.fill();
+        const [c0, c1] = on ? onCap : offCap;
         const cap = c.createRadialGradient(x - 0.7, y - 0.8, 0.2, x, y, 2.2);
-        cap.addColorStop(0, on ? 'rgb(120,200,130)' : 'rgb(56,92,62)');
-        cap.addColorStop(1, on ? 'rgb(30,110,50)' : 'rgb(22,44,28)');
+        cap.addColorStop(0, c0);
+        cap.addColorStop(1, c1);
         c.fillStyle = cap;
         c.beginPath();
         c.ellipse(x, y + (on ? 0.3 : 0), 2.8, 2.3, 0, 0, 6.283);
@@ -2833,7 +2793,7 @@
 
     function onRainSwitch(cx, cy) {
         const [x, y] = toImage(cx, cy);
-        return Math.abs(x - RAIN_SWITCH.x) <= 6 && Math.abs(y - RAIN_SWITCH.y) <= 4;
+        return Math.abs(x - RAIN_SWITCH.x) <= 5 && Math.abs(y - RAIN_SWITCH.y) <= 5;
     }
 
     // Only one scene at a time, and none at all unless the light switch is on
@@ -2861,7 +2821,7 @@
 
     function onXmasButton(cx, cy) {
         const [x, y] = toImage(cx, cy);
-        return Math.abs(x - XMAS_BUTTON.x) <= 6 && Math.abs(y - XMAS_BUTTON.y) <= 5;
+        return Math.abs(x - XMAS_BUTTON.x) <= 5 && Math.abs(y - XMAS_BUTTON.y) <= 5;
     }
 
     function toggleChaos() {
