@@ -135,11 +135,11 @@
     ];
     let eggsOn = false;
     let chaosOn = false;  // the red button on the desk
-    const RED_BUTTON = { x: 868, y: 657 };   // the Halloween button, beside the Christmas one on the desk's front edge
+    const RED_BUTTON = { x: 870, y: 649 };   // the Halloween button, beside the Christmas one on the desk's front edge
     let rainOn = false;   // the weather switch on the desk lamp's cord
     let xmasOn = false;   // the Christmas button on the front edge of the desk
     let xmas = 0;         // 0 normal .. 1 Christmas (2-second fade)
-    const XMAS_BUTTON = { x: 882, y: 657 };   // its neighbour on the front edge
+    const XMAS_BUTTON = { x: 886, y: 650.6 };   // its neighbour on the front edge
     const RAIN_SWITCH = { x: 470, y: 613 };   // an inline switch on the desk lamp's cord
     const CLIMBER_PATCH = [871, 289, 44, 40, 203];
     const CLIMBER_MUTE = 0.55;   // how much of the bare rock shows through the climbers
@@ -1347,7 +1347,7 @@
 
     // The Halloween button: brass-rimmed, with a muted orange cap that glows when on
     function drawRedButton() {
-        drawDeskButton(RED_BUTTON, chaosOn, ['rgb(130,72,30)', 'rgb(58,30,12)'], ['rgb(255,190,110)', 'rgb(220,110,20)'], 'rgba(255,150,60,0.5)');
+        drawDeskButton(RED_BUTTON, chaosOn, ['rgb(96,56,28)', 'rgb(44,24,12)'], ['rgb(240,170,90)', 'rgb(190,96,24)'], 'rgba(255,150,60,0.5)');
     }
 
     // An inline rocker switch on the desk lamp's cord, lying on the desk top
@@ -1402,36 +1402,43 @@
     }
 
     function drawXmasButton() {
-        drawDeskButton(XMAS_BUTTON, xmasOn, ['rgb(120,40,36)', 'rgb(52,16,16)'], ['rgb(255,120,110)', 'rgb(200,30,30)'], 'rgba(255,90,80,0.5)');
+        drawDeskButton(XMAS_BUTTON, xmasOn, ['rgb(92,34,32)', 'rgb(40,14,14)'], ['rgb(235,110,100)', 'rgb(170,30,30)'], 'rgba(255,90,80,0.5)');
     }
 
-    // A small round push button set into the desk's front edge: a brushed brass rim around a
-    // coloured cap that brightens and glows when on
+    // A small flush push button set into the desk's front face: a dark bronze bezel around a deep
+    // enamel centre, tilted to sit along the desk's perspective. It only warms up when on.
+    const DESK_TILT = Math.atan(0.1);   // the front edge drops about 1px for every 10px to the right
     function drawDeskButton({ x, y }, on, offCap, onCap, glowCol) {
         const c = sctx;
         c.save();
+        c.translate(x, y);
+        c.rotate(DESK_TILT);
         if (on) {
-            const glow = c.createRadialGradient(x, y, 0, x, y, 9);
-            glow.addColorStop(0, glowCol);
+            const glow = c.createRadialGradient(0, 0, 0, 0, 0, 7);
+            glow.addColorStop(0, glowCol.replace(/[\d.]+\)$/, '0.3)'));
             glow.addColorStop(1, glowCol.replace(/[\d.]+\)$/, '0)'));
             c.fillStyle = glow;
-            c.fillRect(x - 9, y - 9, 18, 18);
+            c.fillRect(-7, -7, 14, 14);
         }
-        const rim = c.createLinearGradient(0, y - 3, 0, y + 3);
-        rim.addColorStop(0, 'rgb(170,140,90)');
-        rim.addColorStop(1, 'rgb(90,70,40)');
-        c.fillStyle = rim;
-        c.beginPath();
-        c.ellipse(x, y, 4, 3.2, 0, 0, 6.283);
-        c.fill();
+        // recess shadow, then a satin bronze bezel with a fine highlight on its upper lip
+        c.fillStyle = 'rgba(0,0,0,0.55)';
+        c.beginPath(); c.ellipse(0, 0.3, 3.3, 3, 0, 0, 6.283); c.fill();
+        const bezel = c.createLinearGradient(0, -3, 0, 3);
+        bezel.addColorStop(0, 'rgb(118,96,66)');
+        bezel.addColorStop(0.5, 'rgb(72,58,40)');
+        bezel.addColorStop(1, 'rgb(40,32,24)');
+        c.fillStyle = bezel;
+        c.beginPath(); c.ellipse(0, 0, 3, 2.7, 0, 0, 6.283); c.fill();
+        c.strokeStyle = 'rgba(220,190,140,0.25)';
+        c.lineWidth = 0.25;
+        c.beginPath(); c.ellipse(0, 0, 2.9, 2.6, 0, Math.PI * 1.1, Math.PI * 1.9); c.stroke();
+        // the enamel centre, slightly dished
         const [c0, c1] = on ? onCap : offCap;
-        const cap = c.createRadialGradient(x - 0.7, y - 0.8, 0.2, x, y, 2.2);
+        const cap = c.createRadialGradient(-0.5, -0.6, 0.1, 0, 0, 1.9);
         cap.addColorStop(0, c0);
         cap.addColorStop(1, c1);
         c.fillStyle = cap;
-        c.beginPath();
-        c.ellipse(x, y + (on ? 0.3 : 0), 2.8, 2.3, 0, 0, 6.283);
-        c.fill();
+        c.beginPath(); c.ellipse(0, 0.1, 1.9, 1.7, 0, 0, 6.283); c.fill();
         c.restore();
     }
 
