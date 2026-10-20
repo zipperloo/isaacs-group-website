@@ -2266,7 +2266,7 @@
     const SKY_CLOUDS = Array.from({ length: 14 }, (_, i) => ({
         y: 20 + hash(i * 3.3) * 200, start: -260 - hash(i * 5.7) * 900, r: 90 + hash(i * 2.1) * 110, sp: 9 + hash(i * 7.9) * 6
     }));
-    const WATER_MIST = Array.from({ length: 14 }, (_, i) => ({
+    const WATER_MIST = Array.from({ length: 28 }, (_, i) => ({
         lake: i % 2 === 0, x: hash(i * 4.1), y: hash(i * 6.3), r: 30 + hash(i * 1.7) * 40, sp: 3 + hash(i * 8.3) * 4
     }));
     const bats = [];
@@ -2286,10 +2286,15 @@
     });
     // Drifting smoke and haze, low over the land
     // Banks of pale fog, grouped so there are clear gaps between them
-    const HAZE = Array.from({ length: 30 }, (_, i) => {
-        const bank = i % 5;
-        return { x: bank * 380 + hash(i * 4.4) * 160, y: 330 + hash(i * 6.6) * 200, r: 70 + hash(i * 1.9) * 80, sp: 4 + (bank % 3) * 2 };
+    const HAZE = Array.from({ length: 60 }, (_, i) => {
+        const bank = i % 6;
+        return { x: bank * 320 + hash(i * 4.4) * 180, y: 300 + hash(i * 6.6) * 260, r: 80 + hash(i * 1.9) * 110, sp: 3 + (bank % 3) * 2.5 };
     });
+    // Low ground fog creeping across the terrace and the floor of the room
+    const GROUND_FOG = Array.from({ length: 22 }, (_, i) => ({ x: hash(i * 2.2) * IMG_W, y: 560 + hash(i * 3.9) * 360, r: 120 + hash(i * 5.5) * 140, sp: 2 + hash(i * 7.1) * 4 }));
+    // A swarm of bats that gathers and wheels around now and then
+    const swarm = { active: false, next: 4, born: 0, cx: 0, cy: 0, bats: [] };
+    let flash = 0, nextFlash = 6;
     // A skull on the bar top above the aquarium
     const SKULL = [1188, 549, 6];
     // Faint cobwebs strung between the columns and frames: anchor A, anchor B, sag
@@ -2325,7 +2330,18 @@
         const before = chaos;
         chaos = chaosOn ? Math.min(1, chaos + dt / 2) : Math.max(0, chaos - dt / 2);   // 2-second fade, like the painting
         if (chaos !== before) drawLaptop();   // the laptop screen and climber overlays fade with it
-        if (!chaosOn) { if (chaos === 0) { bats.length = 0; witch.active = false; witch.next = 3; } return; }
+        if (!chaosOn) { if (chaos === 0) { bats.length = 0; witch.active = false; witch.next = 3; swarm.active = false; swarm.next = 4; nextFlash = 6; } return; }
+        // a swarm forms, wheels around for a while, then scatters
+        const sw = swarm;
+        if (!sw.active && t - spookSince >= sw.next) {
+            const spots = [[533, 120], [900, 250], [1400, 200], [300, 200]];
+            const [cx, cy] = spots[Math.floor(Math.random() * spots.length)];
+            Object.assign(sw, { active: true, born: t, cx, cy, life: 14 + Math.random() * 8,
+                bats: Array.from({ length: LITE ? 45 : 90 }, () => ({ a: Math.random() * 6.283, r: 20 + Math.random() * 90, w: (0.6 + Math.random() * 1.2) * (Math.random() < 0.5 ? 1 : -1), h: 0.35 + Math.random() * 0.4, ph: Math.random() * 6, s: 1.5 + Math.random() * 1.2 })) });
+        }
+        if (sw.active && t - sw.born > sw.life) { sw.active = false; sw.next = t - spookSince + 10 + Math.random() * 10; }
+        if (t - spookSince >= nextFlash) { flash = 1; nextFlash = t - spookSince + 9 + Math.random() * 14; }
+        flash = Math.max(0, flash - dt * 2.2);
         if (!witch.active && t - spookSince >= witch.next) Object.assign(witch, { active: true, born: t, dur: 9 });
         if (witch.active && t - witch.born > witch.dur) { witch.active = false; witch.next = t - spookSince + 14 + Math.random() * 14; }
         if (t >= nextBat && bats.length < 70) {
@@ -2333,7 +2349,7 @@
             const n = 3 + Math.floor(Math.random() * 6);
             const y = 30 + Math.random() * 200;
             for (let i = 0; i < n; i++) bats.push({ x: ltr ? -10 - i * 10 : IMG_W + 10 + i * 10, y: y + (Math.random() - 0.5) * 24, vx: (ltr ? 1 : -1) * (35 + Math.random() * 20), ph: Math.random() * 6, s: 1.1 + Math.random() * 0.7 });
-            nextBat = t + 0.4 + Math.random() * 1.0;
+            nextBat = t + 0.25 + Math.random() * 0.6;
         }
         for (let i = bats.length - 1; i >= 0; i--) {
             const b = bats[i];
@@ -2358,6 +2374,43 @@
         if (!chaos) return;
         const e = chaos * chaos * (3 - 2 * chaos);
         ctx.save();
+
+        // A skeleton half-buried on the seabed, pale and out of focus, with a bubble now and then
+        if (inView(1250, 1400)) {
+            ctx.save();
+            ctx.clip(fishClip, 'evenodd');
+            if (!LITE) ctx.filter = `blur(${(0.7 * k).toFixed(2)}px)`;
+            ctx.translate(1336, 782);
+            ctx.scale(1.7, 1.7);
+            ctx.rotate(-0.12);
+            ctx.globalAlpha = 0.8 * e;
+            ctx.fillStyle = 'rgb(214,218,206)';
+            ctx.strokeStyle = 'rgb(214,218,206)';
+            ctx.lineCap = 'round';
+            ctx.beginPath(); ctx.ellipse(-16, -2, 3.4, 2.9, -0.2, 0, 6.283); ctx.fill();          // skull
+            ctx.fillStyle = 'rgba(20,40,60,0.9)';
+            ctx.beginPath(); ctx.arc(-17.4, -2.6, 0.75, 0, 6.283); ctx.arc(-15.2, -2.9, 0.75, 0, 6.283); ctx.fill();
+            ctx.lineWidth = 0.7;
+            ctx.beginPath(); ctx.moveTo(-12.5, -1); ctx.lineTo(2, 0.5); ctx.stroke();               // spine
+            ctx.lineWidth = 0.55;
+            for (let r = 0; r < 5; r++) {                                                             // ribs
+                const x = -10 + r * 1.8;
+                ctx.beginPath(); ctx.ellipse(x, -0.6, 0.9, 2.6 - r * 0.25, 0.1, 0.4, 5.9); ctx.stroke();
+            }
+            ctx.beginPath(); ctx.moveTo(2, 0.5); ctx.lineTo(9, -1.5); ctx.lineTo(14, 1); ctx.moveTo(2, 0.5); ctx.lineTo(8, 2.5); ctx.lineTo(13, 3.2); ctx.stroke();   // legs
+            ctx.beginPath(); ctx.moveTo(-10, -1.5); ctx.lineTo(-6, -5.5); ctx.lineTo(-2.5, -4.2); ctx.stroke();   // an arm reaching up
+            ctx.restore();
+            const bph = (t * 0.25) % 1;
+            if (bph < 0.6) {
+                ctx.save();
+                ctx.clip(fishClip, 'evenodd');
+                ctx.globalAlpha = 0.5 * e * (1 - bph / 0.6);
+                ctx.strokeStyle = 'rgb(225,245,255)';
+                ctx.lineWidth = 0.4;
+                ctx.beginPath(); ctx.arc(1320 + Math.sin(t * 3) * 1.5, 778 - bph * 120, 1.2, 0, 6.283); ctx.stroke();
+                ctx.restore();
+            }
+        }
 
         // A shark gliding slowly through the back of the tank, behind the divers
         if (inView(1250, IMG_W)) {
@@ -2413,7 +2466,7 @@
             ctx.save();
             ctx.translate(x, h.y);
             ctx.scale(1, 0.32);
-            drawSprite(mistSprite, 0, 0, h.r * 2, 0.24 * e);
+            drawSprite(mistSprite, 0, 0, h.r * 2, 0.3 * e);
             ctx.restore();
         });
 
@@ -2430,7 +2483,7 @@
                 ctx.save();
                 ctx.translate(x, y);
                 ctx.scale(1, 0.35);
-                drawSprite(mistSprite, 0, 0, m.r * 2, 0.3 * e);
+                drawSprite(mistSprite, 0, 0, m.r * 2, 0.4 * e);
                 ctx.restore();
             });
             ctx.restore();
@@ -2464,10 +2517,39 @@
             ctx.restore();
         }
 
+        // Distant lightning: the sky blinks pale for a moment
+        if (flash > 0) {
+            ctx.globalCompositeOperation = 'lighter';
+            ctx.globalAlpha = 0.22 * flash * e * (Math.random() < 0.6 ? 1 : 0.3);
+            ctx.fillStyle = 'rgb(190,200,235)';
+            ctx.fillRect(0, 0, IMG_W, 330);
+        }
+
         // Bats
         ctx.globalCompositeOperation = 'source-over';
         ctx.globalAlpha = 0.85 * e;
         ctx.fillStyle = 'rgb(12,10,16)';
+        // the swarm wheeling around its centre, gathering in and scattering out
+        if (swarm.active) {
+            const age = t - swarm.born, life = swarm.life;
+            const gather = Math.min(1, age / 2.5) * Math.min(1, (life - age) / 2.5);
+            swarm.bats.forEach(b => {
+                const ang = b.a + t * b.w;
+                const rr = b.r * (0.4 + 0.6 * gather) + (1 - gather) * 300;
+                const bx = swarm.cx + Math.cos(ang) * rr + Math.sin(t * 2 + b.ph) * 6;
+                const by = swarm.cy + Math.sin(ang) * rr * b.h + Math.cos(t * 3 + b.ph) * 4;
+                if (bx < view.x0 || bx > view.x1) return;
+                const f = Math.sin(t * 18 + b.ph), s2 = b.s;
+                ctx.beginPath();
+                ctx.moveTo(bx, by);
+                ctx.quadraticCurveTo(bx - s2 * 0.6, by - s2 * 0.8 * f, bx - s2 * 1.6, by - s2 * 0.3 * f);
+                ctx.lineTo(bx - s2 * 0.3, by + s2 * 0.3);
+                ctx.lineTo(bx + s2 * 0.3, by + s2 * 0.3);
+                ctx.lineTo(bx + s2 * 1.6, by - s2 * 0.3 * f);
+                ctx.quadraticCurveTo(bx + s2 * 0.6, by - s2 * 0.8 * f, bx, by);
+                ctx.fill();
+            });
+        }
         bats.forEach(b => {
             if (b.x < view.x0 || b.x > view.x1) return;
             const f = Math.sin(t * 16 + b.ph);
@@ -2482,6 +2564,17 @@
             ctx.fill();
         });
         ctx.restore();
+
+        // Ground fog creeping across the terrace and the floor
+        ctx.globalCompositeOperation = 'source-over';
+        GROUND_FOG.forEach(g => {
+            const x = ((g.x + t * g.sp) % (IMG_W + 400)) - 200;
+            ctx.save();
+            ctx.translate(x, g.y);
+            ctx.scale(1, 0.22);
+            drawSprite(mistSprite, 0, 0, g.r * 2, 0.22 * e);
+            ctx.restore();
+        });
 
         // The pumpkins and fires flickering
         ctx.globalCompositeOperation = 'lighter';
