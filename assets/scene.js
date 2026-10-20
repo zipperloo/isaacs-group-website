@@ -1349,15 +1349,15 @@
         c.fill();
         if (on) {
             const glow = c.createRadialGradient(x, y, 0, x, y, 11);
-            glow.addColorStop(0, 'rgba(255,40,20,0.5)');
-            glow.addColorStop(1, 'rgba(255,40,20,0)');
+            glow.addColorStop(0, 'rgba(255,120,30,0.5)');
+            glow.addColorStop(1, 'rgba(255,120,30,0)');
             c.fillStyle = glow;
             c.fillRect(x - 11, y - 11, 22, 22);
         }
         // the cap, hanging down as a shallow dome, lit faintly from the room below
         const g = c.createLinearGradient(0, y - 1.4, 0, y + 1.8);
-        g.addColorStop(0, on ? 'rgb(200,20,10)' : 'rgb(40,14,14)');
-        g.addColorStop(1, on ? 'rgb(255,110,90)' : 'rgb(82,32,30)');
+        g.addColorStop(0, on ? 'rgb(200,70,10)' : 'rgb(40,14,14)');
+        g.addColorStop(1, on ? 'rgb(255,160,70)' : 'rgb(82,32,30)');
         c.fillStyle = g;
         c.beginPath();
         c.ellipse(x, y - 1.2, 3, 0.9, 0, 0, Math.PI);
@@ -2250,170 +2250,214 @@
         ctx.restore();
     }
 
-    /* ---------- the red button: chaos ---------- */
+    /* ---------- the red button: Halloween ---------- */
 
-    // Pressing the button sets the scene alight in stages: the city first, then the hills and
-    // village, then everything. Pressing it again lets it all settle back to normal.
-    const CHAOS_RISE = 32;   // seconds to total chaos
-    const CHAOS_FALL = 5;    // seconds to return to calm
-    const CHAOS_MAX = 10 / CHAOS_RISE;   // the fire stops spreading after 10 seconds
-    let chaos = 0;           // 0 calm .. 1 total chaos
+    // Pressing the button turns the evening spooky: a cold moonlit cast, a big full moon,
+    // bats, creeping mist, flickering jack-o'-lanterns, eyes in the trees and the odd ghost
+    // drifting over the lake. Pressing it again lets everything settle back to normal.
+    const SPOOK_RISE = 8;    // seconds to fully spooky
+    const SPOOK_FALL = 5;    // seconds back to normal
+    let chaos = 0;           // 0 normal .. 1 fully spooky
 
-    // Fire sources: x, y, size, the chaos level at which each one catches
-    const FIRES = (() => {
-        const f = [];
-        // city skyline: catches first, building by building
-        CITY_LIGHTS.filter(([, y]) => y < 345).forEach(([x, y], i) => {
-            if (i % 3 === 0) f.push([x, y - 4, 14 + hash(i) * 10, 0.04 + hash(i + 7) * 0.4]);
-        });
-        // then it spreads across the land outside (never on water, never inside the room).
-        // Regions: x0, y0, x1, y1, size, catch from, catch to, count
-        const LAND = [
-            [350, 362, 700, 380, 16, 0.25, 0.55, 7],     // far shore treeline
-            [420, 425, 700, 472, 22, 0.3, 0.6, 8],      // village
-            [90, 385, 380, 470, 32, 0.45, 0.8, 8],      // desert palms
-            [1000, 340, 1300, 450, 26, 0.35, 0.7, 8],   // Thai huts
-            [1380, 290, 1600, 335, 20, 0.4, 0.7, 6],     // hills behind the bay
-            [1500, 195, 1672, 245, 22, 0.45, 0.7, 4],    // the chalet and terrace
-            [1440, 420, 1560, 520, 32, 0.55, 0.85, 5],   // the bridge and jungle
-            [860, 300, 990, 410, 26, 0.5, 0.8, 4]        // the rock
-        ];
-        LAND.forEach(([x0, y0, x1, y1, size, from, to, n], r) => {
-            for (let i = 0; i < n; i++) {
-                const q = r * 31 + i;
-                const x = x0 + hash(q * 5.1) * (x1 - x0);
-                const y = y0 + hash(q * 9.7) * (y1 - y0);
-                f.push([x, y, size * (0.7 + 0.6 * hash(q * 2.3)), from + hash(q * 4.4) * (to - from)]);
-            }
-        });
-        return f;
-    })();
+    const MOON = [640, 100, 40];
+    const PUMPKINS = [[290, 556, 11], [318, 560, 8], [470, 572, 10], [492, 576, 7], [560, 552, 7], [1205, 452, 7],
+        [1150, 458, 6], [1560, 508, 9], [1622, 515, 10], [1540, 250, 5], [1600, 238, 5], [95, 560, 12]];
+    // Cobwebs in the window corners: corner x, y, size, direction
+    const WEBS = [[938, 2, 46, -1], [1132, 104, 40, 1], [62, 2, 40, 1]];
+    const EYES = [[905, 352], [1005, 300], [1325, 382], [160, 470], [1418, 462], [868, 470], [1080, 210], [250, 520]];
+    const MIST = Array.from({ length: 26 }, (_, i) => ({
+        y: 370 + hash(i * 3.3) * 170, x: hash(i * 5.7) * IMG_W, r: 55 + hash(i * 2.1) * 70, sp: 4 + hash(i * 7.9) * 6
+    }));
+    const bats = [];
+    let nextBat = 0;
+    const ghost = { active: false, next: 6 };
 
-    const smoke = [];
-    const ash = [];
-    let flash = 0;
-    let nextBoom = 0;
-    const smokeSprite = (() => {
+    const mistSprite = (() => {
         const c = document.createElement('canvas');
         c.width = c.height = 64;
         const x = c.getContext('2d');
         const g = x.createRadialGradient(32, 32, 0, 32, 32, 32);
-        g.addColorStop(0, 'rgba(70,50,42,1)');
-        g.addColorStop(0.5, 'rgba(62,44,38,0.5)');
-        g.addColorStop(1, 'rgba(55,40,35,0)');
+        g.addColorStop(0, 'rgba(190,200,215,1)');
+        g.addColorStop(0.6, 'rgba(190,200,215,0.35)');
+        g.addColorStop(1, 'rgba(190,200,215,0)');
         x.fillStyle = g;
         x.fillRect(0, 0, 64, 64);
         return c;
     })();
 
-    function fireLevel(threshold) {
-        return Math.max(0, Math.min(1, (chaos - threshold) / 0.12));
-    }
-
     function updateChaos(t, dt) {
-        // it builds for 10 seconds and then holds there, rather than running on to total chaos
-        chaos = chaosOn ? Math.min(CHAOS_MAX, chaos + dt / CHAOS_RISE) : Math.max(0, chaos - dt / CHAOS_FALL);
-        if (chaos <= 0 && !smoke.length && !ash.length) return;
-        const smokeCap = LITE ? 90 : 240;
-        FIRES.forEach(([x, y, size, th]) => {
-            const lv = fireLevel(th);
-            if (lv > 0 && smoke.length < smokeCap && Math.random() < dt * 2.5 * lv) {
-                smoke.push({ x: x + (Math.random() - 0.5) * size * 0.6, y: y - size * 1.2, r: size * 1.1, vy: -(8 + Math.random() * 10), vx: 3 + Math.random() * 5, born: t, life: 7 + Math.random() * 6 });
-            }
-        });
-        const ashCap = LITE ? 60 : 140;
-        if (chaos > 0.2 && ash.length < ashCap && Math.random() < dt * 60 * chaos) {
-            ash.push({ x: Math.random() * IMG_W, y: Math.random() * IMG_H * 0.9, vx: 4 + Math.random() * 8, vy: -(3 + Math.random() * 10), born: t, life: 3 + Math.random() * 4, hot: Math.random() < 0.6 });
+        chaos = chaosOn ? Math.min(1, chaos + dt / SPOOK_RISE) : Math.max(0, chaos - dt / SPOOK_FALL);
+        if (chaos <= 0 && !bats.length) return;
+        MIST.forEach(m => { m.x += m.sp * dt; if (m.x > IMG_W + 80) m.x = -80; });
+        if (chaos > 0.3 && chaosOn && t >= nextBat && bats.length < 22) {
+            const ltr = Math.random() < 0.5;
+            const n = 2 + Math.floor(Math.random() * 4);
+            const y = 50 + Math.random() * 200;
+            for (let i = 0; i < n; i++) bats.push({ x: ltr ? -10 - i * 12 : IMG_W + 10 + i * 12, y: y + (Math.random() - 0.5) * 30, vx: (ltr ? 1 : -1) * (40 + Math.random() * 25), ph: Math.random() * 6, s: 2.2 + Math.random() * 1.6 });
+            nextBat = t + 1.2 + Math.random() * 2.5;
         }
-        if (chaos > 0.6 && chaosOn && t >= nextBoom) {
-            const src = FIRES[Math.floor(Math.random() * FIRES.length)];
-            if (fireLevel(src[3]) > 0.5) {
-                flash = 1;
-                for (let i = 0; i < 25; i++) ash.push({ x: src[0], y: src[1], vx: (Math.random() - 0.5) * 60, vy: -(10 + Math.random() * 50), born: t, life: 1.5 + Math.random() * 2, hot: true });
-            }
-            nextBoom = t + 1.5 + Math.random() * 4;
+        for (let i = bats.length - 1; i >= 0; i--) {
+            const b = bats[i];
+            b.x += b.vx * dt;
+            b.y += Math.sin(t * 3 + b.ph) * 18 * dt;   // the erratic, fluttering flight of a bat
+            if (b.x < -40 || b.x > IMG_W + 40) bats.splice(i, 1);
         }
-        flash = Math.max(0, flash - dt * 2.5);
-        for (let i = smoke.length - 1; i >= 0; i--) {
-            const p = smoke[i];
-            p.x += p.vx * dt; p.y += p.vy * dt; p.r += dt * 9;
-            if (t - p.born > p.life) smoke.splice(i, 1);
+        const g = ghost;
+        if (!g.active && chaos > 0.8 && chaosOn && t >= g.next) {
+            Object.assign(g, { active: true, born: t, life: 12, x: 640 + Math.random() * 120, y: 405 });
         }
-        for (let i = ash.length - 1; i >= 0; i--) {
-            const p = ash[i];
-            p.vy += 6 * dt; p.x += p.vx * dt; p.y += p.vy * dt;
-            if (t - p.born > p.life) ash.splice(i, 1);
-        }
+        if (g.active && t - g.born > g.life) { g.active = false; g.next = t + 10 + Math.random() * 12; }
     }
 
     function drawChaos(t) {
-        if (chaos <= 0 && !smoke.length && !ash.length) return;
+        if (chaos <= 0 && !bats.length) return;
         const e = chaos * chaos * (3 - 2 * chaos);
         ctx.save();
-        // A burning sky and a red cast over everything
+
+        // A cold, moonlit purple cast, deepest in the sky
         ctx.globalCompositeOperation = 'source-over';
         const sky = ctx.createLinearGradient(0, 0, 0, IMG_H);
-        const pulse = 0.9 + 0.1 * noise(t * 1.5);
-        sky.addColorStop(0, `rgba(110,28,10,${(0.6 * e * pulse).toFixed(3)})`);
-        sky.addColorStop(0.3, `rgba(190,55,15,${(0.5 * e * pulse).toFixed(3)})`);
-        sky.addColorStop(0.55, `rgba(150,40,10,${(0.35 * e).toFixed(3)})`);
-        sky.addColorStop(1, `rgba(50,8,4,${(0.3 * e).toFixed(3)})`);
+        sky.addColorStop(0, `rgba(22,10,44,${(0.8 * e).toFixed(3)})`);
+        sky.addColorStop(0.35, `rgba(30,18,58,${(0.62 * e).toFixed(3)})`);
+        sky.addColorStop(0.6, `rgba(20,26,44,${(0.5 * e).toFixed(3)})`);
+        sky.addColorStop(1, `rgba(10,8,20,${(0.42 * e).toFixed(3)})`);
         ctx.fillStyle = sky;
         ctx.fillRect(0, 0, IMG_W, IMG_H);
 
-        // Smoke, drawn first so the flames show through it
-        smoke.forEach(p => {
-            const life = (t - p.born) / p.life;
-            drawSprite(smokeSprite, p.x, p.y, p.r * 2, 0.5 * Math.sin(life * Math.PI) * Math.max(0.35, e));
+        ctx.save();
+        ctx.clip(OUTSIDE);
+
+        // The full moon with a pale halo
+        const [mx, my, mr] = MOON;
+        if (inView(mx - 80, mx + 80)) {
+            ctx.globalCompositeOperation = 'lighter';
+            const halo = ctx.createRadialGradient(mx, my, mr * 0.8, mx, my, mr * 4);
+            halo.addColorStop(0, `rgba(200,210,235,${(0.35 * e).toFixed(3)})`);
+            halo.addColorStop(1, 'rgba(200,210,235,0)');
+            ctx.globalAlpha = 1;
+            ctx.fillStyle = halo;
+            ctx.fillRect(mx - mr * 4, my - mr * 4, mr * 8, mr * 8);
+            ctx.globalCompositeOperation = 'source-over';
+            const disc = ctx.createRadialGradient(mx - mr * 0.3, my - mr * 0.3, mr * 0.2, mx, my, mr);
+            disc.addColorStop(0, 'rgb(250,246,228)');
+            disc.addColorStop(1, 'rgb(214,210,196)');
+            ctx.globalAlpha = 0.95 * e;
+            ctx.fillStyle = disc;
+            ctx.beginPath();
+            ctx.arc(mx, my, mr, 0, 6.283);
+            ctx.fill();
+            // soft grey maria on its face
+            ctx.fillStyle = 'rgba(170,168,158,0.22)';
+            [[-0.35, -0.05, 0.3], [-0.1, -0.35, 0.18], [0.3, 0.25, 0.26], [0.05, 0.05, 0.14], [0.45, -0.25, 0.12]].forEach(([dx, dy, r]) => {
+                ctx.beginPath();
+                ctx.arc(mx + dx * mr, my + dy * mr, r * mr, 0, 6.283);
+                ctx.fill();
+            });
+        }
+
+        // Creeping mist over the land and water
+        MIST.forEach(m => drawSprite(mistSprite, m.x, m.y, m.r * 2, 0.26 * e));
+
+        // A ghost drifting slowly over the lake
+        const g = ghost;
+        if (g.active) {
+            const life = (t - g.born) / g.life;
+            const gx = g.x + life * 60 + Math.sin(t * 0.8) * 4;
+            const gy = g.y - Math.sin(t * 1.3) * 3;
+            ctx.globalAlpha = 0.32 * Math.sin(life * Math.PI) * e;
+            ctx.fillStyle = 'rgb(225,232,240)';
+            ctx.beginPath();
+            ctx.moveTo(gx - 4, gy + 6);
+            ctx.quadraticCurveTo(gx - 4.5, gy - 7, gx, gy - 8);
+            ctx.quadraticCurveTo(gx + 4.5, gy - 7, gx + 4, gy + 6);
+            for (let k = 0; k < 4; k++) ctx.quadraticCurveTo(gx + 3 - k * 2, gy + 8 + (k % 2) * 1.5, gx + 2 - k * 2, gy + 6);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = 'rgba(20,20,30,0.8)';
+            ctx.beginPath();
+            ctx.arc(gx - 1.4, gy - 3.5, 0.7, 0, 6.283);
+            ctx.arc(gx + 1.4, gy - 3.5, 0.7, 0, 6.283);
+            ctx.fill();
+        }
+
+        // Eyes blinking in the dark trees
+        ctx.globalCompositeOperation = 'lighter';
+        EYES.forEach(([x, y], i) => {
+            const open = noise(t * 0.4 + i * 5) > 0.45 && (t * 1.7 + i) % 4 > 0.15;   // open, with blinks
+            if (!open) return;
+            const a = 0.8 * e * ramp(chaos, 0.3 + (i % 4) * 0.1, 0.6 + (i % 4) * 0.1);
+            drawSprite(SPRITES.warm, x - 1.2, y, 2.2, a);
+            drawSprite(SPRITES.warm, x + 1.2, y, 2.2, a);
+        });
+        ctx.restore();
+
+        // Jack-o'-lanterns flickering on the terrace, the huts and the bridge
+        PUMPKINS.forEach(([x, y, r], i) => {
+            const lv = e * ramp(chaos, 0.15 + (i % 4) * 0.12, 0.45 + (i % 4) * 0.12);
+            if (lv <= 0 || x + r * 3 < view.x0 || x - r * 3 > view.x1) return;
+            const fl = 0.7 + 0.3 * flicker(t, i + 60);
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.globalAlpha = lv;
+            ctx.fillStyle = 'rgb(150,70,18)';
+            ctx.beginPath();
+            ctx.ellipse(x, y - r * 0.55, r * 0.75, r * 0.55, 0, 0, 6.283);
+            ctx.fill();
+            ctx.fillStyle = 'rgb(60,70,30)';
+            ctx.fillRect(x - r * 0.08, y - r * 1.2, r * 0.16, r * 0.25);
+            // the carved face glowing from within
+            ctx.fillStyle = `rgba(255,${180 + 50 * fl | 0},70,${(0.95 * fl).toFixed(3)})`;
+            ctx.beginPath();
+            ctx.moveTo(x - r * 0.4, y - r * 0.75); ctx.lineTo(x - r * 0.2, y - r * 0.75); ctx.lineTo(x - r * 0.3, y - r * 0.92); ctx.closePath();
+            ctx.moveTo(x + r * 0.2, y - r * 0.75); ctx.lineTo(x + r * 0.4, y - r * 0.75); ctx.lineTo(x + r * 0.3, y - r * 0.92); ctx.closePath();
+            ctx.fill();
+            ctx.fillRect(x - r * 0.38, y - r * 0.5, r * 0.76, r * 0.14);
+            ctx.globalCompositeOperation = 'lighter';
+            drawSprite(SPRITES.fire, x, y - r * 0.5, r * 6, 0.4 * lv * fl);
         });
 
-        // Flames: each fire is a stream of soft, rising sparks of heat that shrink and cool
-        // from white-yellow at the base to orange and dull red as they lift
-        ctx.globalCompositeOperation = 'lighter';
-        const N = LITE ? 7 : 12;
-        FIRES.forEach(([x, y, size, th], i) => {
-            const lv = fireLevel(th);
-            if (lv <= 0 || x + size * 2 < view.x0 || x - size * 2 > view.x1) return;
-            drawSprite(SPRITES.fire, x, y - size * 0.5, size * 4.5, 0.2 * lv);   // light thrown on the surroundings
-            // the bed of burning embers the flames rise from
-            ctx.save();
-            ctx.translate(x, y);
-            ctx.scale(1, 0.4);
-            drawSprite(SPRITES.warm, 0, 0, size * 1.8, 0.45 * lv * (0.8 + 0.2 * noise(t * 6 + i)));
-            ctx.restore();
-            const h = size * (2.6 + 0.9 * noise(t * 0.7 + i)) * lv;
-            const rate = 1.1 + hash(i) * 0.6;
-            for (let k = 0; k < N; k++) {
-                const ph = (t * rate + k / N + hash(i * 3 + k)) % 1;
-                const wob = Math.sin(ph * 6 + t * 3 + i + k) * size * 0.18 * ph;
-                const spread = (hash(i * 7 + k) - 0.5) * size * 0.9 * (1 - ph * 0.6);
-                const px = x + spread + wob;
-                const py = y - ph * h;
-                const r = size * (1.05 - ph * 0.6);
-                const a = lv * Math.pow(1 - ph, 1.3);
-                ctx.globalAlpha = Math.min(1, a * 0.8);
-                ctx.drawImage(SPRITES.fire, px - r * 0.38, py - r * 0.65, r * 0.76, r * 1.3);   // tall, like a lick of flame
-                if (ph < 0.35) {
-                    const c = r * 0.6;
-                    ctx.globalAlpha = Math.min(1, a * 0.7);
-                    ctx.drawImage(SPRITES.warm, px - c * 0.35, py - c * 0.6, c * 0.7, c * 1.2);
+        // Cobwebs in the window corners
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.strokeStyle = 'rgb(205,210,220)';
+        ctx.lineWidth = 0.35;
+        WEBS.forEach(([cx, cy, sz, dir]) => {
+            if (!inView(cx - sz, cx + sz)) return;
+            ctx.globalAlpha = 0.45 * e;
+            const spokes = 6;
+            ctx.beginPath();
+            for (let k = 0; k <= spokes; k++) {
+                const ang = (k / spokes) * Math.PI / 2;
+                ctx.moveTo(cx, cy);
+                ctx.lineTo(cx + dir * Math.sin(ang) * sz, cy + Math.cos(ang) * sz);
+            }
+            for (let ring = 1; ring <= 5; ring++) {
+                const rr = (ring / 5) * sz * 0.95;
+                for (let k = 0; k <= spokes; k++) {
+                    const ang = (k / spokes) * Math.PI / 2;
+                    const sag = k > 0 && k < spokes ? 0.9 : 1;
+                    const px = cx + dir * Math.sin(ang) * rr * sag, py = cy + Math.cos(ang) * rr * sag;
+                    k ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
                 }
             }
+            ctx.stroke();
         });
 
-        // Embers and ash
-        ash.forEach(p => {
-            const life = (t - p.born) / p.life;
-            drawSprite(p.hot ? SPRITES.fire : SPRITES.white, p.x, p.y, p.hot ? 2.4 : 1.6, (p.hot ? 0.9 : 0.25) * (1 - life));
+        // Bats
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.globalAlpha = 0.9;
+        ctx.fillStyle = 'rgb(14,10,14)';
+        bats.forEach(b => {
+            if (b.x < view.x0 || b.x > view.x1) return;
+            const f = Math.sin(t * 16 + b.ph);
+            const s = b.s;
+            ctx.beginPath();
+            ctx.moveTo(b.x, b.y);
+            ctx.quadraticCurveTo(b.x - s * 0.6, b.y - s * 0.8 * f, b.x - s * 1.6, b.y - s * 0.3 * f);
+            ctx.quadraticCurveTo(b.x - s * 0.9, b.y + s * 0.15, b.x - s * 0.3, b.y + s * 0.35);
+            ctx.lineTo(b.x + s * 0.3, b.y + s * 0.35);
+            ctx.quadraticCurveTo(b.x + s * 0.9, b.y + s * 0.15, b.x + s * 1.6, b.y - s * 0.3 * f);
+            ctx.quadraticCurveTo(b.x + s * 0.6, b.y - s * 0.8 * f, b.x, b.y);
+            ctx.fill();
         });
-
-        // The flash of an explosion
-        if (flash > 0) {
-            ctx.globalCompositeOperation = 'lighter';
-            ctx.globalAlpha = 0.28 * flash;
-            ctx.fillStyle = 'rgb(255,140,60)';
-            ctx.fillRect(0, 0, IMG_W, IMG_H);
-        }
         ctx.restore();
     }
 
