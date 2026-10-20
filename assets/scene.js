@@ -19,6 +19,24 @@
     const img = document.getElementById('scene-img');
     const canvas = document.getElementById('fx');
     // The painted Halloween version of the scene, loaded only once the light switch is on
+    // The daytime painting, shown when the light switch on the column is on
+    const dayImg = document.getElementById('scene-day');
+    let dayOn = false;   // light switch: on = daylight, off = night (the default)
+    let day = 0;         // 0 night .. 1 day (2-second fade)
+    function loadDay() {
+        if (!dayImg.getAttribute('src')) {
+            dayImg.addEventListener('load', applyImages);
+            dayImg.src = 'assets/background-day.jpg';
+        }
+    }
+    // Which painting is showing: day under everything, then Halloween or Christmas on top
+    function applyImages() {
+        const dayReady = dayImg.complete && dayImg.naturalWidth;
+        dayImg.classList.toggle('on', dayOn && !!dayReady);
+        hwImg.classList.toggle('on', chaosOn);
+        xmImg.classList.toggle('on', xmasOn && !dayOn);
+        document.documentElement.classList.toggle('daytime', dayOn);
+    }
     const hwImg = document.getElementById('scene-hw');
     function loadHalloween() { if (!hwImg.getAttribute('src')) hwImg.src = 'assets/background-halloween.jpg'; }
     // ...and the painted Christmas version
@@ -136,11 +154,12 @@
     let eggsOn = false;
     let chaosOn = false;  // the red button on the desk
     const SCENE_PLATE = { x: 878, y: 650 };   // a two-rocker module set into the desk's front face
-    const RED_BUTTON = { x: 873, y: 649.5 };   // the Halloween button, beside the Christmas one on the desk's front edge
+    const RED_BUTTON = { x: 868, y: 649 };   // the Halloween button, beside the Christmas one on the desk's front edge
     let rainOn = false;   // the weather switch on the desk lamp's cord
     let xmasOn = false;   // the Christmas button on the front edge of the desk
     let xmas = 0;         // 0 normal .. 1 Christmas (2-second fade)
-    const XMAS_BUTTON = { x: 883, y: 650.5 };   // its neighbour on the front edge
+    const XMAS_BUTTON = { x: 878, y: 650 };
+    const WEATHER_BUTTON = { x: 888, y: 651 };   // the third rocker, for the rain   // its neighbour on the front edge
     const RAIN_SWITCH = { x: 470, y: 613 };   // an inline switch on the desk lamp's cord
     const CLIMBER_PATCH = [871, 289, 44, 40, 203];
     const CLIMBER_MUTE = 0.55;   // how much of the bare rock shows through the climbers
@@ -224,7 +243,9 @@
         dim: sprite(30, 22, 30)
     };
 
+    let spriteK = 1;   // a group fade for sprites, e.g. night lights fading out by day
     function drawSprite(s, x, y, size, alpha) {
+        alpha *= spriteK;
         if (alpha <= 0.002 || x + size < view.x0 || x - size > view.x1) return;
         ctx.globalAlpha = Math.min(1, alpha);
         ctx.drawImage(s, x - size / 2, y - size / 2, size, size);
@@ -336,7 +357,7 @@
             const depth = (y - r.by) / r.bh;
             const amp = r.amp[0] + (r.amp[1] - r.amp[0]) * depth;
             const dx = amp * (0.6 * Math.sin(y * r.freq + t * r.speed) + 0.4 * Math.sin(y * r.freq * 0.37 - t * r.speed * 0.66 + 1.7));
-            w.drawImage(chaos > 0.5 && hwImg.complete && hwImg.naturalWidth ? hwImg : xmas > 0.5 && xmImg.complete && xmImg.naturalWidth ? xmImg : img, r.bx, y, r.bw, 1, dx * k, (y - r.by) * k, r.bw * k, k);
+            w.drawImage(chaos > 0.5 && hwImg.complete && hwImg.naturalWidth ? hwImg : xmas * (1 - day) > 0.5 && xmImg.complete && xmImg.naturalWidth ? xmImg : day > 0.5 && dayImg.naturalWidth ? dayImg : img, r.bx, y, r.bw, 1, dx * k, (y - r.by) * k, r.bw * k, k);
         }
         w.globalCompositeOperation = 'destination-in';
         w.drawImage(r.mask, 0, 0);
@@ -490,6 +511,8 @@
 
     function drawLights(t) {
         ctx.globalCompositeOperation = 'lighter';
+        const nk = 1 - day;   // night-only lights fade out in daylight
+        spriteK = nk;
 
         // City lights glow steadily; now and then a single light goes dark, flares or flickers
         ctx.globalCompositeOperation = 'source-over';
@@ -516,7 +539,8 @@
             drawSprite(SPRITES.white, x, y, 4, 0.3 + 0.7 * n * n);
         });
 
-        // Navigation lights on the space station
+        // Navigation lights on the space station (always night up there)
+        spriteK = 1;
         NAV_LIGHTS.forEach(([x, y, colour, pattern]) => {
             let a;
             if (pattern === 'pulse') {
@@ -530,15 +554,22 @@
         });
 
         // Firelight, in the room and on the après-ski terrace
-        FIRE_GLOWS.concat(APRES_GLOWS).forEach(([x, y, radius, strength, seed]) => {
+        spriteK = 1 - 0.5 * day;   // the room's fires still flicker by day, just less strongly
+        FIRE_GLOWS.forEach(([x, y, radius, strength, seed]) => {
+            drawSprite(SPRITES.fire, x, y, radius * 2, strength * (0.45 + 0.75 * flicker(t, seed)));
+        });
+        spriteK = nk;
+        APRES_GLOWS.forEach(([x, y, radius, strength, seed]) => {
             drawSprite(SPRITES.fire, x, y, radius * 2, strength * (0.45 + 0.75 * flicker(t, seed)));
         });
 
         drawEmbers(t);
-        drawPartyLights(t);
+        if (day < 0.5) drawPartyLights(t);
         drawHutLights(t);
         drawPlane(t);
         drawLanterns(t);
+        spriteK = 1;
+        if (day > 0) drawDaytime(t);
 
         ctx.globalCompositeOperation = 'source-over';
         ctx.globalAlpha = 1;
@@ -1269,7 +1300,7 @@
         const h = laptopImg.naturalHeight;
         const map = homography(LAPTOP);
         const N = 8;
-        sctx.globalAlpha = 0.88 * (1 - Math.max(chaos, xmas));
+        sctx.globalAlpha = 0.88 * (1 - Math.max(chaos, xmas * (1 - day)));
         for (let i = 0; i < N; i++) {
             for (let j = 0; j < N; j++) {
                 const u0 = i / N, u1 = (i + 1) / N, v0 = j / N, v1 = (j + 1) / N;
@@ -1285,7 +1316,7 @@
         g.addColorStop(0.15, 'rgba(255,255,255,0)');
         g.addColorStop(0.35, 'rgba(220,230,255,0.07)');
         g.addColorStop(0.55, 'rgba(255,255,255,0)');
-        sctx.globalAlpha = 1 - Math.max(chaos, xmas);
+        sctx.globalAlpha = 1 - Math.max(chaos, xmas * (1 - day));
         sctx.fillStyle = g;
         sctx.beginPath();
         LAPTOP.forEach(([x, y], i) => (i ? sctx.lineTo(x, y) : sctx.moveTo(x, y)));
@@ -1318,7 +1349,7 @@
         c.lineWidth = 0.35;
         c.stroke();
         // rocker
-        const on = eggsOn;
+        const on = dayOn;   // the light switch is now day / night
         const rw = w * 0.42, rh = h * 0.5;
         const g = c.createLinearGradient(0, y - rh / 2, 0, y + rh / 2);
         g.addColorStop(0, on ? 'rgb(30,28,30)' : 'rgb(58,54,56)');
@@ -1355,7 +1386,7 @@
     function drawRainSwitch() {
         const { x, y } = RAIN_SWITCH;
         const c = sctx;
-        const on = rainOn;
+        const on = eggsOn;   // the lamp switch is the secret master switch
         c.save();
         // the cord: out of the switch, curling back to the brass lamp, and away to the edge
         c.strokeStyle = 'rgba(16,14,14,0.9)';
@@ -1415,16 +1446,16 @@
         c.transform(1, 0.1, 0, 1, x, y);   // shear to match the desk
         // recess shadow and a dark satin plate with a fine bronze edge
         c.fillStyle = 'rgba(0,0,0,0.55)';
-        c.fillRect(-10.6, -4.4, 21.2, 9.2);
+        c.fillRect(-15.6, -4.4, 31.2, 9.2);
         const plate = c.createLinearGradient(0, -4, 0, 4);
         plate.addColorStop(0, 'rgb(40,36,34)');
         plate.addColorStop(1, 'rgb(22,20,20)');
         c.fillStyle = plate;
-        c.fillRect(-10, -4, 20, 8);
+        c.fillRect(-15, -4, 30, 8);
         c.strokeStyle = 'rgba(160,130,90,0.4)';
         c.lineWidth = 0.3;
-        c.strokeRect(-10, -4, 20, 8);
-        [[-5, chaosOn, '255,140,40'], [5, xmasOn, '255,60,50']].forEach(([cx, on, col]) => {
+        c.strokeRect(-15, -4, 30, 8);
+        [[-10, chaosOn, '255,140,40'], [0, xmasOn, '255,60,50'], [10, rainOn, '70,150,255']].forEach(([cx, on, col]) => {
             // the rocker: pressed in at the bottom when on, at the top when off
             const g = c.createLinearGradient(0, -3, 0, 1.6);
             g.addColorStop(0, on ? 'rgb(30,28,28)' : 'rgb(62,58,56)');
@@ -1449,7 +1480,7 @@
     }
 
     function drawClimbers() {
-        drawPatch(sctx, CLIMBER_PATCH, CLIMBER_MUTE * (1 - Math.max(chaos, xmas)));
+        drawPatch(sctx, CLIMBER_PATCH, CLIMBER_MUTE * (1 - Math.max(chaos, xmas * (1 - day), day)));
     }
 
     // Centre hut lights switching on and off at random; most start off
@@ -1474,7 +1505,7 @@
             let level = s.on ? ramp : 1 - ramp;
             // A brief flicker as a light comes on
             if (s.on && t - s.since < 0.5) level *= 0.6 + 0.4 * hash(Math.floor(t * 20) + i);
-            drawPatch(ctx, patch, level * (1 - Math.max(chaos, xmas)));
+            drawPatch(ctx, patch, level * (1 - Math.max(chaos, xmas * (1 - day), day)));
         });
         ctx.restore();
     }
@@ -2064,12 +2095,13 @@
     // with soft edges. Made once from the painting, then faded in as the land comes to life.
     const GREEN_BOX = [90, 344, 342, 128];   // x, y, w, h
     let greenDesert = null;
-    function makeGreenDesert() {
+    let greenFor = null;
+    function makeGreenDesert(base) {
         const [bx, by, bw, bh] = GREEN_BOX;
         const c = document.createElement('canvas');
         c.width = bw; c.height = bh;
         const x = c.getContext('2d');
-        x.drawImage(img, bx, by, bw, bh, 0, 0, bw, bh);
+        x.drawImage(base, bx, by, bw, bh, 0, 0, bw, bh);
         let d;
         try { d = x.getImageData(0, 0, bw, bh); } catch (e) { return null; }
         const m = document.createElement('canvas');
@@ -2126,7 +2158,7 @@
             const n = 1 + Math.floor(Math.random() * 4);
             const y = 40 + Math.random() * 200;
             for (let i = 0; i < n; i++) birds.push({ x: ltr ? -10 - i * 14 : IMG_W + 10 + i * 14, y: y + (Math.random() - 0.5) * 20, vx: (ltr ? 1 : -1) * (25 + Math.random() * 15), ph: Math.random() * 6, s: 2 + Math.random() * 1.5 });
-            nextBird = t + (w.sun > 0.6 ? 3 + Math.random() * 5 : 8 + Math.random() * 12);
+            nextBird = t + (w.sun > 0.6 || day > 0.5 ? 3 + Math.random() * 5 : 8 + Math.random() * 12);
         }
         for (let i = birds.length - 1; i >= 0; i--) {
             const b = birds[i];
@@ -2154,7 +2186,8 @@
 
         // The desert greening, grass and flowers, and new trees
         if (w.grow > 0) {
-            if (!greenDesert) greenDesert = makeGreenDesert();
+            const base = day > 0.5 && dayImg.naturalWidth ? dayImg : img;
+            if (!greenDesert || greenFor !== base) { greenDesert = makeGreenDesert(base); greenFor = base; }
             if (greenDesert) {
                 ctx.globalAlpha = 0.6 * w.grow;   // a mild, natural greening
                 ctx.drawImage(greenDesert, GREEN_BOX[0], GREEN_BOX[1]);
@@ -2659,11 +2692,14 @@
 
         // Fairy lights twinkling on the tree, the garlands and the huts
         ctx.globalCompositeOperation = 'lighter';
+        spriteK = 1 - day;
         XMAS_LIGHTS.forEach(([x, y], i) => {
             if (x < view.x0 || x > view.x1) return;
             const n = noise(t * (0.8 + hash(i) * 1.6) + i * 5.3);
             drawSprite(hash(i * 2.7) > 0.7 ? SPRITES.white : SPRITES.warm, x, y, 5 + n * 4, e * 0.55 * n * n);
         });
+        spriteK = 1;
+        if (day > 0) drawDogHat(e * day);
 
         ctx.save();
         ctx.clip(OUTSIDE);
@@ -2762,6 +2798,80 @@
         ctx.restore();
     }
 
+    /* ---------- daytime ---------- */
+
+    function updateDay(dt) {
+        const target = dayOn && dayImg.naturalWidth ? 1 : 0;
+        const before = day;
+        day = target ? Math.min(1, day + dt / 2) : Math.max(0, day - dt / 2);
+        if (day !== before) drawLaptop();   // the climber overlay fades with the light
+    }
+
+    // Sunlight glinting on the water, and soft wisps of cloud drifting across the sky
+    const WISPS = Array.from({ length: 10 }, (_, i) => ({ x: hash(i * 3.7) * IMG_W, y: 30 + hash(i * 5.1) * 170, r: 60 + hash(i * 2.3) * 70, sp: 3 + hash(i * 6.7) * 4 }));
+    function drawDaytime(t) {
+        const e = day * day * (3 - 2 * day);
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        WATER.forEach(({ poly }, wi) => {
+            const xs = poly.map(q => q[0]), ys = poly.map(q => q[1]);
+            const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+            if (!inView(x0, x1)) return;
+            ctx.save();
+            ctx.clip(pathFrom(poly));
+            for (let i = 0; i < 90; i++) {
+                const x = x0 + hash(i * 1.7 + wi * 50) * (x1 - x0);
+                const y = y0 + hash(i * 3.3 + wi * 50) * (y1 - y0);
+                const n = noise(t * (1.5 + hash(i) * 2) + i * 4.1 + wi * 9);
+                drawSprite(SPRITES.white, x, y, 2 + 2 * ((y - y0) / (y1 - y0)), 0.9 * e * Math.pow(n, 6));
+            }
+            ctx.restore();
+        });
+        ctx.save();
+        ctx.clip(OUTSIDE);
+        ctx.globalCompositeOperation = 'source-over';
+        WISPS.forEach(w => {
+            const x = ((w.x + t * w.sp) % (IMG_W + 300)) - 150;
+            ctx.save();
+            ctx.translate(x, w.y);
+            ctx.scale(1, 0.3);
+            drawSprite(mistSprite, 0, 0, w.r * 2, 0.16 * e);
+            ctx.restore();
+        });
+        ctx.restore();
+        ctx.restore();
+    }
+
+    // A little Santa hat for the dog, when it is Christmas in daylight
+    const DOG_HEAD = [335, 593];
+    function drawDogHat(a) {
+        if (a <= 0 || !inView(310, 360)) return;
+        const [x, y] = DOG_HEAD;
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(-0.35);
+        ctx.scale(1.7, 1.7);
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.globalAlpha = a;
+        const g = ctx.createLinearGradient(-5, 0, 5, -10);
+        g.addColorStop(0, 'rgb(150,24,28)');
+        g.addColorStop(1, 'rgb(205,46,44)');
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.moveTo(-5.5, 0);
+        ctx.quadraticCurveTo(-3, -6, 1, -9);
+        ctx.quadraticCurveTo(4, -10.5, 6.5, -8.5);
+        ctx.quadraticCurveTo(3.5, -6, 5.5, 0);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = 'rgb(236,232,226)';
+        ctx.beginPath(); ctx.ellipse(0, 0.2, 6.4, 1.7, 0, 0, 6.283); ctx.fill();       // fur trim
+        ctx.beginPath(); ctx.arc(6.6, -8.3, 1.5, 0, 6.283); ctx.fill();                // pompom
+        ctx.fillStyle = 'rgba(0,0,0,0.18)';
+        ctx.beginPath(); ctx.ellipse(0, 1, 6, 0.8, 0, 0, 6.283); ctx.fill();           // its shadow on the fur
+        ctx.restore();
+    }
+
     /* ---------- easter eggs ---------- */
 
     // Hidden words. Rest the pointer on certain things for a moment (or tap them on a touch
@@ -2821,6 +2931,21 @@
         return Math.abs(x - RED_BUTTON.x) <= 4.5 && Math.abs(y - RED_BUTTON.y) <= 5;
     }
 
+    function onWeatherButton(cx, cy) {
+        const [x, y] = toImage(cx, cy);
+        return Math.abs(x - WEATHER_BUTTON.x) <= 4.5 && Math.abs(y - WEATHER_BUTTON.y) <= 5;
+    }
+
+    function toggleDay() {
+        dayOn = !dayOn;
+        if (dayOn) {
+            loadDay();
+            if (chaosOn) setScene(null);   // Halloween only happens at night
+        }
+        applyImages();
+        drawLaptop();
+    }
+
     function onRainSwitch(cx, cy) {
         const [x, y] = toImage(cx, cy);
         return Math.abs(x - RAIN_SWITCH.x) <= 6 && Math.abs(y - RAIN_SWITCH.y) <= 4;
@@ -2834,8 +2959,8 @@
         if (rainOn) weather.start = null;   // starts on the next frame
         if (chaosOn) loadHalloween();
         if (xmasOn) loadChristmas();
-        hwImg.classList.toggle('on', chaosOn);
-        xmImg.classList.toggle('on', xmasOn);
+        if (chaosOn && dayOn) dayOn = false;   // Halloween always turns the scene to night
+        applyImages();
         drawLaptop();
     }
 
@@ -2862,7 +2987,7 @@
 
     function toggleSwitch() {
         eggsOn = !eggsOn;
-        if (eggsOn) { loadHalloween(); loadChristmas(); }
+        if (eggsOn) { loadHalloween(); loadChristmas(); loadDay(); }
         if (!eggsOn) { clearTimeout(dwell.timer); dwell.e = null; hideEgg(0); setScene(null); }
         drawLaptop();   // the switch lives on the static layer
     }
@@ -2913,10 +3038,11 @@
 
     stage.addEventListener('click', e => {
         if (e.pointerType !== 'mouse' && e.pointerType !== '') return;
-        if (onSwitch(e.clientX, e.clientY)) toggleSwitch();
+        if (onSwitch(e.clientX, e.clientY)) toggleDay();
+        else if (onRainSwitch(e.clientX, e.clientY)) toggleSwitch();
         else if (onRedButton(e.clientX, e.clientY)) toggleChaos();
-        else if (onRainSwitch(e.clientX, e.clientY)) toggleRain();
         else if (onXmasButton(e.clientX, e.clientY)) toggleXmas();
+        else if (onWeatherButton(e.clientX, e.clientY)) toggleRain();
     });
 
     // Mouse: only after resting on an object for a moment
@@ -2950,10 +3076,11 @@
         const quick = performance.now() - tapStart.t < 450;
         tapStart = null;
         if (!quick || dialogOpen()) return;
-        if (onSwitch(e.clientX, e.clientY)) { toggleSwitch(); return; }
+        if (onSwitch(e.clientX, e.clientY)) { toggleDay(); return; }
+        if (onRainSwitch(e.clientX, e.clientY)) { toggleSwitch(); return; }
         if (onRedButton(e.clientX, e.clientY)) { toggleChaos(); return; }
-        if (onRainSwitch(e.clientX, e.clientY)) { toggleRain(); return; }
         if (onXmasButton(e.clientX, e.clientY)) { toggleXmas(); return; }
+        if (onWeatherButton(e.clientX, e.clientY)) { toggleRain(); return; }
         const hit = eggAt(e.clientX, e.clientY);
         if (hit) {
             showEgg(hit);
@@ -2999,6 +3126,7 @@
         updateChaos(t, dt);
         updateWeather(t, dt);
         updateXmas(t, dt);
+        updateDay(dt);
 
         // Work out which part of the picture is on screen
         const m = 40;
