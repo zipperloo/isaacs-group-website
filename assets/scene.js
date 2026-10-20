@@ -23,16 +23,23 @@
     const dayImg = document.getElementById('scene-day');
     let dayOn = false;   // light switch: on = daylight, off = night (the default)
     let day = 0;         // 0 night .. 1 day (2-second fade)
+    // ...and the daytime Christmas version (the Christmas decorations lifted onto the daytime painting)
+    const dayXmImg = document.getElementById('scene-dayxmas');
     function loadDay() {
         if (!dayImg.getAttribute('src')) {
             dayImg.addEventListener('load', applyImages);
             dayImg.src = 'assets/background-day.jpg';
+        }
+        if (!dayXmImg.getAttribute('src')) {
+            dayXmImg.addEventListener('load', applyImages);
+            dayXmImg.src = 'assets/background-day-christmas.jpg';
         }
     }
     // Which painting is showing: day under everything, then Halloween or Christmas on top
     function applyImages() {
         const dayReady = dayImg.complete && dayImg.naturalWidth;
         dayImg.classList.toggle('on', dayOn && !!dayReady);
+        dayXmImg.classList.toggle('on', dayOn && xmasOn && !!(dayXmImg.complete && dayXmImg.naturalWidth));
         hwImg.classList.toggle('on', chaosOn);
         xmImg.classList.toggle('on', xmasOn && !dayOn);
         document.documentElement.classList.toggle('daytime', dayOn);
@@ -2692,7 +2699,7 @@
 
         // Fairy lights twinkling on the tree, the garlands and the huts
         ctx.globalCompositeOperation = 'lighter';
-        spriteK = 1 - day;
+        spriteK = 1 - 0.6 * day;   // the fairy lights still twinkle by day, more softly
         XMAS_LIGHTS.forEach(([x, y], i) => {
             if (x < view.x0 || x > view.x1) return;
             const n = noise(t * (0.8 + hash(i) * 1.6) + i * 5.3);
@@ -2843,14 +2850,14 @@
     }
 
     // A little Santa hat for the dog, when it is Christmas in daylight
-    const DOG_HEAD = [335, 593];
+    const DOG_HEAD = [332, 596];   // the crown of the dog's head (it faces right)
     function drawDogHat(a) {
         if (a <= 0 || !inView(310, 360)) return;
         const [x, y] = DOG_HEAD;
         ctx.save();
         ctx.translate(x, y);
-        ctx.rotate(-0.35);
-        ctx.scale(1.7, 1.7);
+        ctx.rotate(0.12);
+        ctx.scale(-1.3, 1.3);   // mirrored, so the tip flops back away from its face
         ctx.globalCompositeOperation = 'source-over';
         ctx.globalAlpha = a;
         const g = ctx.createLinearGradient(-5, 0, 5, -10);
