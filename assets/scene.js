@@ -18,6 +18,9 @@
     const stage = document.getElementById('stage');
     const img = document.getElementById('scene-img');
     const canvas = document.getElementById('fx');
+    // The painted Halloween version of the scene, loaded only once the light switch is on
+    const hwImg = document.getElementById('scene-hw');
+    function loadHalloween() { if (!hwImg.getAttribute('src')) hwImg.src = 'assets/background-halloween.jpg'; }
     // The laptop screen has its own layer, so it appears with the picture rather than
     // waiting for the effects to fade in
     const screenCanvas = document.getElementById('screen');
@@ -326,7 +329,7 @@
             const depth = (y - r.by) / r.bh;
             const amp = r.amp[0] + (r.amp[1] - r.amp[0]) * depth;
             const dx = amp * (0.6 * Math.sin(y * r.freq + t * r.speed) + 0.4 * Math.sin(y * r.freq * 0.37 - t * r.speed * 0.66 + 1.7));
-            w.drawImage(img, r.bx, y, r.bw, 1, dx * k, (y - r.by) * k, r.bw * k, k);
+            w.drawImage(chaos > 0.5 && hwImg.complete && hwImg.naturalWidth ? hwImg : img, r.bx, y, r.bw, 1, dx * k, (y - r.by) * k, r.bw * k, k);
         }
         w.globalCompositeOperation = 'destination-in';
         w.drawImage(r.mask, 0, 0);
@@ -1257,7 +1260,7 @@
         const h = laptopImg.naturalHeight;
         const map = homography(LAPTOP);
         const N = 8;
-        sctx.globalAlpha = 0.88;
+        sctx.globalAlpha = 0.88 * (1 - chaos);
         for (let i = 0; i < N; i++) {
             for (let j = 0; j < N; j++) {
                 const u0 = i / N, u1 = (i + 1) / N, v0 = j / N, v1 = (j + 1) / N;
@@ -1273,7 +1276,7 @@
         g.addColorStop(0.15, 'rgba(255,255,255,0)');
         g.addColorStop(0.35, 'rgba(220,230,255,0.07)');
         g.addColorStop(0.55, 'rgba(255,255,255,0)');
-        sctx.globalAlpha = 1;
+        sctx.globalAlpha = 1 - chaos;
         sctx.fillStyle = g;
         sctx.beginPath();
         LAPTOP.forEach(([x, y], i) => (i ? sctx.lineTo(x, y) : sctx.moveTo(x, y)));
@@ -1418,7 +1421,7 @@
     }
 
     function drawClimbers() {
-        drawPatch(sctx, CLIMBER_PATCH, CLIMBER_MUTE);
+        drawPatch(sctx, CLIMBER_PATCH, CLIMBER_MUTE * (1 - chaos));
     }
 
     // Centre hut lights switching on and off at random; most start off
@@ -1443,7 +1446,7 @@
             let level = s.on ? ramp : 1 - ramp;
             // A brief flicker as a light comes on
             if (s.on && t - s.since < 0.5) level *= 0.6 + 0.4 * hash(Math.floor(t * 20) + i);
-            drawPatch(ctx, patch, level);
+            drawPatch(ctx, patch, level * (1 - chaos));
         });
         ctx.restore();
     }
@@ -2319,7 +2322,9 @@
 
     function updateChaos(t, dt) {
         if (chaosOn && chaos === 0) spookSince = t;
-        chaos = chaosOn ? Math.min(1, chaos + dt / 2) : Math.max(0, chaos - dt / 2);   // 2-second fade
+        const before = chaos;
+        chaos = chaosOn ? Math.min(1, chaos + dt / 2) : Math.max(0, chaos - dt / 2);   // 2-second fade, like the painting
+        if (chaos !== before) drawLaptop();   // the laptop screen and climber overlays fade with it
         if (!chaosOn) { if (chaos === 0) { bats.length = 0; witch.active = false; witch.next = 3; } return; }
         if (!witch.active && t - spookSince >= witch.next) Object.assign(witch, { active: true, born: t, dur: 9 });
         if (witch.active && t - witch.born > witch.dur) { witch.active = false; witch.next = t - spookSince + 14 + Math.random() * 14; }
@@ -2339,61 +2344,80 @@
     }
 
         // Bonfire night on the apres-ski terrace when it is Halloween
+    // Things that move on top of the painted Halloween scene
+    const HW_MOON = [533, 97, 31];
+    const HW_GLOWS = [   // pumpkins and fires painted into the Halloween scene: x, y, size
+        [1568, 226, 34], [1579, 244, 14], [1555, 246, 13], [1618, 253, 12], [1531, 478, 14], [1624, 512, 16],
+        [1147, 492, 12], [1461, 498, 13], [1535, 548, 16], [158, 550, 16], [128, 560, 13], [300, 566, 18],
+        [318, 562, 12], [1024, 585, 18], [1000, 590, 14], [1074, 594, 14], [283, 620, 15], [123, 805, 18],
+        [100, 826, 15], [512, 527, 9]];
+    const HW_WEBS = [[940, 0, 1060, 90], [1120, 0, 1240, 110], [0, 150, 60, 420], [398, 628, 470, 730], [990, 660, 1120, 810], [222, 556, 290, 612]];
+    const shark = { x: 1180, dir: 1 };
+
     function drawChaos(t) {
         if (!chaos) return;
-        const since = t - spookSince;
         const e = chaos * chaos * (3 - 2 * chaos);
         ctx.save();
-        ctx.globalAlpha = 1;
 
-        // A cold, moonlit grade over everything, deepest in the sky
-        ctx.globalCompositeOperation = 'source-over';
-        const grade = ctx.createLinearGradient(0, 0, 0, IMG_H);
-        grade.addColorStop(0, 'rgba(18,12,40,0.72)');
-        grade.addColorStop(0.35, 'rgba(24,20,50,0.55)');
-        grade.addColorStop(0.65, 'rgba(16,22,40,0.45)');
-        grade.addColorStop(1, 'rgba(8,8,18,0.4)');
-        ctx.globalAlpha = e;
-        ctx.fillStyle = grade;
-        ctx.fillRect(0, 0, IMG_W, IMG_H);
-        ctx.globalAlpha = 1;
+        // A shark gliding slowly through the back of the tank, behind the divers
+        if (inView(1250, IMG_W)) {
+            shark.x += shark.dir * 0.35;
+            if (shark.x > 1720) shark.dir = -1;
+            if (shark.x < 1200) shark.dir = 1;
+            const sx = shark.x, sy = 650 + Math.sin(t * 0.3) * 8, sw = 46;
+            const tail = Math.sin(t * 2.4) * 0.25;
+            ctx.save();
+            ctx.clip(fishClip, 'evenodd');
+            if (!LITE) ctx.filter = `blur(${(1.4 * k).toFixed(2)}px)`;
+            ctx.translate(sx, sy);
+            ctx.scale(shark.dir, 1);
+            ctx.globalAlpha = 0.5 * e;
+            ctx.fillStyle = 'rgb(22,46,74)';
+            ctx.beginPath();
+            ctx.moveTo(sw * 0.55, 0);                                              // snout
+            ctx.quadraticCurveTo(sw * 0.3, -sw * 0.14, 0, -sw * 0.13);
+            ctx.lineTo(-sw * 0.05, -sw * 0.32);                                    // dorsal fin
+            ctx.lineTo(-sw * 0.16, -sw * 0.12);
+            ctx.quadraticCurveTo(-sw * 0.4, -sw * 0.08, -sw * 0.5, -sw * 0.03);
+            ctx.lineTo(-sw * 0.72, -sw * (0.2 + tail));                            // tail
+            ctx.lineTo(-sw * 0.62, 0);
+            ctx.lineTo(-sw * 0.72, sw * (0.14 - tail));
+            ctx.lineTo(-sw * 0.5, sw * 0.03);
+            ctx.quadraticCurveTo(-sw * 0.1, sw * 0.12, sw * 0.05, sw * 0.1);
+            ctx.lineTo(-sw * 0.02, sw * 0.24);                                     // pectoral fin
+            ctx.lineTo(sw * 0.14, sw * 0.09);
+            ctx.quadraticCurveTo(sw * 0.4, sw * 0.08, sw * 0.55, 0);
+            ctx.fill();
+            ctx.restore();
+        }
 
         ctx.save();
         ctx.clip(OUTSIDE);
 
-        // A soft full moon with a wide, faint halo
-        const [mx, my, mr] = MOON;
-        if (inView(mx - 120, mx + 120)) {
+        // The moon shimmering: a halo that breathes slowly
+        const [mx, my, mr] = HW_MOON;
+        if (inView(mx - 150, mx + 150)) {
             ctx.globalCompositeOperation = 'lighter';
-            const halo = ctx.createRadialGradient(mx, my, mr * 0.9, mx, my, mr * 5);
-            halo.addColorStop(0, `rgba(190,200,225,${(0.3 * e).toFixed(3)})`);
-            halo.addColorStop(1, 'rgba(190,200,225,0)');
+            const pulse = 0.8 + 0.2 * noise(t * 0.6);
+            const halo = ctx.createRadialGradient(mx, my, mr * 0.9, mx, my, mr * 4.5);
+            halo.addColorStop(0, `rgba(210,215,235,${(0.22 * e * pulse).toFixed(3)})`);
+            halo.addColorStop(1, 'rgba(210,215,235,0)');
             ctx.fillStyle = halo;
-            ctx.fillRect(mx - mr * 5, my - mr * 5, mr * 10, mr * 10);
-            ctx.globalCompositeOperation = 'source-over';
-            const disc = ctx.createRadialGradient(mx - mr * 0.25, my - mr * 0.2, 0, mx, my, mr);
-            disc.addColorStop(0, `rgba(246,242,226,${(0.95 * e).toFixed(3)})`);
-            disc.addColorStop(0.85, `rgba(225,222,206,${(0.9 * e).toFixed(3)})`);
-            disc.addColorStop(1, 'rgba(225,222,206,0)');
-            ctx.fillStyle = disc;
-            ctx.beginPath();
-            ctx.arc(mx, my, mr, 0, 6.283);
-            ctx.fill();
+            ctx.fillRect(mx - mr * 4.5, my - mr * 4.5, mr * 9, mr * 9);
         }
 
-        // Storm clouds rolling in slowly from the left, high in the sky only
+        // Mist drifting through the air, in banks with gaps between them
         ctx.globalCompositeOperation = 'source-over';
-        SKY_CLOUDS.forEach(c => {
-            const x = c.start + since * c.sp * 4;
-            if (x - c.r > IMG_W) return;
+        HAZE.forEach(h => {
+            const x = ((h.x + t * h.sp) % (IMG_W + 400)) - 200;
             ctx.save();
-            ctx.translate(x, c.y);
-            ctx.scale(1, 0.38);
-            drawSprite(cloudSprite, 0, 0, c.r * 2, 0.55);
+            ctx.translate(x, h.y);
+            ctx.scale(1, 0.32);
+            drawSprite(mistSprite, 0, 0, h.r * 2, 0.24 * e);
             ctx.restore();
         });
 
-        // Mist lying on the lake and the bay
+        // Fog moving on the lake and the bay
         WATER.forEach(({ poly }, wi) => {
             const xs = poly.map(q => q[0]), ys = poly.map(q => q[1]);
             const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
@@ -2406,141 +2430,73 @@
                 ctx.save();
                 ctx.translate(x, y);
                 ctx.scale(1, 0.35);
-                drawSprite(mistSprite, 0, 0, m.r * 2, 0.22);
+                drawSprite(mistSprite, 0, 0, m.r * 2, 0.3 * e);
                 ctx.restore();
             });
             ctx.restore();
         });
 
-        // Fog banks drifting slowly across the land, with gaps between them
-        HAZE.forEach(h => {
-            const x = ((h.x + t * h.sp) % (IMG_W + 400)) - 200;
-            ctx.save();
-            ctx.translate(x, h.y);
-            ctx.scale(1, 0.32);
-            drawSprite(mistSprite, 0, 0, h.r * 2, 0.42 * e);
-            ctx.restore();
-        });
-
-        // Fireflies dancing far off, in loose, wandering circles
-        ctx.globalCompositeOperation = 'lighter';
-        skyLanterns.forEach((l, i) => {
-            const x = l.cx + Math.cos(t * l.w1 + l.ph) * l.r + Math.sin(t * l.w2 + l.ph * 2) * l.r * 0.4;
-            const y = l.cy + Math.sin(t * l.w1 * 1.3 + l.ph) * l.r * 0.6 + Math.cos(t * l.w2 * 0.8 + l.ph) * l.r * 0.3;
-            const a = e * (0.4 + 0.6 * noise(t * 1.5 + i * 3.7));
-            drawSprite(SPRITES.fire, x, y, 6, 0.35 * a);
-            drawSprite(SPRITES.warm, x, y, 1.6, 0.9 * a);
-        });
-
-        // Faint lantern glows flickering by the huts and the bridge
-        ctx.globalCompositeOperation = 'lighter';
-        LANTERNS.forEach(([x, y], i) => {
-            const fl = 0.6 + 0.4 * flicker(t, i + 60);
-            drawSprite(SPRITES.fire, x, y, 16, 0.35 * fl * e);
-            drawSprite(SPRITES.warm, x, y, 4, 0.7 * fl * e);
-        });
-
-        // The witch, flying a gentle arc that passes across the moon's face
+        // The witch, crossing the moon now and then
         if (witch.active) {
             const f = (t - witch.born) / witch.dur;
-            const wx = MOON[0] - 300 + f * 600;
-            const wy = MOON[1] + 22 - Math.sin(f * Math.PI) * 40 + Math.sin(t * 2.2) * 1.2;
+            const wx = mx - 260 + f * 520;
+            const wy = my + 18 - Math.sin(f * Math.PI) * 30 + Math.sin(t * 2.2) * 1.2;
             ctx.save();
             ctx.translate(wx, wy);
             ctx.rotate(-0.08 + Math.sin(t * 1.6) * 0.04);
             ctx.globalCompositeOperation = 'source-over';
-            ctx.globalAlpha = 0.92 * Math.min(1, f / 0.08, (1 - f) / 0.08);
+            ctx.globalAlpha = 0.92 * e * Math.min(1, f / 0.08, (1 - f) / 0.08);
             ctx.fillStyle = 'rgb(10,8,12)';
             ctx.strokeStyle = 'rgb(10,8,12)';
             ctx.lineCap = 'round';
-            // broom handle and bristles
             ctx.lineWidth = 0.6;
             ctx.beginPath(); ctx.moveTo(-9, 1.2); ctx.lineTo(7, -0.4); ctx.stroke();
             ctx.beginPath(); ctx.moveTo(-9, 1.2); ctx.lineTo(-13.5, -0.6); ctx.lineTo(-14, 2.4); ctx.lineTo(-13, 3.6); ctx.closePath(); ctx.fill();
-            // body hunched forward, cloak trailing
             const flap = Math.sin(t * 5) * 0.8;
             ctx.beginPath();
             ctx.moveTo(-3.5, 0.8); ctx.quadraticCurveTo(-2.5, -4.5, 0.8, -5.2);
             ctx.lineTo(1.6, 0.2); ctx.quadraticCurveTo(-4, 1, -8.5 + flap, -1.8 + flap * 0.6);
             ctx.closePath(); ctx.fill();
-            // head and pointed hat
             ctx.beginPath(); ctx.arc(1.4, -5.6, 1.1, 0, 6.283); ctx.fill();
             ctx.beginPath(); ctx.moveTo(-0.6, -6.1); ctx.lineTo(3.4, -6.5); ctx.lineTo(0.4, -10.2); ctx.closePath(); ctx.fill();
-            // leg hanging over the broom
             ctx.lineWidth = 0.7;
             ctx.beginPath(); ctx.moveTo(-0.5, 0.4); ctx.lineTo(0.6, 3.2); ctx.lineTo(2, 3.4); ctx.stroke();
             ctx.restore();
         }
 
-        // Tiny bats, far off and high up
+        // Bats
         ctx.globalCompositeOperation = 'source-over';
         ctx.globalAlpha = 0.85 * e;
         ctx.fillStyle = 'rgb(12,10,16)';
         bats.forEach(b => {
             if (b.x < view.x0 || b.x > view.x1) return;
             const f = Math.sin(t * 16 + b.ph);
-            const s = b.s;
+            const s2 = b.s;
             ctx.beginPath();
             ctx.moveTo(b.x, b.y);
-            ctx.quadraticCurveTo(b.x - s * 0.6, b.y - s * 0.8 * f, b.x - s * 1.6, b.y - s * 0.3 * f);
-            ctx.lineTo(b.x - s * 0.3, b.y + s * 0.3);
-            ctx.lineTo(b.x + s * 0.3, b.y + s * 0.3);
-            ctx.lineTo(b.x + s * 1.6, b.y - s * 0.3 * f);
-            ctx.quadraticCurveTo(b.x + s * 0.6, b.y - s * 0.8 * f, b.x, b.y);
+            ctx.quadraticCurveTo(b.x - s2 * 0.6, b.y - s2 * 0.8 * f, b.x - s2 * 1.6, b.y - s2 * 0.3 * f);
+            ctx.lineTo(b.x - s2 * 0.3, b.y + s2 * 0.3);
+            ctx.lineTo(b.x + s2 * 0.3, b.y + s2 * 0.3);
+            ctx.lineTo(b.x + s2 * 1.6, b.y - s2 * 0.3 * f);
+            ctx.quadraticCurveTo(b.x + s2 * 0.6, b.y - s2 * 0.8 * f, b.x, b.y);
             ctx.fill();
         });
         ctx.restore();
 
-        // A skull on the bar top, shaded and muted so it sits in the scene
-        {
-            const [sx, sy, sr] = SKULL;
-            if (inView(sx - 10, sx + 10)) {
-                ctx.save();
-                ctx.globalCompositeOperation = 'source-over';
-                ctx.globalAlpha = 0.5 * e;
-                ctx.fillStyle = 'rgb(8,6,6)';
-                ctx.beginPath(); ctx.ellipse(sx + 0.8, sy + 0.6, sr * 1.2, sr * 0.35, 0, 0, 6.283); ctx.fill();
-                const g = ctx.createRadialGradient(sx - sr * 0.35, sy - sr * 1.25, sr * 0.1, sx, sy - sr * 0.9, sr * 1.1);
-                g.addColorStop(0, 'rgb(196,186,166)');
-                g.addColorStop(0.6, 'rgb(140,130,114)');
-                g.addColorStop(1, 'rgb(70,64,56)');
-                ctx.globalAlpha = 0.9 * e;
-                ctx.fillStyle = g;
-                ctx.beginPath(); ctx.ellipse(sx, sy - sr * 1.0, sr * 0.82, sr * 0.78, 0, 0, 6.283); ctx.fill();   // cranium
-                ctx.beginPath(); ctx.ellipse(sx, sy - sr * 0.3, sr * 0.55, sr * 0.36, 0, 0, 6.283); ctx.fill();   // jaw
-                ctx.fillStyle = 'rgba(20,16,14,0.9)';
-                ctx.beginPath();
-                ctx.ellipse(sx - sr * 0.3, sy - sr * 0.85, sr * 0.2, sr * 0.17, 0.2, 0, 6.283);
-                ctx.ellipse(sx + sr * 0.3, sy - sr * 0.85, sr * 0.2, sr * 0.17, -0.2, 0, 6.283);
-                ctx.fill();
-                ctx.beginPath(); ctx.moveTo(sx, sy - sr * 0.62); ctx.lineTo(sx - sr * 0.08, sy - sr * 0.48); ctx.lineTo(sx + sr * 0.08, sy - sr * 0.48); ctx.fill();
-                ctx.strokeStyle = 'rgba(30,26,22,0.7)'; ctx.lineWidth = 0.25;
-                ctx.beginPath(); for (let k = -2; k <= 2; k++) { ctx.moveTo(sx + k * sr * 0.12, sy - sr * 0.38); ctx.lineTo(sx + k * sr * 0.12, sy - sr * 0.22); } ctx.stroke();
-                ctx.restore();
-            }
-        }
-
-        // Faint cobwebs strung between the columns, barely there
-        ctx.globalCompositeOperation = 'source-over';
-        ctx.strokeStyle = 'rgb(190,195,205)';
-        ctx.lineWidth = 0.3;
-        ctx.globalAlpha = 0.18 * e;
-        WEBS2.forEach(([[ax, ay], [bx, by], sag]) => {
-            if (!inView(Math.min(ax, bx), Math.max(ax, bx))) return;
-            ctx.beginPath();
-            for (let k = 0; k < 5; k++) {
-                const s2 = sag * (0.4 + k * 0.18);
-                ctx.moveTo(ax, ay + k * 2);
-                ctx.quadraticCurveTo((ax + bx) / 2, (ay + by) / 2 + s2, bx, by + k * 2);
-            }
-            for (let k = 1; k < 6; k++) {
-                const fx = ax + (bx - ax) * k / 6;
-                ctx.moveTo(fx, ay + (by - ay) * k / 6);
-                ctx.lineTo(fx + (k - 3) * 0.6, ay + (by - ay) * k / 6 + sag * 1.1);
-            }
-            ctx.stroke();
-        });
+        // The pumpkins and fires flickering
         ctx.globalCompositeOperation = 'lighter';
+        HW_GLOWS.forEach(([x, y, r], i) => {
+            const fl = flicker(t * 1.2, i + 120);
+            drawSprite(SPRITES.fire, x, y, r * 3, 0.22 * e * (0.5 + fl));
+            drawSprite(SPRITES.warm, x, y, r * 0.8, 0.18 * e * fl);
+        });
+
+        // Light catching the cobwebs: a soft glint drifting slowly across each
+        HW_WEBS.forEach(([x0, y0, x1, y1], i) => {
+            const f = (t * 0.06 + hash(i * 3.7)) % 1;
+            const x = x0 + (x1 - x0) * f, y = y0 + (y1 - y0) * (0.5 + 0.5 * Math.sin(f * 6.28 + i));
+            drawSprite(SPRITES.white, x, y, 14, 0.12 * e * Math.sin(f * Math.PI));
+        });
         ctx.restore();
     }
 
@@ -2618,11 +2574,14 @@
         // A double safeguard: the button only arms while the word light switch is on
         if (!chaosOn && !eggsOn) return;
         chaosOn = !chaosOn;
+        loadHalloween();
+        hwImg.classList.toggle('on', chaosOn);
         drawLaptop();
     }
 
     function toggleSwitch() {
         eggsOn = !eggsOn;
+        if (eggsOn) loadHalloween();
         if (!eggsOn) { clearTimeout(dwell.timer); dwell.e = null; hideEgg(0); }
         drawLaptop();   // the switch lives on the static layer
     }

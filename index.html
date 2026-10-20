@@ -88,6 +88,8 @@
             pointer-events: none;
         }
         .stage #screen { opacity: 1; }
+        .stage #scene-hw { opacity: 0; transition: opacity 2s ease; }
+        .stage #scene-hw.on { opacity: 1; }
 
         /* Entrance: fade up from black while the scene settles, then the lettering appears */
         .curtain {
@@ -527,6 +529,7 @@
         <div class="settle">
             <div class="breathe">
                 <img id="scene-img" src="assets/background-night.jpg" alt="">
+                <img id="scene-hw" alt="">
                 <canvas id="screen"></canvas>
                 <canvas id="fx"></canvas>
             </div>
