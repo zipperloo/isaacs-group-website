@@ -153,6 +153,23 @@
         .daytime .logo img, .daytime .label { filter: brightness(0.16) sepia(0.6) drop-shadow(0 0 6px rgba(255, 250, 240, 0.35)); }
         .daytime .tagline, .daytime .sound { color: #2a1e18; text-shadow: 0 0 5px rgba(255, 248, 236, 0.85), 0 0 16px rgba(255, 248, 236, 0.65), 0 0 30px rgba(255, 248, 236, 0.4); }
         .daytime .eq i { background: #2a1e18; box-shadow: none; }
+        /* The tagline sits over the dark rug: by day it gets a soft, feathered cream glow behind it */
+        .tagline::before {
+            content: '';
+            position: absolute;
+            left: -10%;
+            right: -10%;
+            top: -70%;
+            bottom: -70%;
+            z-index: -1;
+            background: radial-gradient(ellipse at center, rgba(250, 244, 234, 0.8) 0%, rgba(250, 244, 234, 0.62) 55%, rgba(250, 244, 234, 0) 80%);
+            filter: blur(6px);
+            opacity: 0;
+            transition: opacity 2s ease;
+            pointer-events: none;
+        }
+        .daytime .tagline::before { opacity: 1; }
+        .daytime .tagline { font-weight: 300; }
 
         /* Layout */
         .logo {
