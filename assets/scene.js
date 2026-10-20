@@ -135,12 +135,12 @@
     ];
     let eggsOn = false;
     let chaosOn = false;  // the red button on the desk
-    const RED_BUTTON = { x: 560, y: 637 };   // on the underside of the desk's front lip, pressed from below
+    const RED_BUTTON = { x: 893, y: 641 };   // the Halloween button, beside the Christmas one on the desk's front edge
     let rainOn = false;   // the weather switch on the desk lamp's cord
     let xmasOn = false;   // the Christmas button on the front edge of the desk
     let xmas = 0;         // 0 normal .. 1 Christmas (2-second fade)
     const XMAS_BUTTON = { x: 905, y: 641 };   // its neighbour on the front edge
-    const RAIN_SWITCH = { x: 893, y: 641 };   // a button on the desk's front edge, beside the Christmas button
+    const RAIN_SWITCH = { x: 470, y: 613 };   // an inline switch on the desk lamp's cord
     const CLIMBER_PATCH = [871, 289, 44, 40, 203];
     const CLIMBER_MUTE = 0.55;   // how much of the bare rock shows through the climbers
     const patchImg = new Image();
@@ -1256,6 +1256,7 @@
         if (!k) return;
         sctx.setTransform(1, 0, 0, 1, 0, 0);
         sctx.clearRect(0, 0, screenCanvas.width, screenCanvas.height);
+        sctx.globalAlpha = 1;   // the laptop fade below must not carry over to the buttons
         sctx.setTransform(k, 0, 0, k, 0, 0);
         drawClimbers();
         drawSwitch();
@@ -1344,48 +1345,64 @@
         c.restore();
     }
 
-    // A muted red push button fixed to the underside of the desk's front lip, so it is pressed
-    // upward with the fingers; it glows when pressed
+    // The Halloween button: brass-rimmed, with a muted orange cap that glows when on
     function drawRedButton() {
-        const { x, y } = RED_BUTTON;
+        drawDeskButton(RED_BUTTON, chaosOn, ['rgb(130,72,30)', 'rgb(58,30,12)'], ['rgb(255,190,110)', 'rgb(220,110,20)'], 'rgba(255,150,60,0.5)');
+    }
+
+    // An inline rocker switch on the desk lamp's cord, lying on the desk top
+    function drawRainSwitch() {
+        const { x, y } = RAIN_SWITCH;
         const c = sctx;
-        const on = chaosOn;
+        const on = rainOn;
         c.save();
-        // the dark mounting ring against the underside of the lip
-        c.globalAlpha = 0.95;
-        c.fillStyle = 'rgb(18,16,16)';
+        // the cord: out of the switch, curling back to the brass lamp, and away to the edge
+        c.strokeStyle = 'rgba(16,14,14,0.9)';
+        c.lineWidth = 0.7;
+        c.lineCap = 'round';
         c.beginPath();
-        c.ellipse(x, y - 1.4, 4.2, 1.2, 0, 0, 6.283);
+        c.moveTo(x + 4, y - 0.4);
+        c.bezierCurveTo(x + 14, y - 1.5, x + 30, y - 6, 523, 594);
+        c.moveTo(x - 4, y + 0.4);
+        c.bezierCurveTo(x - 12, y + 1.5, x - 26, y + 2, 425, 619);
+        c.stroke();
+        // shadow
+        c.globalAlpha = 0.45;
+        c.fillStyle = 'rgb(6,5,5)';
+        c.beginPath();
+        c.ellipse(x + 0.5, y + 1.2, 4.6, 1.4, -0.08, 0, 6.283);
         c.fill();
-        if (on) {
-            const glow = c.createRadialGradient(x, y, 0, x, y, 11);
-            glow.addColorStop(0, 'rgba(255,120,30,0.5)');
-            glow.addColorStop(1, 'rgba(255,120,30,0)');
-            c.fillStyle = glow;
-            c.fillRect(x - 11, y - 11, 22, 22);
-        }
-        // the cap, hanging down as a shallow dome, lit faintly from the room below
-        const g = c.createLinearGradient(0, y - 1.4, 0, y + 1.8);
-        g.addColorStop(0, on ? 'rgb(200,70,10)' : 'rgb(40,14,14)');
-        g.addColorStop(1, on ? 'rgb(255,160,70)' : 'rgb(82,32,30)');
+        // body: a small rounded oblong in dark bakelite
+        c.globalAlpha = 1;
+        const g = c.createLinearGradient(0, y - 1.6, 0, y + 1.6);
+        g.addColorStop(0, 'rgb(58,54,52)');
+        g.addColorStop(1, 'rgb(22,20,20)');
         c.fillStyle = g;
         c.beginPath();
-        c.ellipse(x, y - 1.2, 3, 0.9, 0, 0, Math.PI);
-        c.ellipse(x, y - 0.4 + (on ? -0.4 : 0), 3, 2.1, 0, 0, Math.PI);
+        c.ellipse(x, y, 4.2, 1.6, -0.08, 0, 6.283);
         c.fill();
+        // the rocker, pressed down on one side or the other, with a faint highlight
+        c.fillStyle = 'rgb(30,28,28)';
+        c.beginPath();
+        c.ellipse(x + (on ? 0.9 : -0.9), y - 0.5, 1.9, 0.7, -0.08, 0, 6.283);
+        c.fill();
+        c.fillStyle = 'rgba(210,200,185,0.35)';
+        c.beginPath();
+        c.ellipse(x + (on ? -0.6 : 0.6), y - 0.9, 1.1, 0.3, -0.08, 0, 6.283);
+        c.fill();
+        // a tiny warm indicator when on
+        if (on) {
+            const glow = c.createRadialGradient(x + 2.4, y - 0.4, 0, x + 2.4, y - 0.4, 3);
+            glow.addColorStop(0, 'rgba(255,190,120,0.9)');
+            glow.addColorStop(1, 'rgba(255,190,120,0)');
+            c.fillStyle = glow;
+            c.fillRect(x - 0.6, y - 3.4, 6, 6);
+        }
         c.restore();
     }
 
-    // The weather button: the same brass-rimmed push button as its Christmas neighbour, with a
-    // muted blue cap that glows cool when the rain is on
-    function drawRainSwitch() {
-        drawDeskButton(RAIN_SWITCH, rainOn, ['rgb(52,74,104)', 'rgb(20,30,46)'], ['rgb(150,190,240)', 'rgb(40,80,150)'], 'rgba(150,200,255,0.5)');
-    }
-
-    // A small round push button set into the desk's front edge: a brushed brass rim around a
-    // deep green cap, which glows warm when Christmas is on
     function drawXmasButton() {
-        drawDeskButton(XMAS_BUTTON, xmasOn, ['rgb(56,92,62)', 'rgb(22,44,28)'], ['rgb(120,200,130)', 'rgb(30,110,50)'], 'rgba(255,215,140,0.5)');
+        drawDeskButton(XMAS_BUTTON, xmasOn, ['rgb(120,40,36)', 'rgb(52,16,16)'], ['rgb(255,120,110)', 'rgb(200,30,30)'], 'rgba(255,90,80,0.5)');
     }
 
     // A small round push button set into the desk's front edge: a brushed brass rim around a
@@ -2788,12 +2805,12 @@
 
     function onRedButton(cx, cy) {
         const [x, y] = toImage(cx, cy);
-        return Math.abs(x - RED_BUTTON.x) <= 7 && Math.abs(y - RED_BUTTON.y) <= 5;
+        return Math.abs(x - RED_BUTTON.x) <= 5 && Math.abs(y - RED_BUTTON.y) <= 5;
     }
 
     function onRainSwitch(cx, cy) {
         const [x, y] = toImage(cx, cy);
-        return Math.abs(x - RAIN_SWITCH.x) <= 5 && Math.abs(y - RAIN_SWITCH.y) <= 5;
+        return Math.abs(x - RAIN_SWITCH.x) <= 6 && Math.abs(y - RAIN_SWITCH.y) <= 4;
     }
 
     // Only one scene at a time, and none at all unless the light switch is on
