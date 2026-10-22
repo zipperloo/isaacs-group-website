@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Strategy | ISAACS Family Office</title>
+    <meta name="description" content="ISAACS Family Office — thinking in decades.">
+    <!-- Not linked from the site yet, so keep it out of search results -->
+    <meta name="robots" content="noindex">
+    <link rel="icon" href="favicon.ico" sizes="16x16 32x32 48x48">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <meta name="theme-color" content="#132038">
+    <link rel="preload" as="image" href="assets/background-strategy.jpg?v=84">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@200;300&display=swap" rel="stylesheet">
+    <script>document.documentElement.classList.add('loading');</script>
+    <style>
+        :root {
+            --ink: #2a1e18;   /* the deep brown used for lettering on the bright daytime scenes */
+            --gutter: clamp(16px, 5.5vw, 96px);
+            --gutter-right: clamp(16px, 2.2vw, 48px);
+            --edge: clamp(20px, 4vw, 56px);
+            --label-h: clamp(18px, 1.4vw, 26px);
+        }
+        * { box-sizing: border-box; }
+        html, body { margin: 0; height: 100%; }
+        body { background: #f3e2c8; overflow: hidden; font-family: 'Source Sans 3', sans-serif; }
+        .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+
+        /* The picture and the effects canvas share one stage, sized by strategy.js to cover the screen */
+        .stage { position: fixed; inset: 0; overflow: hidden; will-change: transform; }
+        .breathe { position: absolute; inset: 0; animation: breathe 48s ease-in-out infinite alternate; }
+        @keyframes breathe { from { transform: scale(1); } to { transform: scale(1.025); } }
+        .stage img, .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+        .stage img { object-fit: cover; }
+        .stage canvas { pointer-events: none; }
+
+        .curtain { position: fixed; inset: 0; background: #000; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 2.4s ease, visibility 0s 2.4s; z-index: 5; }
+        .reveal { transition: opacity 1.6s ease var(--delay, 0s), transform 1.6s cubic-bezier(0.2, 0.7, 0.2, 1) var(--delay, 0s); }
+        html.loading .curtain { opacity: 1; visibility: visible; transition: none; }
+        html.loading .reveal { opacity: 0; transform: translateY(10px); transition: none; }
+
+        .logo { position: fixed; top: var(--edge); left: calc(var(--gutter) + 1.5vw); width: clamp(170px, 21vw, 400px); margin: 0; line-height: 0; z-index: 2; }
+        .logo a { display: block; }
+        .logo img { display: block; width: 100%; height: auto; }
+        .logo .family-office { width: 85%; margin: 4% auto 0; }
+        .logo img, .label { filter: brightness(0.16) sepia(0.6) drop-shadow(0 0 6px rgba(255, 250, 240, 0.4)); }
+
+        .contact { position: fixed; top: calc(var(--edge) * 0.6); right: var(--gutter-right); padding: 6px; margin: -6px; z-index: 2; transition: opacity 0.3s ease; }
+        .contact:hover { opacity: 0.75; }
+        .label { display: block; height: var(--label-h); width: auto; }
+
+        .tagline {
+            position: fixed; left: 50%; bottom: clamp(36px, 6vh, 72px); transform: translateX(-50%); margin: 0;
+            padding-left: 0.45em; color: var(--ink);
+            font-weight: 300; font-size: clamp(14px, 2.4vw, 46px); letter-spacing: 0.45em; line-height: 1;
+            text-transform: uppercase; white-space: nowrap; z-index: 2;
+            text-shadow: 0 0 5px rgba(255, 248, 236, 0.85), 0 0 16px rgba(255, 248, 236, 0.6);
+        }
+        .layer { position: absolute; inset: 0; }
+        .ui { position: fixed; inset: 0; pointer-events: none; z-index: 2; }
+        .ui a { pointer-events: auto; }
+
+        @media (max-width: 768px) {
+            .tagline { font-size: 3.4vw; letter-spacing: 0.35em; padding-left: 0.35em; bottom: calc(var(--edge) + 24px); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .breathe { animation: none; }
+            .reveal, .curtain { transition: none !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="stage" id="stage" aria-hidden="true">
+        <div class="breathe">
+            <img id="scene-img" src="assets/background-strategy.jpg?v=84" alt="">
+            <canvas id="fx"></canvas>
+        </div>
+    </div>
+
+    <div class="ui">
+        <header>
+            <h1 class="logo reveal" style="--delay: 1.2s">
+                <a href="./" aria-label="ISAACS Family Office, home">
+                    <img src="assets/typography/isaacs-wordmark-ivory.png" alt="" aria-hidden="true">
+                    <img class="family-office" src="assets/typography/family-office-ivory.png" alt="" aria-hidden="true">
+                </a>
+            </h1>
+            <div class="layer reveal" style="--delay: 2.6s">
+                <a class="contact" href="./#contact">
+                    <img class="label" src="assets/typography/contact-ivory.png" alt="Contact">
+                </a>
+            </div>
+        </header>
+        <main>
+            <div class="layer reveal" style="--delay: 2s">
+                <p class="tagline">Thinking in Decades</p>
+            </div>
+        </main>
+    </div>
+
+    <div class="curtain" aria-hidden="true"></div>
+    <script src="assets/strategy.js?v=84"></script>
+</body>
+</html>

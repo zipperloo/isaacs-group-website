@@ -49,6 +49,7 @@ Visitors who have "reduce motion" turned on in their device settings see the sti
 | `assets/background-christmas.jpg` | The painted Christmas version of the background, pixel-aligned with it. |
 | `assets/background-halloween.jpg` | The painted Halloween version of the background, pixel-aligned with it. |
 | `assets/typography/` | Ivory lettering as transparent PNGs: wordmark, "family office" and contact. The tagline "A World of Perspective" is live text instead, set in Source Sans 3 ExtraLight (the supplied artwork's typeface at a lighter weight, to match the wordmark). |
+| `strategy.html`, `assets/strategy.js`, `assets/background-strategy.jpg` | The Strategy page (logo, Contact and the tagline "Thinking in Decades" over a golden-hour city scene, with river ripples and glints, small boats, a breathing sun, drifting cloud wisps, desert heat haze, birds and dust motes). Not linked yet: the STRATEGY link under CONTACT on the home page is in the markup with a `hidden` attribute; remove that to show it. The page is marked noindex until then. |
 | `favicon.ico`, `favicon.svg`, `apple-touch-icon.png`, `icon-512.png` | Site icons: the A from the ISAACS wordmark in ivory on navy. |
 | `logo.png` | Old yellow logo mark. Not used by the current site. |
 | `CNAME` | Custom domain for GitHub Pages (`isaacs.group`). |
