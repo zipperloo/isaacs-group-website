@@ -21,6 +21,19 @@
         [850, 668], [930, 680], [1010, 695], [1060, 712], [1120, 725], [1220, 738], [1320, 742], [1392, 750],
         [1300, 756], [1130, 761], [1040, 768], [900, 776], [780, 790], [640, 800], [520, 806], [420, 806]];
     const FAMILY = [1122, 645, 1268, 792];
+    // The glass balustrade in front of the river: its top rail (a line sloping gently up to the
+    // right) and its vertical posts, all kept out of the ripple so they stay straight
+    const railY = x => 763 - (x - 300) * 0.033;
+    const POSTS = [371, 645, 905, 975];
+    // Riverside roads and promenades, as polylines: cars drive along the roads, people stroll the paths
+    const ROADS = [
+        [[345, 758], [450, 742], [560, 728], [622, 708], [664, 684]],
+        [[850, 664], [930, 676], [1010, 692], [1070, 708], [1120, 720]]
+    ];
+    const PATHS = [
+        [[360, 753], [460, 738], [560, 724], [618, 705]],
+        [[860, 668], [940, 680], [1020, 697], [1080, 712]]
+    ];
     const DESERT = [1405, 588, 1568, 668];   // shimmering heat haze over the dunes
     const SUN = [1522, 535];
 
@@ -79,7 +92,7 @@
     let regions = [];
     function buildRegions() {
         const defs = [
-            { poly: RIVER, amp: [0.5, 1.4], freq: 0.7, speed: 1.6, cut: FAMILY },
+            { poly: RIVER, amp: [0.7, 1.8], freq: 0.7, speed: 1.7, cut: FAMILY, rail: true },
             { poly: [[DESERT[0], DESERT[1]], [DESERT[2], DESERT[1]], [DESERT[2], DESERT[3]], [DESERT[0], DESERT[3]]], amp: [0.7, 0.4], freq: 1.8, speed: 4.5 }
         ];
         regions = defs.map(def => {
@@ -95,7 +108,18 @@
             m.fill(path(def.poly));
             if (def.cut) {
                 m.globalCompositeOperation = 'destination-out';
-                m.fillRect(def.cut[0] + off, def.cut[1], def.cut[2] - def.cut[0], def.cut[3] - def.cut[1]);
+                m.shadowBlur = 0;
+                m.shadowOffsetX = 0;
+                m.setTransform(k, 0, 0, k, -bx * k, -by * k);
+                m.fillRect(def.cut[0], def.cut[1], def.cut[2] - def.cut[0], def.cut[3] - def.cut[1]);
+                if (def.rail) {
+                    m.lineWidth = 5;
+                    m.beginPath();
+                    m.moveTo(250, railY(250));
+                    m.lineTo(1450, railY(1450));
+                    m.stroke();
+                    POSTS.forEach(x => m.fillRect(x - 3, railY(x) - 2, 6, 70));
+                }
             }
             const work = document.createElement('canvas');
             work.width = mask.width; work.height = mask.height;
@@ -122,17 +146,39 @@
     const WISPS = Array.from({ length: 12 }, (_, i) => ({ x: hash(i * 3.7) * IMG_W, y: 40 + hash(i * 5.1) * 420, r: 70 + hash(i * 2.3) * 110, sp: 2 + hash(i * 6.7) * 3 }));
     const MOTES = Array.from({ length: LITE ? 30 : 70 }, (_, i) => ({ x: 900 + hash(i * 1.9) * 760, y: 560 + hash(i * 4.3) * 360, r: 0.8 + hash(i * 7.1) * 1.4, ph: hash(i * 2.2) * 6.28, sp: 2 + hash(i * 8.8) * 4 }));
     const birds = [];
-    let nextBird = 2;
+    let nextBird = 1;
+    // a point a fraction f of the way along a polyline
+    function along(line, f) {
+        const segs = [];
+        let total = 0;
+        for (let i = 1; i < line.length; i++) { const d = Math.hypot(line[i][0] - line[i - 1][0], line[i][1] - line[i - 1][1]); segs.push(d); total += d; }
+        let d = f * total;
+        for (let i = 0; i < segs.length; i++) {
+            if (d <= segs[i]) { const q = d / segs[i]; return [line[i][0] + (line[i + 1][0] - line[i][0]) * q, line[i][1] + (line[i + 1][1] - line[i][1]) * q]; }
+            d -= segs[i];
+        }
+        return line[line.length - 1];
+    }
+    // cars: which road, position along it, speed (either way), and a muted colour
+    const CAR_COLOURS = ['rgb(52,48,46)', 'rgb(70,66,62)', 'rgb(96,90,84)', 'rgb(40,44,52)', 'rgb(110,96,84)'];
+    const cars = Array.from({ length: 9 }, (_, i) => ({ road: i % 2, f: hash(i * 3.1), v: (0.012 + hash(i * 5.7) * 0.012) * (i % 3 ? 1 : -1), col: CAR_COLOURS[i % CAR_COLOURS.length], lane: i % 3 ? 0.6 : -0.6 }));
+    // people strolling: which path, position, slow speed, and a step phase
+    const walkers = Array.from({ length: 16 }, (_, i) => ({ path: i % 2, f: hash(i * 2.3), v: (0.0015 + hash(i * 6.1) * 0.002) * (hash(i * 9.3) > 0.5 ? 1 : -1), ph: hash(i * 4.4) * 6, h: 2.4 + hash(i * 7.7) * 0.6, col: hash(i * 8.1) > 0.5 ? 'rgb(48,40,36)' : 'rgb(78,70,64)' }));
     const boats = [   // a couple of small craft moving slowly along the river: path y at the river, start x, speed
         { x: 420, y: 781, sp: 3.2, s: 1 }, { x: 980, y: 709, sp: -2.4, s: 0.8 }, { x: 760, y: 676, sp: 1.6, s: 0.55 }
     ];
 
     function update(t, dt) {
-        if (t >= nextBird && birds.length < 10) {
-            const ltr = Math.random() < 0.5, n = 1 + Math.floor(Math.random() * 5), y = 80 + Math.random() * 300;
-            for (let i = 0; i < n; i++) birds.push({ x: ltr ? -10 - i * 14 : IMG_W + 10 + i * 14, y: y + (Math.random() - 0.5) * 24, vx: (ltr ? 1 : -1) * (22 + Math.random() * 14), ph: Math.random() * 6, s: 2 + Math.random() * 1.5 });
-            nextBird = t + 4 + Math.random() * 7;
+        if (t >= nextBird && birds.length < 26) {
+            // mostly small, distant flocks low over the city; now and then one or two nearer
+            const far = Math.random() < 0.75;
+            const ltr = Math.random() < 0.5, n = far ? 3 + Math.floor(Math.random() * 6) : 1 + Math.floor(Math.random() * 2);
+            const y = far ? 420 + Math.random() * 160 : 120 + Math.random() * 260;
+            for (let i = 0; i < n; i++) birds.push({ x: ltr ? -10 - i * 9 : IMG_W + 10 + i * 9, y: y + (Math.random() - 0.5) * (far ? 14 : 24), vx: (ltr ? 1 : -1) * (far ? 10 + Math.random() * 6 : 24 + Math.random() * 12), ph: Math.random() * 6, s: far ? 0.9 + Math.random() * 0.5 : 2 + Math.random() * 1.2, far });
+            nextBird = t + 1.5 + Math.random() * 3;
         }
+        cars.forEach(c => { c.f += c.v * dt; if (c.f > 1) c.f -= 1; if (c.f < 0) c.f += 1; });
+        walkers.forEach(w => { w.f += w.v * dt; if (w.f > 1 || w.f < 0) w.v = -w.v; });
         for (let i = birds.length - 1; i >= 0; i--) {
             const b = birds[i];
             b.x += b.vx * dt;
@@ -203,8 +249,40 @@
             ctx.save();
             ctx.translate(x, w.y);
             ctx.scale(1, 0.28);
-            dot(WISP, 0, 0, w.r * 2, 0.16);
+            dot(WISP, 0, 0, w.r * 2, 0.22);
             ctx.restore();
+        });
+
+        // Cars along the riverside roads: small, dark and muted, with a faint glint of sun on glass
+        ctx.globalCompositeOperation = 'source-over';
+        cars.forEach(c => {
+            const [x, y] = along(ROADS[c.road], c.f);
+            const [x2, y2] = along(ROADS[c.road], Math.min(1, c.f + 0.01));
+            const a = Math.atan2(y2 - y, x2 - x);
+            const sz = 0.7 + (y - 660) / 140;   // nearer roads, slightly bigger cars
+            ctx.save();
+            ctx.translate(x, y + c.lane);
+            ctx.rotate(a);
+            ctx.globalAlpha = 0.85;
+            ctx.fillStyle = c.col;
+            ctx.fillRect(-1.6 * sz, -0.7 * sz, 3.2 * sz, 1.4 * sz);
+            ctx.globalAlpha = 0.5;
+            ctx.fillStyle = 'rgb(255,236,200)';
+            ctx.fillRect(-0.4 * sz, -0.7 * sz, 0.9 * sz, 0.4 * sz);
+            ctx.restore();
+        });
+
+        // People strolling along the embankments: tiny upright figures with a gentle bob
+        walkers.forEach(w => {
+            const [x, y] = along(PATHS[w.path], w.f);
+            const bob = Math.abs(Math.sin(t * 3 + w.ph)) * 0.25;
+            const h = w.h * (0.7 + (y - 660) / 160);
+            ctx.globalAlpha = 0.85;
+            ctx.fillStyle = w.col;
+            ctx.fillRect(x - 0.35, y - h - bob, 0.7, h);
+            ctx.beginPath();
+            ctx.arc(x, y - h - bob - 0.35, 0.42, 0, 6.283);
+            ctx.fill();
         });
 
         // Birds
@@ -212,6 +290,8 @@
         ctx.strokeStyle = 'rgb(70,56,48)';
         ctx.lineWidth = 0.6;
         birds.forEach(b => {
+            ctx.globalAlpha = b.far ? 0.55 : 0.75;
+            ctx.lineWidth = b.far ? 0.4 : 0.6;
             const f = Math.sin(t * 9 + b.ph) * b.s * 0.6;
             ctx.beginPath();
             ctx.moveTo(b.x - b.s, b.y - f);
