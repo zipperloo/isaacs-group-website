@@ -11,6 +11,10 @@
     const root = document.documentElement;
     const stage = document.getElementById('stage');
     const img = document.getElementById('scene-img');
+    const nightImg = document.getElementById('scene-night');
+    const breaker = document.getElementById('breaker');
+    let nightOn = false;   // the breaker: up = day (the default), down = night
+    let night = 0;         // 0 day .. 1 night (2-second fade)
     const canvas = document.getElementById('fx');
     const ctx = canvas.getContext('2d');
     const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -37,6 +41,10 @@
     ];
     const DESERT = [1405, 588, 1568, 668];   // shimmering heat haze over the dunes
     const SUN = [1522, 535];
+    const BREAKER_AT = [1621, 455];   // on the marble wall at the right of the picture
+    // Night: city lights detected in the night painting, and the tallest towers' aircraft lights
+    const CITY = [[1519,744],[1405,656],[1513,702],[398,734],[1048,638],[1056,651],[913,653],[68,655],[605,729],[1512,744],[812,656],[1346,661],[722,698],[302,704],[414,732],[1529,743],[1523,755],[605,701],[566,716],[522,722],[395,742],[1346,650],[1226,653],[793,654],[1432,657],[1073,684],[1072,703],[1477,704],[556,705],[595,711],[1078,716],[524,745],[645,652],[870,665],[1493,703],[617,704],[595,728],[1119,642],[41,654],[243,657],[1397,659],[1015,692],[647,694],[1531,701],[1041,705],[484,725],[305,620],[247,637],[1056,638],[1174,654],[1356,655],[1195,659],[1250,718],[375,689],[426,730],[568,736],[1432,740],[1537,742],[239,623],[744,650],[963,688],[132,689],[326,698],[888,650],[922,653],[235,695],[654,696],[1234,707],[1041,717],[871,749],[105,625],[825,655],[1140,656],[237,661],[962,675],[526,685],[1041,691],[321,703],[588,734],[350,747],[1059,534],[293,667],[48,691],[287,692],[1294,726],[606,748],[655,650],[776,653],[1012,664],[206,703],[1115,703],[586,704],[448,731],[1529,519],[1529,529],[1359,603],[155,665],[801,676],[278,737],[429,759],[1051,536],[472,556],[311,630],[69,634],[152,637],[911,670],[1015,683],[406,688],[1078,725],[561,734],[1442,739],[1508,759],[857,619],[230,629],[633,636],[1371,651],[931,653],[1131,657],[362,691],[337,749],[525,752],[1056,631],[1185,654],[1278,654],[1185,661],[266,665],[211,666],[1007,691],[298,694],[1452,743],[1520,521],[635,653],[156,682],[1346,722],[1040,727],[21,737],[360,624],[412,682],[914,699],[653,715],[1501,750],[396,640],[902,651],[535,655],[1249,657],[1417,660],[221,695],[214,700],[1161,741],[1547,741],[1355,564],[1086,579],[236,611],[702,619],[645,626],[264,630],[451,631],[1244,645],[595,657],[227,699],[1086,705],[1453,728],[14,622],[527,645],[509,646],[1104,646],[156,657],[1378,659],[260,670],[787,670]];
+    const TOWER_TOPS = [[1345, 383, 0], [365, 471, 0.7], [1056, 568, 1.3], [1130, 571, 0.4], [1228, 575, 1.9], [1262, 585, 1.1], [958, 586, 1.6]];
 
     /* ---------- helpers ---------- */
     function hash(n) { n = Math.sin(n * 127.1) * 43758.5453; return n - Math.floor(n); }
@@ -56,6 +64,9 @@
     const GLINT = sprite(255, 244, 220);
     const SUNGLOW = sprite(255, 220, 150);
     const WISP = sprite(255, 236, 214);
+    const WARM = sprite(255, 214, 150);
+    const RED = sprite(255, 50, 40);
+    const WHITE = sprite(235, 240, 255);
     const path = poly => { const p = new Path2D(); poly.forEach(([x, y], i) => (i ? p.lineTo(x, y) : p.moveTo(x, y))); p.closePath(); return p; };
     const riverPath = path(RIVER);
     function dot(s, x, y, size, a) {
@@ -134,12 +145,19 @@
         const w = r.wctx;
         w.globalCompositeOperation = 'source-over';
         w.clearRect(0, 0, r.work.width, r.work.height);
-        for (let y = r.by; y < r.by + r.bh; y++) {
-            const depth = (y - r.by) / r.bh;
-            const amp = r.amp[0] + (r.amp[1] - r.amp[0]) * depth;
-            const dx = amp * (0.6 * Math.sin(y * r.freq + t * r.speed) + 0.4 * Math.sin(y * r.freq * 0.37 - t * r.speed * 0.66 + 1.7));
-            w.drawImage(img, r.bx, y, r.bw, 1, dx * k, (y - r.by) * k, r.bw * k, k);
-        }
+        // copy from whichever painting is showing, blending the two during the fade
+        const nReady = nightImg.complete && nightImg.naturalWidth;
+        const layers = night <= 0 || !nReady ? [[img, 1]] : night >= 1 ? [[nightImg, 1]] : [[img, 1], [nightImg, night]];
+        layers.forEach(([src, alpha]) => {
+            w.globalAlpha = alpha;
+            for (let y = r.by; y < r.by + r.bh; y++) {
+                const depth = (y - r.by) / r.bh;
+                const amp = r.amp[0] + (r.amp[1] - r.amp[0]) * depth;
+                const dx = amp * (0.6 * Math.sin(y * r.freq + t * r.speed) + 0.4 * Math.sin(y * r.freq * 0.37 - t * r.speed * 0.66 + 1.7));
+                w.drawImage(src, r.bx, y, r.bw, 1, dx * k, (y - r.by) * k, r.bw * k, k);
+            }
+        });
+        w.globalAlpha = 1;
         w.globalCompositeOperation = 'destination-in';
         w.drawImage(r.mask, 0, 0);
         ctx.globalAlpha = 1;
@@ -224,6 +242,11 @@
             ctx.closePath(); ctx.fill();
             ctx.fillStyle = 'rgb(90,80,74)';
             ctx.fillRect(b.x - 2 * s, b.y - 1.8 * s, 3.2 * s, 1.8 * s);
+            if (night > 0) {
+                ctx.globalCompositeOperation = 'lighter';
+                dot(WARM, b.x - 0.4 * s, b.y - 1 * s, 5 * s, 0.8 * night);
+                ctx.globalCompositeOperation = 'source-over';
+            }
         });
         ctx.restore();
 
@@ -234,17 +257,19 @@
         for (let i = 0; i < (LITE ? 60 : 130); i++) {
             const x = 340 + hash(i * 1.7) * 1060, y = 662 + hash(i * 3.3) * 145;
             const n = noise(t * (1.4 + hash(i) * 2) + i * 4.1);
-            dot(GLINT, x, y, 3 + 2.5 * hash(i * 9), Math.pow(n, 4) * (0.6 + 0.4 * (x / 1400)));
+            dot(night > 0.5 ? WARM : GLINT, x, y, 3 + 2.5 * hash(i * 9), Math.pow(n, 4) * (0.6 + 0.4 * (x / 1400)) * (1 - 0.5 * night));
         }
         ctx.restore();
 
         // The low sun breathing softly, with a faint flare
         ctx.globalCompositeOperation = 'lighter';
-        const pulse = 0.75 + 0.25 * noise(t * 0.35);
+        const pulse = (0.75 + 0.25 * noise(t * 0.35)) * (1 - night);
         dot(SUNGLOW, SUN[0], SUN[1], 260, 0.22 * pulse);
         dot(SUNGLOW, SUN[0], SUN[1], 70, 0.35 * pulse);
         dot(SUNGLOW, SUN[0] - 260, SUN[1] + 120, 26, 0.08 * pulse);
         dot(SUNGLOW, SUN[0] - 420, SUN[1] + 190, 14, 0.06 * pulse);
+        // ...and by night a soft halo around the moon
+        dot(WHITE, 1525, 527, 120, 0.12 * night * (0.85 + 0.15 * noise(t * 0.4)));
 
         // Fine golden wisps of cloud drifting across the sky
         ctx.globalCompositeOperation = 'source-over';
@@ -253,7 +278,7 @@
             ctx.save();
             ctx.translate(x, w.y);
             ctx.scale(1, 0.28);
-            dot(WISP, 0, 0, w.r * 2, 0.22);
+            dot(WISP, 0, 0, w.r * 2, 0.22 * (1 - 0.7 * night));
             ctx.restore();
         });
 
@@ -267,13 +292,21 @@
             ctx.save();
             ctx.translate(x, y + c.lane);
             ctx.rotate(a);
-            ctx.globalAlpha = 0.85;
+            ctx.globalAlpha = 0.85 * (1 - night);
             ctx.fillStyle = c.col;
             ctx.fillRect(-1.6 * sz, -0.7 * sz, 3.2 * sz, 1.4 * sz);
-            ctx.globalAlpha = 0.5;
+            ctx.globalAlpha = 0.5 * (1 - night);
             ctx.fillStyle = 'rgb(255,236,200)';
             ctx.fillRect(-0.4 * sz, -0.7 * sz, 0.9 * sz, 0.4 * sz);
             ctx.restore();
+            if (night > 0) {
+                // by night just headlights and tail lights
+                const dir = Math.sign(c.v), ca = Math.cos(a) * dir, sa = Math.sin(a) * dir;
+                ctx.globalCompositeOperation = 'lighter';
+                dot(WARM, x + ca * 1.8 * sz, y + c.lane + sa * 1.8 * sz, 3.2 * sz, 0.9 * night);
+                dot(RED, x - ca * 1.8 * sz, y + c.lane - sa * 1.8 * sz, 2.4 * sz, 0.7 * night);
+                ctx.globalCompositeOperation = 'source-over';
+            }
         });
 
         // People strolling along the embankments: tiny upright figures with a gentle bob
@@ -281,7 +314,7 @@
             const [x, y] = along(PATHS[w.path], w.f);
             const bob = Math.abs(Math.sin(t * 3 + w.ph)) * 0.25;
             const h = w.h * (1.05 + (y - 660) / 120);
-            ctx.globalAlpha = 0.85;
+            ctx.globalAlpha = 0.85 * (1 - 0.6 * night);
             ctx.fillStyle = w.col;
             ctx.fillRect(x - 0.5, y - h - bob, 1, h);
             ctx.beginPath();
@@ -294,7 +327,7 @@
         ctx.strokeStyle = 'rgb(70,56,48)';
         ctx.lineWidth = 0.6;
         birds.forEach(b => {
-            ctx.globalAlpha = b.far ? 0.7 : 0.8;
+            ctx.globalAlpha = (b.far ? 0.7 : 0.8) * (1 - 0.85 * night);
             ctx.lineWidth = b.far ? 0.55 : 0.7;
             const f = Math.sin(t * 9 + b.ph) * b.s * 0.6;
             ctx.beginPath();
@@ -309,11 +342,64 @@
         MOTES.forEach((m, i) => {
             const x = m.x + Math.sin(t * 0.2 + m.ph) * 14 + t * m.sp * 0.3 % 40;
             const y = m.y + Math.cos(t * 0.17 + m.ph * 2) * 10;
-            dot(GLINT, x, y, m.r * 3, 0.35 * (0.4 + 0.6 * noise(t * 0.6 + i)));
+            dot(GLINT, x, y, m.r * 3, 0.35 * (0.4 + 0.6 * noise(t * 0.6 + i)) * (1 - night));
         });
+        if (night > 0) drawNight(t);
         ctx.globalCompositeOperation = 'source-over';
         ctx.globalAlpha = 1;
     }
+
+    // City lights twinkling, red aircraft warning lights on the tallest towers, and a plane
+    // crossing high over the scene now and then
+    const plane = { born: -100, dur: 40, next: 6, ltr: true, y: 120 };
+    function drawNight(t) {
+        const e = night * night * (3 - 2 * night);
+        ctx.globalCompositeOperation = 'lighter';
+        CITY.forEach(([x, y], i) => {
+            const n = noise(t * (0.5 + hash(i) * 1.2) + i * 5.3);
+            const blink = hash(Math.floor(t * 0.4 + i * 3.1) * 7 + i) > 0.97 ? 0 : 1;   // the odd light switching off for a moment
+            dot(WARM, x, y, 4 + n * 3, e * (0.18 + 0.4 * n * n) * blink);
+        });
+        TOWER_TOPS.forEach(([x, y, ph]) => {
+            const c = ((t + ph) % 2.2) / 2.2;
+            dot(RED, x, y, 7, e * (c < 0.35 ? Math.sin((c / 0.35) * Math.PI) : 0.06));
+        });
+        if (t >= plane.next && t - plane.born > plane.dur) {
+            Object.assign(plane, { born: t, dur: 38 + Math.random() * 14, ltr: Math.random() < 0.5, y: 70 + Math.random() * 160 });
+            plane.next = t + plane.dur + 15 + Math.random() * 25;
+        }
+        const f = (t - plane.born) / plane.dur;
+        if (f >= 0 && f <= 1) {
+            const x = plane.ltr ? -30 + f * (IMG_W + 60) : IMG_W + 30 - f * (IMG_W + 60);
+            const y = plane.y + f * 30;
+            const edge = Math.min(1, f / 0.04, (1 - f) / 0.04);
+            const c = (t - plane.born) % 1.2;
+            dot(WHITE, x, y, 2.4, 0.6 * e * edge);                                           // steady navigation light
+            if (c < 0.06 || (c > 0.18 && c < 0.24)) dot(WHITE, x, y, 7, 0.95 * e * edge);   // double white strobe
+            dot(RED, x + (plane.ltr ? -1.6 : 1.6), y + 0.4, 4, (c > 0.6 && c < 0.85 ? 0.8 : 0.1) * e * edge);   // red beacon
+        }
+    }
+
+    /* ---------- day / night breaker ---------- */
+    function placeBreaker() {
+        const r = canvas.getBoundingClientRect();
+        let x = r.left + (BREAKER_AT[0] / IMG_W) * r.width;
+        let y = r.top + (BREAKER_AT[1] / IMG_H) * r.height;
+        const w = breaker.offsetWidth, h = breaker.offsetHeight;
+        // stay on the wall, but never slide off screen where the wall is cropped
+        x = Math.min(x, innerWidth - w / 2 - 14);
+        y = Math.max(h / 2 + 70, Math.min(innerHeight - h / 2 - 90, y));
+        breaker.style.transform = `translate(${(x - w / 2).toFixed(1)}px, ${(y - h / 2).toFixed(1)}px)`;
+    }
+    breaker.addEventListener('click', () => {
+        nightOn = !nightOn;
+        if (nightOn && !nightImg.getAttribute('src')) nightImg.src = nightImg.dataset.src;
+        breaker.setAttribute('aria-pressed', String(nightOn));
+        breaker.setAttribute('aria-label', nightOn ? 'Switch to day' : 'Switch to night');
+        nightImg.classList.toggle('on', nightOn);
+        root.classList.toggle('night', nightOn);
+    });
+    nightImg.addEventListener('load', () => nightImg.classList.toggle('on', nightOn));
 
     /* ---------- loop ---------- */
     let start = 0, last = 0, lastDraw = 0;
@@ -328,13 +414,16 @@
         lastDraw = now;
         const dt = Math.min(0.05, Math.max(0, (now - last) / 1000));
         last = now;
+        night = nightOn && nightImg.naturalWidth ? Math.min(1, night + dt / 2) : Math.max(0, night - dt / 2);
         update(t, dt);
         draw(t);
+        placeBreaker();
         requestAnimationFrame(frame);
     }
 
     layout();
-    addEventListener('resize', layout);
+    addEventListener('resize', () => { layout(); placeBreaker(); });
+    placeBreaker();
     (img.decode ? img.decode() : Promise.resolve()).catch(() => {}).then(() => {
         root.classList.remove('loading');
         if (reduceMotion) return;
