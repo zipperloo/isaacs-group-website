@@ -11,7 +11,7 @@
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
     <meta name="theme-color" content="#132038">
-    <link rel="preload" as="image" href="assets/background-strategy.jpg?v=92">
+    <link rel="preload" as="image" href="assets/background-strategy.jpg?v=96">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@200;300&display=swap" rel="stylesheet">
@@ -68,12 +68,21 @@
             position: fixed;
             left: calc(var(--gutter) + 1.5vw);
             top: 22vh;
-            width: min(440px, calc(100vw - 2 * var(--gutter)));
+            width: min(560px, calc(100vw - 2 * var(--gutter)));
             margin: 0;
             text-align: left;
             color: var(--ink);
-            text-shadow: 0 0 10px rgba(255, 248, 236, 0.55);
-            transition: color 2s ease, text-shadow 2s ease;
+            text-shadow: none;
+            /* a soft, frosted panel behind the text: warm ivory by day, deep navy by night */
+            padding: clamp(24px, 2.6vw, 40px) clamp(26px, 2.8vw, 44px);
+            margin-left: calc(-1 * clamp(26px, 2.8vw, 44px));
+            background: rgba(252, 246, 236, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.45);
+            border-radius: 2px;
+            box-shadow: 0 18px 50px rgba(60, 40, 20, 0.12);
+            backdrop-filter: blur(10px) saturate(1.1);
+            -webkit-backdrop-filter: blur(10px) saturate(1.1);
+            transition: color 2s ease, background-color 2s ease, border-color 2s ease, box-shadow 2s ease;
             z-index: 2;
         }
         .statement h2 {
@@ -97,23 +106,36 @@
             font-size: clamp(13px, 0.95vw, 17px);
             line-height: 1.7;
             letter-spacing: 0.02em;
-            opacity: 0.88;
+            opacity: 0.92;
         }
         .statement .sectors {
-            margin-top: clamp(14px, 2vh, 22px);
+            margin-top: clamp(16px, 2.2vh, 24px);
+            padding-top: clamp(14px, 2vh, 20px);
+            border-top: 1px solid currentColor;
+            border-top-color: color-mix(in srgb, currentColor 18%, transparent);
             font-size: clamp(10px, 0.68vw, 12px);
             letter-spacing: 0.24em;
             text-transform: uppercase;
             opacity: 0.75;
         }
         .statement .sectors span { white-space: nowrap; }
+        .statement .sectors b { font-weight: inherit; }
+        /* wide screens: Consumer · B2B · Data Centres / Real Estate · AI Software;
+           phones: Consumer · B2B / Data Centres / Real Estate · AI Software */
+        .statement .brk { display: inline; }
+        .statement .brk-wide { display: none; }
+        @media (max-width: 768px) {
+            .statement .brk { display: none; }
+            .statement .brk-wide { display: inline; }
+        }
         .statement .sectors { max-width: none; line-height: 2.1; }
         .statement .sectors i { font-style: normal; margin: 0 0.35em; opacity: 0.6; }
 
         /* Night: the lettering turns ivory with a soft dark halo */
         .logo img, .label, .tagline { transition: filter 2s ease, color 2s ease, text-shadow 2s ease; }
         .night .logo img, .night .label { filter: drop-shadow(0 0 3px rgba(10, 12, 25, 0.6)) drop-shadow(0 0 10px rgba(10, 12, 25, 0.4)); }
-        .night .tagline, .night .statement { color: #e2d8c9; text-shadow: 0 0 6px rgba(10, 12, 25, 0.7), 0 0 18px rgba(10, 12, 25, 0.45); }
+        .night .tagline { color: #e2d8c9; text-shadow: 0 0 6px rgba(10, 12, 25, 0.7), 0 0 18px rgba(10, 12, 25, 0.45); }
+        .night .statement { color: #e2d8c9; background: rgba(12, 18, 36, 0.42); border-color: rgba(226, 216, 201, 0.14); box-shadow: 0 18px 50px rgba(0, 0, 0, 0.3); }
 
         /* The day / night switch: a satin-brass rocker light switch on the marble wall. It is drawn
            flat and then skewed and foreshortened by strategy.js to sit in the wall's perspective. */
@@ -142,7 +164,8 @@
 
         @media (max-width: 768px) {
             .tagline { font-size: 3.4vw; letter-spacing: 0.35em; padding-left: 0.35em; bottom: calc(var(--edge) + 24px); }
-            .statement { top: 18vh; }
+            .statement { top: 17vh; margin-left: 0; width: calc(100vw - var(--gutter) - 1.5vw - 64px); padding: 20px 20px; }
+            .statement .sectors { font-size: 10px; letter-spacing: 0.14em; }
             .statement .sectors { letter-spacing: 0.14em; }
         }
         @media (prefers-reduced-motion: reduce) {
@@ -154,8 +177,8 @@
 <body>
     <div class="stage" id="stage" aria-hidden="true">
         <div class="breathe">
-            <img id="scene-img" src="assets/background-strategy.jpg?v=92" alt="">
-            <img id="scene-night" data-src="assets/background-strategy-night.jpg?v=92" alt="">
+            <img id="scene-img" src="assets/background-strategy.jpg?v=96" alt="">
+            <img id="scene-night" data-src="assets/background-strategy-night.jpg?v=96" alt="">
             <canvas id="fx"></canvas>
         </div>
     </div>
@@ -180,7 +203,7 @@
                     <h2>Independent capital.<br>A long-term perspective.</h2>
                     <div class="rule" aria-hidden="true"></div>
                     <p>A private family office investing globally across public markets, alternative assets and directly held businesses.</p>
-                    <p class="sectors"><span>Consumer &amp; Beauty</span><i>·</i><span>B2B Technology</span><i>·</i><span>Data Centres</span><br><span>Real Estate</span><i>·</i><span>AI Software</span></p>
+                    <p class="sectors"><span>Consumer &amp; Beauty</span><i>·</i><span>B2B Technology</span><b class="brk"><i>·</i></b><br class="brk-wide"><span>Data Centres</span><br class="brk-narrow"><span>Real Estate</span><i>·</i><span>AI Software</span></p>
                 </section>
             </div>
             <div class="layer reveal" style="--delay: 2s">
@@ -211,6 +234,6 @@
     </button>
 
     <div class="curtain" aria-hidden="true"></div>
-    <script src="assets/strategy.js?v=92"></script>
+    <script src="assets/strategy.js?v=96"></script>
 </body>
 </html>
