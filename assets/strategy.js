@@ -21,6 +21,7 @@
         [850, 668], [930, 680], [1010, 695], [1060, 712], [1120, 725], [1220, 738], [1320, 742], [1392, 750],
         [1300, 756], [1130, 761], [1040, 768], [900, 776], [780, 790], [640, 800], [520, 806], [420, 806]];
     const FAMILY = [1122, 645, 1268, 792];
+    const BURJ_AL_ARAB = [952, 592, 1018, 708];   // stands in the water, so kept out of the ripple
     // The glass balustrade in front of the river: its top rail (a line sloping gently up to the
     // right) and its vertical posts, all kept out of the ripple so they stay straight
     const railY = x => 763 - (x - 300) * 0.033;
@@ -28,11 +29,11 @@
     // Riverside roads and promenades, as polylines: cars drive along the roads, people stroll the paths
     const ROADS = [
         [[345, 758], [450, 742], [560, 728], [622, 708], [664, 684]],
-        [[850, 664], [930, 676], [1010, 692], [1070, 708], [1120, 720]]
+        [[1022, 700], [1070, 710], [1118, 721]]
     ];
     const PATHS = [
         [[360, 753], [460, 738], [560, 724], [618, 705]],
-        [[860, 668], [940, 680], [1020, 697], [1080, 712]]
+        [[1026, 704], [1080, 714], [1114, 722]]
     ];
     const DESERT = [1405, 588, 1568, 668];   // shimmering heat haze over the dunes
     const SUN = [1522, 535];
@@ -112,6 +113,7 @@
                 m.shadowOffsetX = 0;
                 m.setTransform(k, 0, 0, k, -bx * k, -by * k);
                 m.fillRect(def.cut[0], def.cut[1], def.cut[2] - def.cut[0], def.cut[3] - def.cut[1]);
+                if (def.rail) m.fillRect(BURJ_AL_ARAB[0], BURJ_AL_ARAB[1], BURJ_AL_ARAB[2] - BURJ_AL_ARAB[0], BURJ_AL_ARAB[3] - BURJ_AL_ARAB[1]);
                 if (def.rail) {
                     // no ripple anywhere near the glass balustrade: only the far river moves
                     m.beginPath();
@@ -167,7 +169,7 @@
     // people strolling: which path, position, slow speed, and a step phase
     const walkers = Array.from({ length: 16 }, (_, i) => ({ path: i % 2, f: hash(i * 2.3), v: (0.0015 + hash(i * 6.1) * 0.002) * (hash(i * 9.3) > 0.5 ? 1 : -1), ph: hash(i * 4.4) * 6, h: 2.4 + hash(i * 7.7) * 0.6, col: hash(i * 8.1) > 0.5 ? 'rgb(48,40,36)' : 'rgb(78,70,64)' }));
     const boats = [   // a couple of small craft moving slowly along the river: path y at the river, start x, speed
-        { x: 420, y: 781, sp: 5, s: 1.5 }, { x: 980, y: 709, sp: -4, s: 1.2 }, { x: 760, y: 676, sp: 2.6, s: 0.85 }
+        { x: 420, y: 781, sp: 5, s: 1.5 }, { x: 980, y: 722, sp: -4, s: 1.2 }, { x: 760, y: 676, sp: 2.6, s: 0.85 }
     ];
 
     function update(t, dt) {
@@ -190,7 +192,7 @@
         boats.forEach(b => {
             b.x += b.sp * dt;
             if (b.x > 1000 && b.y > 770) b.x = 380;
-            if (b.x < 860 && b.y > 700 && b.y < 720) b.x = 1100;
+            if (b.x < 860 && b.y > 700 && b.y < 730) b.x = 1100;
             if (b.x > 880 && b.y < 690) b.x = 700;
         });
     }
