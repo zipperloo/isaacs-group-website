@@ -113,12 +113,14 @@
                 m.setTransform(k, 0, 0, k, -bx * k, -by * k);
                 m.fillRect(def.cut[0], def.cut[1], def.cut[2] - def.cut[0], def.cut[3] - def.cut[1]);
                 if (def.rail) {
-                    m.lineWidth = 5;
+                    // no ripple anywhere near the glass balustrade: only the far river moves
                     m.beginPath();
-                    m.moveTo(250, railY(250));
-                    m.lineTo(1450, railY(1450));
-                    m.stroke();
-                    POSTS.forEach(x => m.fillRect(x - 3, railY(x) - 2, 6, 70));
+                    m.moveTo(200, railY(200) - 16);
+                    m.lineTo(1500, railY(1500) - 16);
+                    m.lineTo(1500, 950);
+                    m.lineTo(200, 950);
+                    m.closePath();
+                    m.fill();
                 }
             }
             const work = document.createElement('canvas');
@@ -165,7 +167,7 @@
     // people strolling: which path, position, slow speed, and a step phase
     const walkers = Array.from({ length: 16 }, (_, i) => ({ path: i % 2, f: hash(i * 2.3), v: (0.0015 + hash(i * 6.1) * 0.002) * (hash(i * 9.3) > 0.5 ? 1 : -1), ph: hash(i * 4.4) * 6, h: 2.4 + hash(i * 7.7) * 0.6, col: hash(i * 8.1) > 0.5 ? 'rgb(48,40,36)' : 'rgb(78,70,64)' }));
     const boats = [   // a couple of small craft moving slowly along the river: path y at the river, start x, speed
-        { x: 420, y: 781, sp: 3.2, s: 1 }, { x: 980, y: 709, sp: -2.4, s: 0.8 }, { x: 760, y: 676, sp: 1.6, s: 0.55 }
+        { x: 420, y: 781, sp: 5, s: 1.5 }, { x: 980, y: 709, sp: -4, s: 1.2 }, { x: 760, y: 676, sp: 2.6, s: 0.85 }
     ];
 
     function update(t, dt) {
@@ -174,7 +176,7 @@
             const far = Math.random() < 0.75;
             const ltr = Math.random() < 0.5, n = far ? 3 + Math.floor(Math.random() * 6) : 1 + Math.floor(Math.random() * 2);
             const y = far ? 420 + Math.random() * 160 : 120 + Math.random() * 260;
-            for (let i = 0; i < n; i++) birds.push({ x: ltr ? -10 - i * 9 : IMG_W + 10 + i * 9, y: y + (Math.random() - 0.5) * (far ? 14 : 24), vx: (ltr ? 1 : -1) * (far ? 10 + Math.random() * 6 : 24 + Math.random() * 12), ph: Math.random() * 6, s: far ? 0.9 + Math.random() * 0.5 : 2 + Math.random() * 1.2, far });
+            for (let i = 0; i < n; i++) birds.push({ x: ltr ? -10 - i * 9 : IMG_W + 10 + i * 9, y: y + (Math.random() - 0.5) * (far ? 14 : 24), vx: (ltr ? 1 : -1) * (far ? 10 + Math.random() * 6 : 24 + Math.random() * 12), ph: Math.random() * 6, s: far ? 1.3 + Math.random() * 0.6 : 2.4 + Math.random() * 1.4, far });
             nextBird = t + 1.5 + Math.random() * 3;
         }
         cars.forEach(c => { c.f += c.v * dt; if (c.f > 1) c.f -= 1; if (c.f < 0) c.f += 1; });
@@ -230,7 +232,7 @@
         for (let i = 0; i < (LITE ? 60 : 130); i++) {
             const x = 340 + hash(i * 1.7) * 1060, y = 662 + hash(i * 3.3) * 145;
             const n = noise(t * (1.4 + hash(i) * 2) + i * 4.1);
-            dot(GLINT, x, y, 2.4 + 2 * hash(i * 9), 0.95 * Math.pow(n, 5) * (0.5 + 0.5 * (x / 1400)));
+            dot(GLINT, x, y, 3 + 2.5 * hash(i * 9), Math.pow(n, 4) * (0.6 + 0.4 * (x / 1400)));
         }
         ctx.restore();
 
@@ -259,7 +261,7 @@
             const [x, y] = along(ROADS[c.road], c.f);
             const [x2, y2] = along(ROADS[c.road], Math.min(1, c.f + 0.01));
             const a = Math.atan2(y2 - y, x2 - x);
-            const sz = 0.7 + (y - 660) / 140;   // nearer roads, slightly bigger cars
+            const sz = 1.1 + (y - 660) / 110;   // nearer roads, slightly bigger cars
             ctx.save();
             ctx.translate(x, y + c.lane);
             ctx.rotate(a);
@@ -276,12 +278,12 @@
         walkers.forEach(w => {
             const [x, y] = along(PATHS[w.path], w.f);
             const bob = Math.abs(Math.sin(t * 3 + w.ph)) * 0.25;
-            const h = w.h * (0.7 + (y - 660) / 160);
+            const h = w.h * (1.05 + (y - 660) / 120);
             ctx.globalAlpha = 0.85;
             ctx.fillStyle = w.col;
-            ctx.fillRect(x - 0.35, y - h - bob, 0.7, h);
+            ctx.fillRect(x - 0.5, y - h - bob, 1, h);
             ctx.beginPath();
-            ctx.arc(x, y - h - bob - 0.35, 0.42, 0, 6.283);
+            ctx.arc(x, y - h - bob - 0.5, 0.6, 0, 6.283);
             ctx.fill();
         });
 
@@ -290,8 +292,8 @@
         ctx.strokeStyle = 'rgb(70,56,48)';
         ctx.lineWidth = 0.6;
         birds.forEach(b => {
-            ctx.globalAlpha = b.far ? 0.55 : 0.75;
-            ctx.lineWidth = b.far ? 0.4 : 0.6;
+            ctx.globalAlpha = b.far ? 0.7 : 0.8;
+            ctx.lineWidth = b.far ? 0.55 : 0.7;
             const f = Math.sin(t * 9 + b.ph) * b.s * 0.6;
             ctx.beginPath();
             ctx.moveTo(b.x - b.s, b.y - f);
