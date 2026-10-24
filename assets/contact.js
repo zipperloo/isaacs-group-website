@@ -5,7 +5,7 @@
 (() => {
     const css = document.createElement('link');
     css.rel = 'stylesheet';
-    css.href = 'assets/contact.css?v=100';
+    css.href = 'assets/contact.css?v=101';
     document.head.appendChild(css);
 
     const holder = document.createElement('div');

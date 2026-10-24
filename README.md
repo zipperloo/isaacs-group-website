@@ -2,7 +2,7 @@
 
 The single-page website for ISAACS Family Office ("A world of perspective"), served at [isaacs.group](https://isaacs.group).
 
-The home page is a full-screen illustrated night scene with the ISAACS logo, the tagline and a link to the contact form, all in ivory.
+The home page is a full-screen illustrated night scene with the ISAACS logo, the tagline and the site menu, all in ivory.
 
 The scene is subtly animated (see `assets/scene.js`):
 
@@ -40,6 +40,7 @@ Visitors who have "reduce motion" turned on in their device settings see the sti
 | Path | Purpose |
 | --- | --- |
 | `index.html` | The home page and its styles. |
+| `assets/nav.js`, `assets/nav.css` | The site menu, shared by every page: three thin lines at the top right (ivory or brown to suit the scene) that open a small frosted navy list of HOME, STRATEGY and CONTACT, with the current page underlined. It closes on choosing an item, tapping elsewhere or Escape. CONTACT opens the contact form. |
 | `assets/contact.js`, `assets/contact.css` | The contact form, shared by every page: it adds its own markup, and any element with a `data-contact` attribute opens it (as does `#contact` in a page address). |
 | `assets/scene.js` | The scene animation: layout, parallax and the canvas effects. |
 | `assets/sound.js` | The sound toggle and background music. |
@@ -49,8 +50,8 @@ Visitors who have "reduce motion" turned on in their device settings see the sti
 | `assets/background-day.jpg` | The daytime painting, pixel-aligned with the night one. |
 | `assets/background-christmas.jpg` | The painted Christmas version of the background, pixel-aligned with it. |
 | `assets/background-halloween.jpg` | The painted Halloween version of the background, pixel-aligned with it. |
-| `assets/typography/` | Ivory lettering as transparent PNGs: wordmark, "family office" and contact. The tagline "A World of Perspective" is live text instead, set in Source Sans 3 ExtraLight (the supplied artwork's typeface at a lighter weight, to match the wordmark). |
-| `strategy.html`, `assets/strategy.js`, `assets/background-strategy.jpg`, `assets/background-strategy-night.jpg` | The Strategy page (logo, Contact and the tagline "Thinking in Decades" over a golden-hour city scene, with a satin-brass light switch on the right-hand marble wall (drawn in the wall’s perspective) that switches it to night (twinkling city lights, red aircraft lights on the tallest towers, car head and tail lights, lit boats and a plane crossing), and with river ripples (kept off the glass balustrade) and glints, small boats, cars on the riverside roads, people strolling the embankments, distant flocks of birds, a breathing sun, drifting cloud wisps, desert heat haze, birds and dust motes). Linked as STRATEGY under CONTACT on both pages; on touch screens the scene can be swiped to explore, as on the home page. |
+| `assets/typography/` | Ivory lettering as transparent PNGs: wordmark, "family office" and contact (the last no longer used now the menu is live text). The tagline "A World of Perspective" is live text instead, set in Source Sans 3 ExtraLight (the supplied artwork's typeface at a lighter weight, to match the wordmark). |
+| `strategy.html`, `assets/strategy.js`, `assets/background-strategy.jpg`, `assets/background-strategy-night.jpg` | The Strategy page (logo, the site menu and the tagline "Thinking in Decades" over a golden-hour city scene, with a satin-brass light switch on the right-hand marble wall (drawn in the wall’s perspective) that switches it to night (twinkling city lights, red aircraft lights on the tallest towers, car head and tail lights, lit boats and a plane crossing), and with river ripples (kept off the glass balustrade) and glints, small boats, cars on the riverside roads, people strolling the embankments, distant flocks of birds, a breathing sun, drifting cloud wisps, desert heat haze, birds and dust motes). Reached from the site menu; on touch screens the scene can be swiped to explore, as on the home page, and the light switch stays fixed to its spot on the wall as the picture moves (on phones, swipe to the right-hand wall to find it). |
 | `favicon.ico`, `favicon.svg`, `apple-touch-icon.png`, `icon-512.png` | Site icons: the A from the ISAACS wordmark in ivory on navy. |
 | `logo.png` | Old yellow logo mark. Not used by the current site. |
 | `CNAME` | Custom domain for GitHub Pages (`isaacs.group`). |
@@ -91,7 +92,7 @@ The laptop on the terrace desk shows a screenshot of the medik8.com home page on
 
 ## Contact form
 
-The **Contact** link opens a form addressed to Helen Molyneux, Executive Assistant to the Principal. It posts to [Formspree](https://formspree.io) (endpoint `https://formspree.io/f/xnpjrnja`, set on the `<form>` tag's `action` attribute in `index.html`). Messages arrive at hello@isaacs.group. The form shows a confirmation or error message without leaving the page.
+**Contact** in the site menu opens a form, over whichever page is open, addressed to Helen Molyneux, Executive Assistant to the Principal. It posts to [Formspree](https://formspree.io) (endpoint `https://formspree.io/f/xnpjrnja`, set on the `<form>` tag's `action` attribute in `assets/contact.js`). Messages arrive at hello@isaacs.group. The form shows a confirmation or error message without leaving the page.
 
 ## Deployment
 

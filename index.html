@@ -216,40 +216,6 @@
         }
 
 
-        .contact {
-            position: fixed;
-            top: calc(var(--edge) * 0.6);
-            right: var(--gutter-right);
-            padding: 6px;
-            margin: -6px;
-            background: none;
-            border: 0;
-            cursor: pointer;
-            transition: opacity 0.3s ease;
-            z-index: 2;
-        }
-        .contact:hover { opacity: 0.75; }
-        .strategy-link {
-            position: fixed;
-            top: calc(var(--edge) * 0.6 + var(--label-h) + 14px);
-            right: var(--gutter-right);
-            color: var(--ivory);
-            font-family: 'Jost', 'Segoe UI', sans-serif;
-            font-weight: 300;
-            font-size: calc(var(--label-h) * 0.62);
-            letter-spacing: 0.42em;
-            margin-right: -0.42em;
-            text-decoration: none;
-            text-transform: uppercase;
-            text-shadow: 0 0 6px var(--halo);
-            pointer-events: auto;
-            transition: opacity 0.3s ease, color 2s ease;
-            z-index: 2;
-        }
-        .strategy-link[hidden] { display: none; }
-        .strategy-link:hover { opacity: 0.75; }
-        .daytime .strategy-link { color: #2a1e18; text-shadow: 0 0 6px rgba(255, 248, 236, 0.6); }
-        .contact:focus-visible,
         .sound:focus-visible {
             outline: 1px solid var(--ivory);
             outline-offset: 4px;
@@ -414,12 +380,6 @@
                 <img class="family-office" src="assets/typography/family-office-ivory.png" alt="" aria-hidden="true">
             </h1>
 
-            <div class="layer reveal" style="--delay: 2.6s">
-                <button class="contact" id="contact-button" type="button" aria-haspopup="dialog" data-contact>
-                    <img class="label" src="assets/typography/contact-ivory.png" alt="Contact">
-                </button>
-                <a class="strategy-link" href="strategy.html">Strategy</a>
-            </div>
         </header>
 
         <main>
@@ -439,8 +399,9 @@
 
     <div class="curtain" aria-hidden="true"></div>
 
-    <script src="assets/scene.js?v=100"></script>
-    <script src="assets/sound.js?v=100"></script>
-    <script src="assets/contact.js?v=100"></script>
+    <script src="assets/scene.js?v=101"></script>
+    <script src="assets/sound.js?v=101"></script>
+    <script src="assets/nav.js?v=101"></script>
+    <script src="assets/contact.js?v=101"></script>
 </body>
 </html>

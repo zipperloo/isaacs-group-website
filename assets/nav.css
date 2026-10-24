@@ -1,0 +1,90 @@
+/* The site menu (nav.js): three hairlines at the top right, opening a small frosted list */
+.site-nav {
+    position: fixed;
+    top: calc(clamp(20px, 4vw, 56px) * 0.6);
+    right: clamp(16px, 2.2vw, 48px);
+    z-index: 6;
+    color: #e2d8c9;
+    font-family: 'Jost', 'Segoe UI', sans-serif;
+    transition: color 2s ease, opacity 1.6s ease var(--delay, 0s), transform 1.6s cubic-bezier(0.2, 0.7, 0.2, 1) var(--delay, 0s);
+}
+/* home: ivory at night, brown on the bright day scene; strategy: the reverse */
+.daytime .site-nav, .site-nav.on-strategy { color: #2a1e18; }
+.night .site-nav.on-strategy { color: #e2d8c9; }
+
+.menu-button {
+    position: relative;
+    display: block;
+    width: 44px;
+    height: 44px;
+    margin: -10px -10px 0 0;
+    padding: 0;
+    background: none;
+    border: 0;
+    color: inherit;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+.menu-button span {
+    position: absolute;
+    right: 10px;
+    width: 26px;
+    height: 1px;
+    background: currentColor;
+    box-shadow: 0 0 6px rgba(10, 8, 6, 0.45);
+    transition: transform 0.4s ease, opacity 0.3s ease, width 0.4s ease;
+}
+.daytime .menu-button span, .on-strategy .menu-button span { box-shadow: 0 0 6px rgba(255, 248, 236, 0.7); }
+.night .on-strategy .menu-button span { box-shadow: 0 0 6px rgba(10, 8, 6, 0.45); }
+.menu-button span:nth-child(1) { top: 14px; }
+.menu-button span:nth-child(2) { top: 21px; width: 18px; }
+.menu-button span:nth-child(3) { top: 28px; }
+.menu-button:hover span:nth-child(2) { width: 26px; }
+/* open: the outer lines cross, the middle one fades */
+.open .menu-button span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.open .menu-button span:nth-child(2) { opacity: 0; }
+.open .menu-button span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+.menu-button:focus-visible { outline: 1px solid currentColor; outline-offset: -4px; }
+
+.menu {
+    position: absolute;
+    top: 46px;
+    right: -14px;
+    min-width: 200px;
+    margin: 0;
+    padding: 10px 0;
+    list-style: none;
+    background: rgba(19, 32, 56, 0.72);
+    backdrop-filter: blur(14px) saturate(1.1);
+    -webkit-backdrop-filter: blur(14px) saturate(1.1);
+    border: 1px solid rgba(226, 216, 201, 0.16);
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.28);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-6px);
+    transition: opacity 0.35s ease, transform 0.35s ease, visibility 0s 0.35s;
+}
+.open .menu { opacity: 1; visibility: visible; transform: none; transition: opacity 0.35s ease, transform 0.35s ease; }
+.menu a, .menu button {
+    display: block;
+    width: 100%;
+    padding: 14px 26px 14px 28px;
+    background: none;
+    border: 0;
+    color: #e2d8c9;
+    font: 300 12px/1 'Jost', 'Segoe UI', sans-serif;
+    letter-spacing: 0.42em;
+    text-align: right;
+    text-decoration: none;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: opacity 0.3s ease;
+}
+.menu a:hover, .menu button:hover { opacity: 0.7; }
+.menu [aria-current] { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 0.6em; }
+.menu a:focus-visible, .menu button:focus-visible { outline: 1px solid rgba(226, 216, 201, 0.6); outline-offset: -6px; }
+
+@media (max-width: 600px) {
+    .menu { min-width: 180px; }
+    .menu a, .menu button { padding: 16px 24px; font-size: 13px; }
+}

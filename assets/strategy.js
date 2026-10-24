@@ -388,12 +388,10 @@
     /* ---------- day / night breaker ---------- */
     function placeBreaker() {
         const r = canvas.getBoundingClientRect();
-        let x = r.left + (BREAKER_AT[0] / IMG_W) * r.width;
-        let y = r.top + (BREAKER_AT[1] / IMG_H) * r.height;
+        // fixed to its spot on the wall: it moves with the picture and slides off screen with it
+        const x = r.left + (BREAKER_AT[0] / IMG_W) * r.width;
+        const y = r.top + (BREAKER_AT[1] / IMG_H) * r.height;
         const w = breaker.offsetWidth, h = breaker.offsetHeight;
-        // stay on the wall, but never slide off screen where the wall is cropped
-        x = Math.min(x, innerWidth - w / 2 - 14);
-        y = Math.max(h / 2 + 70, Math.min(innerHeight - h / 2 - 90, y));
         // The wall recedes to the left: its marble joints rise slightly to the right above eye level
         // and the face is foreshortened, so the plate is narrowed and sheared to match
         breaker.style.transform = `translate(${(x - w * 0.41).toFixed(1)}px, ${(y - h / 2).toFixed(1)}px) matrix(0.82, -0.07, 0, 1, 0, 0)`;
@@ -465,6 +463,7 @@
         current.y += (ty - current.y) * 0.04;
         updatePan(t);
         stage.style.transform = `translate3d(${(-overflowX * pan.focal - current.x * 6).toFixed(2)}px, ${(-overflowY * pan.focalY - current.y * 4).toFixed(2)}px, 0)`;
+        placeBreaker();   // every frame, so it never lags behind the picture
         if (LITE && now - lastDraw < 30) { requestAnimationFrame(frame); return; }
         lastDraw = now;
         const dt = Math.min(0.05, Math.max(0, (now - last) / 1000));
@@ -472,7 +471,6 @@
         night = nightOn && nightImg.naturalWidth ? Math.min(1, night + dt / 2) : Math.max(0, night - dt / 2);
         update(t, dt);
         draw(t);
-        placeBreaker();
         requestAnimationFrame(frame);
     }
 
