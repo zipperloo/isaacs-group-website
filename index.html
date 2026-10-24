@@ -18,122 +18,22 @@
         // Hold the entrance until the background is ready (scene.js removes this)
         document.documentElement.classList.add('loading');
     </script>
+    <link rel="stylesheet" href="assets/site.css?v=102">
     <style>
-        :root {
-            --espresso: #4b382d;
-            --navy: #132038;
-            --ivory: #e2d8c9;
-            --halo: rgba(10, 8, 6, 0.55); /* soft glow behind thin type so it reads on busy parts of the image */
-            --gutter: clamp(16px, 5.5vw, 96px);
-            --gutter-right: clamp(16px, 2.2vw, 48px);
-            --edge: clamp(20px, 4vw, 56px);
-            --label-h: clamp(18px, 1.4vw, 26px);
-        }
+        /* Home only; the shared layout, menu and contact form are in assets/site.css */
+        body { background: #0d0f1a; color: var(--ivory); font-family: 'Jost', 'Segoe UI', sans-serif; font-weight: 300; }
 
-        * { box-sizing: border-box; }
-
-        html, body {
-            margin: 0;
-            height: 100%;
-        }
-
-        body {
-            background: #0d0f1a;
-            color: var(--ivory);
-            font-family: 'Jost', 'Segoe UI', sans-serif;
-            font-weight: 300;
-            overflow: hidden;
-        }
-
-        .sr-only {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            padding: 0;
-            margin: -1px;
-            overflow: hidden;
-            clip: rect(0, 0, 0, 0);
-            white-space: nowrap;
-            border: 0;
-        }
-
-        /* Background scene: the image and the effects canvas share one stage.
-           scene.js sizes the stage and moves it for parallax; without JS it simply covers the screen. */
-        .stage {
-            position: fixed;
-            inset: 0;
-            overflow: hidden;
-            touch-action: none;   /* swipes pan the picture instead of the page */
-            will-change: transform;
-        }
-        .settle,
-        .breathe {
-            position: absolute;
-            inset: 0;
-            transform-origin: 50% 50%;
-        }
-        .stage img,
-        .stage canvas {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-        }
-        .stage img {
-            object-fit: cover;
-            object-position: 44% 50%;
-        }
-        .stage canvas {
-            opacity: 0;
-            pointer-events: none;
-        }
-        .stage #screen { opacity: 1; }
-        .stage #scene-day { opacity: 0; transition: opacity 2s ease; }
-        .stage #scene-day.on { opacity: 1; }
-        .stage #scene-hw { opacity: 0; transition: opacity 2s ease; }
-        .stage #scene-hw.on { opacity: 1; }
-        .stage #scene-xmas { opacity: 0; transition: opacity 2s ease; }
-        .stage #scene-xmas.on { opacity: 1; }
-
-        /* Entrance: fade up from black while the scene settles, then the lettering appears */
-        .curtain {
-            position: fixed;
-            inset: 0;
-            background: #000;
-            opacity: 0;
-            visibility: hidden;
-            pointer-events: none;
-            transition: opacity 2.4s ease, visibility 0s 2.4s;
-            z-index: 5;
-        }
-        .settle { transition: transform 7s cubic-bezier(0.16, 0.7, 0.2, 1); }
-        .reveal { transition: opacity 1.6s ease var(--delay, 0s), transform 1.6s cubic-bezier(0.2, 0.7, 0.2, 1) var(--delay, 0s); }
-        html.loading .curtain { opacity: 1; visibility: visible; transition: none; }
+        /* The entrance settles the picture from a slight zoom; the paintings crossfade over 2 seconds */
+        .settle { position: absolute; inset: 0; transition: transform 7s cubic-bezier(0.16, 0.7, 0.2, 1); }
         html.loading .settle { transform: scale(1.03); transition: none; }
-        html.loading .reveal { opacity: 0; transform: translateY(10px); transition: none; }
+        .stage img { object-position: 44% 50%; }
+        .stage canvas { opacity: 0; }
+        .stage #screen { opacity: 1; }
+        #scene-day, #scene-hw, #scene-xmas { opacity: 0; transition: opacity 2s ease; }
+        #scene-day.on, #scene-hw.on, #scene-xmas.on { opacity: 1; }
+        .ui { will-change: transform; }
 
-        /* A barely-there, slow zoom so the scene never feels static */
-        .breathe { animation: breathe 48s ease-in-out infinite alternate; }
-        @keyframes breathe {
-            from { transform: scale(1); }
-            to { transform: scale(1.025); }
-        }
-
-        .ui {
-            position: fixed;
-            inset: 0;
-            pointer-events: none;
-            will-change: transform;
-            z-index: 2;
-        }
-        .ui button { pointer-events: auto; }
-        /* Full-screen wrappers, so the fade-in transform doesn't shift what the lettering is positioned against */
-        .layer {
-            position: absolute;
-            inset: 0;
-        }
-
-        /* Soft shading so the type stays legible on any part of the image */
+        /* Soft shading so the type stays legible on any part of the picture (lighter by day) */
         .shade {
             position: fixed;
             inset: 0;
@@ -143,22 +43,20 @@
                 linear-gradient(to top, rgba(10, 8, 6, 0.6) 0%, transparent 28%);
             transition: opacity 2s ease;
         }
-        /* By day the edges need only a little shading to keep the lettering readable */
         .daytime .shade { opacity: 0.55; }
-        /* By day the lettering turns a deep, near-black brown (the leather of the sofa and chair),
-           with a faint pale halo so it still reads over the busier parts of the picture */
-        .logo img, .label, .tagline, .sound, .eq i { transition: filter 2s ease, color 2s ease, background-color 2s ease, text-shadow 2s ease; }
-        .daytime .logo img, .daytime .label { filter: brightness(0.16) sepia(0.6) drop-shadow(0 0 6px rgba(255, 250, 240, 0.35)); }
-        .daytime .tagline, .daytime .sound { color: #2a1e18; text-shadow: 0 0 5px rgba(255, 248, 236, 0.85), 0 0 16px rgba(255, 248, 236, 0.65), 0 0 30px rgba(255, 248, 236, 0.4); }
-        .daytime .eq i { background: #2a1e18; box-shadow: none; }
-        /* The tagline sits over the dark rug: by day it gets a soft, feathered cream glow behind it */
+
+        /* Ivory lettering at night; by day a deep near-black brown with a faint pale halo */
+        .tagline { font-family: 'Source Sans 3', sans-serif; font-weight: 200; text-shadow: 0 0 14px var(--halo), 0 0 4px var(--halo); }
+        .sound, .eq i { transition: color 2s ease, background-color 2s ease, text-shadow 2s ease; }
+        .daytime .logo img { filter: brightness(0.16) sepia(0.6) drop-shadow(0 0 6px rgba(255, 250, 240, 0.35)); }
+        .daytime .tagline, .daytime .sound { color: var(--ink); text-shadow: 0 0 5px rgba(255, 248, 236, 0.85), 0 0 16px rgba(255, 248, 236, 0.65), 0 0 30px rgba(255, 248, 236, 0.4); }
+        .daytime .tagline { font-weight: 300; }
+        .daytime .eq i { background: var(--ink); box-shadow: none; }
+        /* the tagline sits over the dark rug: by day it gets a soft, feathered cream glow behind it */
         .tagline::before {
             content: '';
             position: absolute;
-            left: -10%;
-            right: -10%;
-            top: -70%;
-            bottom: -70%;
+            inset: -70% -10%;
             z-index: -1;
             background: radial-gradient(ellipse at center, rgba(250, 244, 234, 0.8) 0%, rgba(250, 244, 234, 0.62) 55%, rgba(250, 244, 234, 0) 80%);
             filter: blur(6px);
@@ -167,65 +65,13 @@
             pointer-events: none;
         }
         .daytime .tagline::before { opacity: 1; }
-        .daytime .tagline { font-weight: 300; }
-
-        /* Layout */
-        .logo {
-            position: fixed;
-            top: var(--edge);
-            left: calc(var(--gutter) + 1.5vw);
-            width: clamp(170px, 21vw, 400px);
-            margin: 0;
-            line-height: 0;
-            z-index: 2;
-        }
-        .logo img {
-            display: block;
-            width: 100%;
-            height: auto;
-        }
-        .logo .family-office {
-            width: 85%;
-            margin: 4% auto 0;
-        }
-
-        /* Same typeface as the supplied artwork, at a lighter weight to match the ISAACS wordmark */
-        .tagline {
-            position: fixed;
-            left: 50%;
-            bottom: clamp(36px, 6vh, 72px);
-            transform: translateX(-50%);
-            margin: 0;
-            padding-left: 0.45em; /* balances the trailing letter-spacing so the line stays centred */
-            font-family: 'Source Sans 3', sans-serif;
-            font-weight: 200;
-            font-size: clamp(14px, 2.4vw, 46px);
-            letter-spacing: 0.45em;
-            line-height: 1;
-            text-transform: uppercase;
-            text-shadow: 0 0 14px var(--halo), 0 0 4px var(--halo);
-            white-space: nowrap;
-            z-index: 2;
-        }
-
-        .label {
-            display: block;
-            height: var(--label-h);
-            width: auto;
-            filter: drop-shadow(0 0 2px var(--halo)) drop-shadow(0 0 8px var(--halo));
-        }
-
-
-        .sound:focus-visible {
-            outline: 1px solid var(--ivory);
-            outline-offset: 4px;
-        }
 
         /* Sound toggle, bottom right */
         .sound {
             position: fixed;
             right: var(--gutter-right);
             bottom: var(--edge);
+            z-index: 2;
             display: flex;
             align-items: center;
             gap: 10px;
@@ -240,54 +86,25 @@
             text-transform: uppercase;
             text-shadow: 0 0 6px var(--halo);
             cursor: pointer;
-            transition: opacity 0.3s ease;
-            z-index: 2;
         }
         .sound:hover { opacity: 0.75; }
         .sound:disabled { opacity: 0.4; cursor: default; }
-        .eq {
-            display: flex;
-            align-items: flex-end;
-            gap: 2px;
-            height: 12px;
-        }
-        .eq i {
-            width: 2px;
-            height: 3px;
-            background: var(--ivory);
-            box-shadow: 0 0 4px var(--halo);
-            transition: height 0.4s ease;
-        }
+        .sound:focus-visible { outline: 1px solid currentColor; outline-offset: 4px; }
+        .eq { display: flex; align-items: flex-end; gap: 2px; height: 12px; }
+        .eq i { width: 2px; height: 3px; background: var(--ivory); box-shadow: 0 0 4px var(--halo); }
         .sound[data-state="waiting"] .eq i { animation: eq-wait 1.2s ease-in-out infinite; }
-        /* While sound is off, the toggle pulses gently to draw the eye */
+        /* while sound is off, the toggle pulses gently to draw the eye */
         .sound[data-state="off"] { animation: sound-blink 2.2s ease-in-out 4s infinite; }
         .sound[data-state="off"]:hover { animation: none; }
-        @keyframes sound-blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.25; }
-        }
         .sound[data-state="playing"] .eq i { animation: eq 0.9s ease-in-out infinite alternate; }
         .eq i:nth-child(2) { animation-delay: -0.3s !important; }
         .eq i:nth-child(3) { animation-delay: -0.6s !important; }
         .eq i:nth-child(4) { animation-delay: -0.15s !important; }
-        @keyframes eq {
-            0% { height: 3px; }
-            50% { height: 12px; }
-            100% { height: 5px; }
-        }
-        @keyframes eq-wait {
-            0%, 100% { opacity: 0.35; }
-            50% { opacity: 0.9; }
-        }
-        /* The YouTube player only provides the audio, so it is kept out of view */
-        .yt-player {
-            position: fixed;
-            left: -10000px;
-            top: 0;
-            width: 200px;
-            height: 200px;
-            pointer-events: none;
-        }
+        @keyframes sound-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+        @keyframes eq { 0% { height: 3px; } 50% { height: 12px; } 100% { height: 5px; } }
+        @keyframes eq-wait { 0%, 100% { opacity: 0.35; } 50% { opacity: 0.9; } }
+        /* the YouTube player only provides the audio, so it is kept out of view */
+        .yt-player { position: fixed; left: -10000px; top: 0; width: 200px; height: 200px; pointer-events: none; }
 
         /* Easter-egg notes: small and quiet, fading in beside an object */
         .egg {
@@ -308,52 +125,18 @@
         }
         .egg.show { opacity: 0.92; }
         .egg p { margin: 0; }
-        .egg-head {
-            display: flex;
-            align-items: baseline;
-            gap: 6px;
-        }
-        .egg-word {
-            font-family: 'Source Sans 3', sans-serif;
-            font-weight: 300;
-            font-size: 0.85rem;
-            letter-spacing: 0.1em;
-        }
-        .egg-pos {
-            font-size: 0.65rem;
-            font-style: italic;
-            opacity: 0.55;
-        }
-        .egg-def {
-            margin-top: 4px !important;
-            font-size: 0.68rem;
-            line-height: 1.5;
-            opacity: 0.75;
-        }
-
-        .egg-thought {
-            font-family: 'Source Sans 3', sans-serif;
-            font-weight: 300;
-            font-style: italic;
-            font-size: 0.74rem;
-            line-height: 1.5;
-            opacity: 0.85;
-        }
+        .egg-head { display: flex; align-items: baseline; gap: 6px; }
+        .egg-word { font-family: 'Source Sans 3', sans-serif; font-weight: 300; font-size: 0.85rem; letter-spacing: 0.1em; }
+        .egg-pos { font-size: 0.65rem; font-style: italic; opacity: 0.55; }
+        .egg-def { margin-top: 4px !important; font-size: 0.68rem; line-height: 1.5; opacity: 0.75; }
+        .egg-thought { font-family: 'Source Sans 3', sans-serif; font-weight: 300; font-style: italic; font-size: 0.74rem; line-height: 1.5; opacity: 0.85; }
 
         @media (max-width: 768px) {
-            .tagline {
-                font-size: 3.4vw;
-                font-weight: 300; /* ExtraLight breaks up at this small size */
-                letter-spacing: 0.35em;
-                padding-left: 0.35em;
-                bottom: calc(var(--edge) + 44px);
-            }
+            .tagline { font-weight: 300; bottom: calc(var(--edge) + 44px); }   /* ExtraLight breaks up this small */
             .stage img { object-position: 42% 50%; }
         }
-
         @media (prefers-reduced-motion: reduce) {
-            .settle, .reveal, .curtain { transition: none !important; }
-            .breathe { animation: none; }
+            .settle { transition: none !important; }
         }
     </style>
 </head>
@@ -379,7 +162,6 @@
                 <img src="assets/typography/isaacs-wordmark-ivory.png" alt="" aria-hidden="true">
                 <img class="family-office" src="assets/typography/family-office-ivory.png" alt="" aria-hidden="true">
             </h1>
-
         </header>
 
         <main>
@@ -399,9 +181,8 @@
 
     <div class="curtain" aria-hidden="true"></div>
 
-    <script src="assets/scene.js?v=101"></script>
-    <script src="assets/sound.js?v=101"></script>
-    <script src="assets/nav.js?v=101"></script>
-    <script src="assets/contact.js?v=101"></script>
+    <script src="assets/scene.js?v=102"></script>
+    <script src="assets/sound.js?v=102"></script>
+    <script src="assets/site.js?v=102"></script>
 </body>
 </html>

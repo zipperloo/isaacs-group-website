@@ -40,8 +40,7 @@ Visitors who have "reduce motion" turned on in their device settings see the sti
 | Path | Purpose |
 | --- | --- |
 | `index.html` | The home page and its styles. |
-| `assets/nav.js`, `assets/nav.css` | The site menu, shared by every page: three thin lines at the top right (ivory or brown to suit the scene) that open a small frosted navy list of HOME, STRATEGY and CONTACT, with the current page underlined. It closes on choosing an item, tapping elsewhere or Escape. CONTACT opens the contact form. |
-| `assets/contact.js`, `assets/contact.css` | The contact form, shared by every page: it adds its own markup, and any element with a `data-contact` attribute opens it (as does `#contact` in a page address). |
+| `assets/site.css`, `assets/site.js` | Shared by every page. `site.css` (linked in each page's head, so nothing appears unstyled) holds the base layout, entrance, logo, tagline, menu and contact form. `site.js` adds the menu (three thin lines at the top right, opening HOME, STRATEGY and CONTACT, with the current page underlined; ivory over dark pictures, brown over bright ones via a `light` class on the page) and the contact form, a native `<dialog>` that stays hidden until opened. Any element with `data-contact` opens it, as does `#contact` in a page address. |
 | `assets/scene.js` | The scene animation: layout, parallax and the canvas effects. |
 | `assets/sound.js` | The sound toggle and background music. |
 | `assets/scene-patches.png` | Small pieces of the earlier painting: the centre hut lights (switched on and off by the animation) and the bare rock used to mute the two climbers. Must be regenerated if those parts of the painting change. |
@@ -50,19 +49,19 @@ Visitors who have "reduce motion" turned on in their device settings see the sti
 | `assets/background-day.jpg` | The daytime painting, pixel-aligned with the night one. |
 | `assets/background-christmas.jpg` | The painted Christmas version of the background, pixel-aligned with it. |
 | `assets/background-halloween.jpg` | The painted Halloween version of the background, pixel-aligned with it. |
-| `assets/typography/` | Ivory lettering as transparent PNGs: wordmark, "family office" and contact (the last no longer used now the menu is live text). The tagline "A World of Perspective" is live text instead, set in Source Sans 3 ExtraLight (the supplied artwork's typeface at a lighter weight, to match the wordmark). |
-| `strategy.html`, `assets/strategy.js`, `assets/background-strategy.jpg`, `assets/background-strategy-night.jpg` | The Strategy page (logo, the site menu and the tagline "Thinking in Decades" over a golden-hour city scene, with a satin-brass light switch on the right-hand marble wall (drawn in the wall’s perspective) that switches it to night (twinkling city lights, red aircraft lights on the tallest towers, car head and tail lights, lit boats and a plane crossing), and with river ripples (kept off the glass balustrade) and glints, small boats, cars on the riverside roads, people strolling the embankments, distant flocks of birds, a breathing sun, drifting cloud wisps, desert heat haze, birds and dust motes). Reached from the site menu; on touch screens the scene can be swiped to explore, as on the home page, and the light switch stays fixed to its spot on the wall as the picture moves (on phones, swipe to the right-hand wall to find it). |
+| `assets/typography/` | Ivory lettering as transparent PNGs: wordmark and "family office". The tagline "A World of Perspective" is live text instead, set in Source Sans 3 ExtraLight (the supplied artwork's typeface at a lighter weight, to match the wordmark). |
+| `strategy.html`, `assets/strategy.js`, `assets/background-strategy.jpg`, `assets/background-strategy-night.jpg` | The Strategy page (logo, the site menu and the tagline "Thinking in Decades" over a golden-hour city scene, with a satin-brass light switch on the right-hand marble wall (drawn in the wall’s perspective) that switches it to night (twinkling city lights, red aircraft lights on the tallest towers, car head and tail lights, lit boats and a plane crossing), and with river ripples (kept off the glass balustrade) and glints, small boats, cars on the riverside roads, people strolling the embankments, distant flocks of birds, a breathing sun, drifting cloud wisps, desert heat haze, birds and dust motes). Reached from the site menu; on touch screens the scene can be swiped to explore, as on the home page, and the light switch stays fixed to its spot on the wall as the picture moves (on phones, swipe to the right-hand wall to find it; on laptop-shaped screens the picture starts shifted right just enough to show the wall). |
 | `favicon.ico`, `favicon.svg`, `apple-touch-icon.png`, `icon-512.png` | Site icons: the A from the ISAACS wordmark in ivory on navy. |
-| `logo.png` | Old yellow logo mark. Not used by the current site. |
 | `CNAME` | Custom domain for GitHub Pages (`isaacs.group`). |
 | `server.js` | Small Node.js static server for local preview only. |
 
 ### Brand colours
 
-- Ivory `#E2D8C9` – all lettering
-- Navy `#132038` – contact form panel (with the ISAACS wordmark)
+- Ivory `#E2D8C9` – lettering over dark pictures
+- Deep brown `#2A1E18` – lettering over bright pictures
+- Navy `#132038` – menu and contact form panels
 
-These are set as `--espresso` and `--ivory` at the top of the CSS in `index.html`.
+These are set as `--ivory`, `--ink` and `--navy` at the top of `assets/site.css`.
 
 ### Updating images
 
@@ -92,7 +91,7 @@ The laptop on the terrace desk shows a screenshot of the medik8.com home page on
 
 ## Contact form
 
-**Contact** in the site menu opens a form, over whichever page is open, addressed to Helen Molyneux, Executive Assistant to the Principal. It posts to [Formspree](https://formspree.io) (endpoint `https://formspree.io/f/xnpjrnja`, set on the `<form>` tag's `action` attribute in `assets/contact.js`). Messages arrive at hello@isaacs.group. The form shows a confirmation or error message without leaving the page.
+**Contact** in the site menu opens a form, over whichever page is open, addressed to Helen Molyneux, Executive Assistant to the Principal. It posts to [Formspree](https://formspree.io) (endpoint `https://formspree.io/f/xnpjrnja`, set on the `<form>` tag's `action` attribute in `assets/site.js`). Messages arrive at hello@isaacs.group. The form shows a confirmation or error message without leaving the page.
 
 ## Deployment
 

@@ -85,7 +85,10 @@
         const w = IMG_W * scale, h = IMG_H * scale;
         overflowX = w - vw;
         overflowY = h - vh;
-        pan.base = vw <= 768 ? 0.62 : 0.5;   // phones start on the river and the family
+        // phones start on the river and the family (swipe right for the wall); larger screens start
+        // centred, or shifted right just enough that the wall with the light switch is in view
+        const switchX = (BREAKER_AT[0] / IMG_W) * w;
+        pan.base = vw <= 768 ? 0.62 : Math.min(1, Math.max(0.5, (switchX - vw + 60) / Math.max(1, overflowX)));
         if (!pan.touched) pan.focal = pan.base;
         Object.assign(stage.style, { width: w + 'px', height: h + 'px', left: '0px', top: '0px', right: 'auto', bottom: 'auto' });
         const nk = Math.min(LITE ? 1.3 : 2, Math.max(1, (w * (devicePixelRatio || 1)) / IMG_W));
@@ -403,6 +406,7 @@
         breaker.setAttribute('aria-label', nightOn ? 'Switch to day' : 'Switch to night');
         nightImg.classList.toggle('on', nightOn);
         root.classList.toggle('night', nightOn);
+        root.classList.toggle('light', !nightOn);
     });
     nightImg.addEventListener('load', () => nightImg.classList.toggle('on', nightOn));
 

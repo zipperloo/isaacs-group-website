@@ -1,0 +1,243 @@
+/*
+ * Shared by every page: the base layout (picture, logo, tagline, entrance), the menu and the
+ * contact form. Linked in each page's <head> so nothing ever appears unstyled. Page-specific
+ * colours and extras stay in each page's own <style>.
+ */
+:root {
+    --navy: #132038;
+    --ivory: #e2d8c9;
+    --ink: #2a1e18;                 /* deep brown lettering on the bright daytime pictures */
+    --halo: rgba(10, 8, 6, 0.55);   /* soft glow behind thin type on busy parts of the picture */
+    --gutter: clamp(16px, 5.5vw, 96px);
+    --gutter-right: clamp(16px, 2.2vw, 48px);
+    --edge: clamp(20px, 4vw, 56px);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { overflow: hidden; }
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+
+/* The picture and its effects canvases share one stage, sized and moved by the page script */
+.stage { position: fixed; inset: 0; overflow: hidden; touch-action: none; will-change: transform; }
+.breathe { position: absolute; inset: 0; animation: breathe 48s ease-in-out infinite alternate; }
+@keyframes breathe { from { transform: scale(1); } to { transform: scale(1.025); } }
+.stage img, .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.stage img { object-fit: cover; }
+.stage canvas { pointer-events: none; }
+
+/* Entrance: fade up from black, then the lettering appears */
+.curtain { position: fixed; inset: 0; z-index: 5; background: #000; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 2.4s ease, visibility 0s 2.4s; }
+.reveal { transition: opacity 1.6s ease var(--delay, 0s), transform 1.6s cubic-bezier(0.2, 0.7, 0.2, 1) var(--delay, 0s); }
+html.loading .curtain { opacity: 1; visibility: visible; transition: none; }
+html.loading .reveal { opacity: 0; transform: translateY(10px); transition: none; }
+
+.ui { position: fixed; inset: 0; z-index: 2; pointer-events: none; }
+.ui a, .ui button { pointer-events: auto; }
+.layer { position: absolute; inset: 0; }   /* full-screen wrappers, so the entrance transform doesn't move what's inside */
+
+.logo { position: fixed; top: var(--edge); left: calc(var(--gutter) + 1.5vw); z-index: 2; width: clamp(170px, 21vw, 400px); margin: 0; line-height: 0; }
+.logo a { display: block; }
+.logo img { display: block; width: 100%; height: auto; transition: filter 2s ease; }
+.logo .family-office { width: 85%; margin: 4% auto 0; }
+
+.tagline {
+    position: fixed;
+    left: 50%;
+    bottom: clamp(36px, 6vh, 72px);
+    z-index: 2;
+    transform: translateX(-50%);
+    margin: 0;
+    padding-left: 0.45em;   /* balances the trailing letter-spacing so the line stays centred */
+    font-size: clamp(14px, 2.4vw, 46px);
+    letter-spacing: 0.45em;
+    line-height: 1;
+    text-transform: uppercase;
+    white-space: nowrap;
+    transition: color 2s ease, text-shadow 2s ease;
+}
+@media (max-width: 768px) {
+    .tagline { font-size: 3.4vw; letter-spacing: 0.35em; padding-left: 0.35em; }
+}
+
+/* ---------- Menu: three hairlines at the top right, opening a small frosted list ---------- */
+.site-nav {
+    position: fixed;
+    top: calc(var(--edge) * 0.6);
+    right: var(--gutter-right);
+    z-index: 6;
+    color: var(--ivory);
+    font-family: 'Jost', 'Segoe UI', sans-serif;
+    transition: color 2s ease, opacity 1.6s ease var(--delay, 0s), transform 1.6s cubic-bezier(0.2, 0.7, 0.2, 1) var(--delay, 0s);
+}
+/* pages set this class when the picture behind the menu is bright */
+.light .site-nav { color: var(--ink); }
+.menu-button {
+    position: relative;
+    display: block;
+    width: 44px;
+    height: 44px;
+    margin: -10px -10px 0 0;
+    padding: 0;
+    background: none;
+    border: 0;
+    color: inherit;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+.menu-button span {
+    position: absolute;
+    right: 10px;
+    width: 26px;
+    height: 1px;
+    background: currentColor;
+    box-shadow: 0 0 6px rgba(10, 8, 6, 0.45);
+    transition: transform 0.4s ease, opacity 0.3s ease, width 0.4s ease;
+}
+.light .menu-button span { box-shadow: 0 0 6px rgba(255, 248, 236, 0.7); }
+.menu-button span:nth-child(1) { top: 14px; }
+.menu-button span:nth-child(2) { top: 21px; width: 18px; }
+.menu-button span:nth-child(3) { top: 28px; }
+.menu-button:hover span:nth-child(2) { width: 26px; }
+.open .menu-button span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.open .menu-button span:nth-child(2) { opacity: 0; }
+.open .menu-button span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+.menu-button:focus-visible { outline: 1px solid currentColor; outline-offset: -4px; }
+.menu {
+    position: absolute;
+    top: 46px;
+    right: -14px;
+    min-width: 200px;
+    margin: 0;
+    padding: 10px 0;
+    list-style: none;
+    background: rgba(19, 32, 56, 0.72);
+    backdrop-filter: blur(14px) saturate(1.1);
+    -webkit-backdrop-filter: blur(14px) saturate(1.1);
+    border: 1px solid rgba(226, 216, 201, 0.16);
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.28);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-6px);
+    transition: opacity 0.35s ease, transform 0.35s ease, visibility 0s 0.35s;
+}
+.open .menu { opacity: 1; visibility: visible; transform: none; transition: opacity 0.35s ease, transform 0.35s ease; }
+.menu a, .menu button {
+    display: block;
+    width: 100%;
+    padding: 14px 26px 14px 28px;
+    background: none;
+    border: 0;
+    color: var(--ivory);
+    font: 300 12px/1 'Jost', 'Segoe UI', sans-serif;
+    letter-spacing: 0.42em;
+    text-align: right;
+    text-decoration: none;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: opacity 0.3s ease;
+}
+.menu a:hover, .menu button:hover { opacity: 0.7; }
+.menu [aria-current] { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 0.6em; }
+.menu a:focus-visible, .menu button:focus-visible { outline: 1px solid rgba(226, 216, 201, 0.6); outline-offset: -6px; }
+
+/* ---------- Contact form: a native <dialog>, so it stays hidden until opened ---------- */
+.contact {
+    width: min(520px, calc(100% - 32px));
+    max-width: none;
+    max-height: calc(100dvh - 32px);
+    margin: auto;
+    padding: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    background: color-mix(in srgb, var(--navy) 94%, transparent);
+    border: 1px solid color-mix(in srgb, var(--ivory) 30%, transparent);
+    color: var(--ivory);
+    font-family: 'Jost', 'Segoe UI', sans-serif;
+    font-weight: 300;
+}
+.contact::backdrop { background: rgba(10, 8, 6, 0.45); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.contact[open] { animation: contact-in 0.4s ease; }
+.contact[open]::backdrop { animation: contact-fade 0.4s ease; }
+.contact.closing { animation: contact-out 0.3s ease forwards; }
+.contact.closing::backdrop { animation: contact-fade 0.3s ease reverse forwards; }
+@keyframes contact-in { from { opacity: 0; transform: translateY(12px); } }
+@keyframes contact-out { to { opacity: 0; transform: translateY(12px); } }
+@keyframes contact-fade { from { opacity: 0; } }
+.contact .inner { position: relative; padding: clamp(28px, 5vw, 48px); }
+.contact .close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 36px;
+    height: 36px;
+    background: none;
+    border: 0;
+    color: inherit;
+    font: 200 1.7rem/1 'Source Sans 3', sans-serif;
+    opacity: 0.75;
+    cursor: pointer;
+}
+.contact .panel-logo { display: block; width: min(200px, 60%); height: auto; margin: 6px auto 8px; }
+.contact .panel-sub { display: block; width: min(170px, 51%); height: auto; margin: 0 auto; }
+.recipient { margin: 0 0 36px; text-align: center; }
+.recipient::before { content: ''; display: block; width: 36px; height: 1px; margin: 26px auto 24px; background: color-mix(in srgb, var(--ivory) 45%, transparent); }
+.recipient-name { display: block; font: 300 1.2rem 'Source Sans 3', sans-serif; letter-spacing: 0.14em; }
+.recipient-role { display: block; margin-top: 8px; font-size: 0.66rem; letter-spacing: 0.28em; text-transform: uppercase; opacity: 0.6; }
+.field { display: block; margin-bottom: 20px; }
+.field span { display: block; margin-bottom: 6px; font-size: 0.75rem; letter-spacing: 0.25em; text-transform: uppercase; opacity: 0.8; }
+.field input, .field textarea {
+    width: 100%;
+    padding: 10px 0;
+    border: 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--ivory) 45%, transparent);
+    border-radius: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 16px;   /* 16px or more, so phones don't zoom in when a field is tapped */
+    outline: none;
+    transition: border-color 0.3s ease;
+}
+.field textarea { min-height: 110px; resize: vertical; }
+.field input:focus, .field textarea:focus { border-bottom-color: var(--ivory); }
+.submit {
+    display: block;
+    margin: 32px auto 0;
+    padding: 14px 40px;
+    background: transparent;
+    color: inherit;
+    border: 1px solid var(--ivory);
+    font: inherit;
+    font-size: 0.8rem;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+.submit:hover { background: var(--ivory); color: var(--navy); }
+.submit:disabled { opacity: 0.5; cursor: wait; }
+.status { margin: 16px 0 -8px; min-height: 1.4em; text-align: center; font-size: 0.95rem; line-height: 1.5; }
+
+@media (max-width: 600px) {
+    .menu { min-width: 180px; }
+    .menu a, .menu button { padding: 16px 24px; font-size: 13px; }
+    .contact .inner { padding: 24px 24px 22px; }
+    .contact .panel-logo { width: 156px; margin: 0 auto 7px; }
+    .contact .panel-sub { width: 133px; }
+    .recipient { margin-bottom: 22px; }
+    .recipient::before { margin: 16px auto 14px; }
+    .recipient-name { font-size: 1.05rem; }
+    .recipient-role { letter-spacing: 0.16em; }
+    .field { margin-bottom: 14px; }
+    .field span { margin-bottom: 2px; }
+    .field input, .field textarea { padding: 7px 0; }
+    .field textarea { min-height: 72px; }
+    .submit { margin-top: 20px; padding: 12px 36px; }
+    .status { margin-top: 10px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .breathe { animation: none; }
+    .reveal, .curtain { transition: none !important; }
+    .contact[open], .contact.closing, .contact::backdrop { animation: none !important; }
+}

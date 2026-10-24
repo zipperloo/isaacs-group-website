@@ -37,6 +37,7 @@
         hwImg.classList.toggle('on', chaosOn);
         xmImg.classList.toggle('on', xmasOn);
         document.documentElement.classList.toggle('daytime', dayOn);
+        document.documentElement.classList.toggle('light', dayOn);
     }
     const hwImg = document.getElementById('scene-hw');
     function loadHalloween() { if (!hwImg.getAttribute('src')) hwImg.src = 'assets/background-halloween.jpg?v=83'; }
@@ -3011,7 +3012,7 @@
         }, delay || 0);
     }
 
-    const dialogOpen = () => document.querySelector('.dialog.open');
+    const dialogOpen = () => document.querySelector('dialog[open]');
 
     stage.addEventListener('click', e => {
         if (e.pointerType !== 'mouse' && e.pointerType !== '') return;
