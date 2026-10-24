@@ -39,7 +39,8 @@ Visitors who have "reduce motion" turned on in their device settings see the sti
 
 | Path | Purpose |
 | --- | --- |
-| `index.html` | The page, its styles and the contact form script. |
+| `index.html` | The home page and its styles. |
+| `assets/contact.js`, `assets/contact.css` | The contact form, shared by every page: it adds its own markup, and any element with a `data-contact` attribute opens it (as does `#contact` in a page address). |
 | `assets/scene.js` | The scene animation: layout, parallax and the canvas effects. |
 | `assets/sound.js` | The sound toggle and background music. |
 | `assets/scene-patches.png` | Small pieces of the earlier painting: the centre hut lights (switched on and off by the animation) and the bare rock used to mute the two climbers. Must be regenerated if those parts of the painting change. |
@@ -49,7 +50,7 @@ Visitors who have "reduce motion" turned on in their device settings see the sti
 | `assets/background-christmas.jpg` | The painted Christmas version of the background, pixel-aligned with it. |
 | `assets/background-halloween.jpg` | The painted Halloween version of the background, pixel-aligned with it. |
 | `assets/typography/` | Ivory lettering as transparent PNGs: wordmark, "family office" and contact. The tagline "A World of Perspective" is live text instead, set in Source Sans 3 ExtraLight (the supplied artwork's typeface at a lighter weight, to match the wordmark). |
-| `strategy.html`, `assets/strategy.js`, `assets/background-strategy.jpg`, `assets/background-strategy-night.jpg` | The Strategy page (logo, Contact and the tagline "Thinking in Decades" over a golden-hour city scene, with a satin-brass light switch on the right-hand marble wall (drawn in the wall’s perspective) that switches it to night (twinkling city lights, red aircraft lights on the tallest towers, car head and tail lights, lit boats and a plane crossing), and with river ripples (kept off the glass balustrade) and glints, small boats, cars on the riverside roads, people strolling the embankments, distant flocks of birds, a breathing sun, drifting cloud wisps, desert heat haze, birds and dust motes). Not linked yet: the STRATEGY link under CONTACT on the home page is in the markup with a `hidden` attribute; remove that to show it. The page is marked noindex until then. |
+| `strategy.html`, `assets/strategy.js`, `assets/background-strategy.jpg`, `assets/background-strategy-night.jpg` | The Strategy page (logo, Contact and the tagline "Thinking in Decades" over a golden-hour city scene, with a satin-brass light switch on the right-hand marble wall (drawn in the wall’s perspective) that switches it to night (twinkling city lights, red aircraft lights on the tallest towers, car head and tail lights, lit boats and a plane crossing), and with river ripples (kept off the glass balustrade) and glints, small boats, cars on the riverside roads, people strolling the embankments, distant flocks of birds, a breathing sun, drifting cloud wisps, desert heat haze, birds and dust motes). Linked as STRATEGY under CONTACT on both pages; on touch screens the scene can be swiped to explore, as on the home page. |
 | `favicon.ico`, `favicon.svg`, `apple-touch-icon.png`, `icon-512.png` | Site icons: the A from the ISAACS wordmark in ivory on navy. |
 | `logo.png` | Old yellow logo mark. Not used by the current site. |
 | `CNAME` | Custom domain for GitHub Pages (`isaacs.group`). |
@@ -94,6 +95,6 @@ The **Contact** link opens a form addressed to Helen Molyneux, Executive Assista
 
 ## Deployment
 
-The page links its files with a version tag (`?v=83`). Bump the number in `index.html` and `assets/scene.js` after changing any asset, so browsers fetch the new copy instead of one saved for up to 10 minutes.
+The page links its files with a version tag (`?v=100`). Bump the number in `index.html` and `assets/scene.js` after changing any asset, so browsers fetch the new copy instead of one saved for up to 10 minutes.
 
 The site is hosted on GitHub Pages from the `main` branch, at the custom domain in `CNAME`. Pushing to `main` publishes the changes.

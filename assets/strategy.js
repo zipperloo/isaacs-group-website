@@ -76,13 +76,18 @@
     }
 
     /* ---------- layout and parallax ---------- */
-    let k = 0, overflowX = 0, scale = 1;
+    let k = 0, overflowX = 0, overflowY = 0, scale = 1;
+    // Swipe to explore (touch screens), exactly as on the home page: which slice is in view
+    const pan = { base: 0.5, focal: 0.5, focalY: 0.5, vel: 0, velY: 0, dragging: false, lastX: 0, lastY: 0, lastT: 0, touched: false };
     function layout() {
         const vw = innerWidth, vh = innerHeight;
         scale = Math.max((vw + 2 * MARGIN) / IMG_W, (vh + 2 * MARGIN) / IMG_H);
         const w = IMG_W * scale, h = IMG_H * scale;
         overflowX = w - vw;
-        Object.assign(stage.style, { width: w + 'px', height: h + 'px', left: (vw - w) * 0.5 + 'px', top: (vh - h) * 0.5 + 'px', right: 'auto', bottom: 'auto' });
+        overflowY = h - vh;
+        pan.base = vw <= 768 ? 0.62 : 0.5;   // phones start on the river and the family
+        if (!pan.touched) pan.focal = pan.base;
+        Object.assign(stage.style, { width: w + 'px', height: h + 'px', left: '0px', top: '0px', right: 'auto', bottom: 'auto' });
         const nk = Math.min(LITE ? 1.3 : 2, Math.max(1, (w * (devicePixelRatio || 1)) / IMG_W));
         if (Math.abs(nk - k) > 0.05) {
             k = nk;
@@ -403,6 +408,53 @@
     });
     nightImg.addEventListener('load', () => nightImg.classList.toggle('on', nightOn));
 
+    /* ---------- swipe to explore ---------- */
+    const panLimit = () => MARGIN / Math.max(1, overflowX);
+    function updatePan(t) {
+        if (pan.dragging) return;
+        const lo = panLimit(), hi = 1 - panLimit();
+        if (!pan.touched && overflowX > innerWidth * 0.3 && t > 6 && t < 11) {
+            // a one-off drift on phones to show there is more to see, then back
+            pan.focal = pan.base + Math.sin(((t - 6) / 5) * Math.PI) * -0.16;
+        } else {
+            pan.focal += pan.vel;
+            pan.vel *= 0.93;
+            if (pan.focal < lo) { pan.focal += (lo - pan.focal) * 0.2; pan.vel *= 0.5; }
+            if (pan.focal > hi) { pan.focal += (hi - pan.focal) * 0.2; pan.vel *= 0.5; }
+        }
+        const loY = MARGIN / Math.max(1, overflowY), hiY = 1 - loY;
+        pan.focalY += pan.velY;
+        pan.velY *= 0.93;
+        if (pan.focalY < loY) { pan.focalY += (loY - pan.focalY) * 0.2; pan.velY *= 0.5; }
+        if (pan.focalY > hiY) { pan.focalY += (hiY - pan.focalY) * 0.2; pan.velY *= 0.5; }
+    }
+    stage.addEventListener('pointerdown', e => {
+        if (e.pointerType === 'mouse' || (overflowX < 40 && overflowY < 40)) return;
+        Object.assign(pan, { dragging: true, touched: true, vel: 0, velY: 0, lastX: e.clientX, lastY: e.clientY, lastT: performance.now() });
+    });
+    addEventListener('pointermove', e => {
+        if (!pan.dragging) return;
+        const now = performance.now(), frames = Math.max(1, (now - pan.lastT) / 16.7);
+        const d = -(e.clientX - pan.lastX) / Math.max(1, overflowX);
+        const lo = panLimit(), hi = 1 - panLimit();
+        pan.focal += pan.focal < lo || pan.focal > hi ? d * 0.35 : d;
+        pan.vel = d / frames;
+        if (overflowY > 2 * MARGIN) {
+            const dy = -(e.clientY - pan.lastY) / overflowY;
+            pan.focalY += pan.focalY < 0 || pan.focalY > 1 ? dy * 0.35 : dy;
+            pan.velY = dy / frames;
+        }
+        pan.lastX = e.clientX; pan.lastY = e.clientY; pan.lastT = now;
+    });
+    const endDrag = () => {
+        if (!pan.dragging) return;
+        pan.dragging = false;
+        pan.vel = Math.max(-0.04, Math.min(0.04, pan.vel));
+        pan.velY = Math.max(-0.04, Math.min(0.04, pan.velY));
+    };
+    addEventListener('pointerup', endDrag);
+    addEventListener('pointercancel', endDrag);
+
     /* ---------- loop ---------- */
     let start = 0, last = 0, lastDraw = 0;
     function frame(now) {
@@ -411,7 +463,8 @@
         const ty = steered ? target.y : Math.sin(t * 0.05 + 1) * 0.25;
         current.x += (tx - current.x) * 0.04;
         current.y += (ty - current.y) * 0.04;
-        stage.style.transform = `translate3d(${(-current.x * 6).toFixed(2)}px, ${(-current.y * 4).toFixed(2)}px, 0)`;
+        updatePan(t);
+        stage.style.transform = `translate3d(${(-overflowX * pan.focal - current.x * 6).toFixed(2)}px, ${(-overflowY * pan.focalY - current.y * 4).toFixed(2)}px, 0)`;
         if (LITE && now - lastDraw < 30) { requestAnimationFrame(frame); return; }
         lastDraw = now;
         const dt = Math.min(0.05, Math.max(0, (now - last) / 1000));
