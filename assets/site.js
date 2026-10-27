@@ -43,8 +43,7 @@
     dialog.innerHTML = `
         <div class="inner">
             <button class="close" type="button" aria-label="Close">&times;</button>
-            <img class="panel-logo" src="assets/typography/isaacs-wordmark-ivory.png" alt="ISAACS">
-            <img class="panel-sub" src="assets/typography/family-office-ivory.png" alt="Family Office">
+            <img class="panel-logo" src="assets/typography/isaacs-wordmark-ivory.png?v=103" alt="ISAACS Family Office">
             <p class="recipient">
                 <span class="recipient-name" id="contact-title">Write to Helen Molyneux</span>
                 <span class="recipient-role">Executive Assistant to the Principal</span>

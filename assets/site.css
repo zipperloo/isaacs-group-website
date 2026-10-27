@@ -38,7 +38,6 @@ html.loading .reveal { opacity: 0; transform: translateY(10px); transition: none
 .logo { position: fixed; top: var(--edge); left: calc(var(--gutter) + 1.5vw); z-index: 2; width: clamp(170px, 21vw, 400px); margin: 0; line-height: 0; }
 .logo a { display: block; }
 .logo img { display: block; width: 100%; height: auto; transition: filter 2s ease; }
-.logo .family-office { width: 85%; margin: 4% auto 0; }
 
 .tagline {
     position: fixed;
@@ -177,8 +176,7 @@ html.loading .reveal { opacity: 0; transform: translateY(10px); transition: none
     opacity: 0.75;
     cursor: pointer;
 }
-.contact .panel-logo { display: block; width: min(200px, 60%); height: auto; margin: 6px auto 8px; }
-.contact .panel-sub { display: block; width: min(170px, 51%); height: auto; margin: 0 auto; }
+.contact .panel-logo { display: block; width: min(200px, 60%); height: auto; margin: 6px auto 0; }
 .recipient { margin: 0 0 36px; text-align: center; }
 .recipient::before { content: ''; display: block; width: 36px; height: 1px; margin: 26px auto 24px; background: color-mix(in srgb, var(--ivory) 45%, transparent); }
 .recipient-name { display: block; font: 300 1.2rem 'Source Sans 3', sans-serif; letter-spacing: 0.14em; }
@@ -222,8 +220,7 @@ html.loading .reveal { opacity: 0; transform: translateY(10px); transition: none
     .menu { min-width: 180px; }
     .menu a, .menu button { padding: 16px 24px; font-size: 13px; }
     .contact .inner { padding: 24px 24px 22px; }
-    .contact .panel-logo { width: 156px; margin: 0 auto 7px; }
-    .contact .panel-sub { width: 133px; }
+    .contact .panel-logo { width: 156px; margin: 0 auto; }
     .recipient { margin-bottom: 22px; }
     .recipient::before { margin: 16px auto 14px; }
     .recipient-name { font-size: 1.05rem; }
