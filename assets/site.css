@@ -11,6 +11,9 @@
     --gutter: clamp(16px, 5.5vw, 96px);
     --gutter-right: clamp(16px, 2.2vw, 48px);
     --edge: clamp(20px, 4vw, 56px);
+    --logo-w: clamp(170px, 21vw, 400px);
+    /* where the logo ends: its top plus its height (the logo image is 670 x 183) */
+    --logo-bottom: calc(var(--edge) + var(--logo-w) * 183 / 670);
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; }
@@ -35,7 +38,7 @@ html.loading .reveal { opacity: 0; transform: translateY(10px); transition: none
 .ui a, .ui button { pointer-events: auto; }
 .layer { position: absolute; inset: 0; }   /* full-screen wrappers, so the entrance transform doesn't move what's inside */
 
-.logo { position: fixed; top: var(--edge); left: calc(var(--gutter) + 1.5vw); z-index: 2; width: clamp(170px, 21vw, 400px); margin: 0; line-height: 0; }
+.logo { position: fixed; top: var(--edge); left: calc(var(--gutter) + 1.5vw); z-index: 2; width: var(--logo-w); margin: 0; line-height: 0; }
 .logo a { display: block; }
 .logo img { display: block; width: 100%; height: auto; transition: filter 2s ease; }
 

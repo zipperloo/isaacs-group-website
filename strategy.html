@@ -16,7 +16,7 @@
     <script>
         document.documentElement.classList.add('loading');
     </script>
-    <link rel="stylesheet" href="assets/site.css?v=103">
+    <link rel="stylesheet" href="assets/site.css?v=104">
     <style>
         /* Strategy only; the shared layout, menu and contact form are in assets/site.css */
         body { background: #f3e2c8; font-family: 'Source Sans 3', sans-serif; }
@@ -34,7 +34,8 @@
         .statement {
             position: fixed;
             left: calc(var(--gutter) + 1.5vw);
-            top: 17.5vh;
+            /* always the same breathing space below the logo, whatever the screen's shape */
+            top: calc(var(--logo-bottom) + clamp(40px, 6vh, 88px));
             width: min(500px, calc(100vw - 2 * var(--gutter)));
             margin: 0;
             color: #1f1611;
