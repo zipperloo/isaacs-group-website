@@ -2421,7 +2421,7 @@
         const before = chaos;
         chaos = chaosOn ? Math.min(1, chaos + dt / 2) : Math.max(0, chaos - dt / 2);   // 2-second fade, like the painting
         if (chaos !== before) drawLaptop();   // the laptop screen and climber overlays fade with it
-        if (!chaosOn) { xray = 0; if (chaos === 0) { bats.length = 0; witch.active = false; witch.next = 3; swarm.active = false; swarm.next = 4; nextFlash = 6; } return; }
+        if (!chaosOn) { if (chaos === 0) { bats.length = 0; witch.active = false; witch.next = 3; swarm.active = false; swarm.next = 4; nextFlash = 6; } return; }
         // a swarm forms, wheels around for a while, then scatters
         const sw = swarm;
         if (!sw.active && t - spookSince >= sw.next) {
@@ -2431,9 +2431,8 @@
                 bats: Array.from({ length: LITE ? 45 : 90 }, () => ({ a: Math.random() * 6.283, r: 20 + Math.random() * 90, w: (0.6 + Math.random() * 1.2) * (Math.random() < 0.5 ? 1 : -1), h: 0.35 + Math.random() * 0.4, ph: Math.random() * 6, s: 1.5 + Math.random() * 1.2 })) });
         }
         if (sw.active && t - sw.born > sw.life) { sw.active = false; sw.next = t - spookSince + 10 + Math.random() * 10; }
-        if (t - spookSince >= nextFlash) { flash = 1; if (Math.random() < 0.65) xray = 1; nextFlash = t - spookSince + 9 + Math.random() * 14; }
+        if (t - spookSince >= nextFlash) { flash = 1; nextFlash = t - spookSince + 9 + Math.random() * 14; }
         flash = Math.max(0, flash - dt * 2.2);
-        xray = Math.max(0, xray - dt * 2.4);
         if (!witch.active && t - spookSince >= witch.next) Object.assign(witch, { active: true, born: t, dur: 9 });
         if (witch.active && t - witch.born > witch.dur) { witch.active = false; witch.next = t - spookSince + 14 + Math.random() * 14; }
         if (t >= nextBat && bats.length < 70) {
@@ -2840,7 +2839,7 @@
     // Santa hats: band centre, band width, body height, tilt, and which way the tip trails
     const DIVER_HATS = [
         { x: 1456, y: 680, w: 31, H: 19, a: 0.05, dir: -1 },
-        { x: 1520, y: 705, w: 26, H: 15, a: -0.13, dir: 1 }
+        { x: 1524, y: 708.5, w: 32, H: 15, a: 0.03, dir: 1, bend: 2.2, lean: 0.8 }   // hugging her head, swept back as she swims
     ];
     // Bones for the X-ray: skull (x, y, rx, ry), jaw, spine, shoulders, pelvis and limbs, in picture pixels
     const DIVER_BONES = [
@@ -2853,7 +2852,7 @@
           limbs: [[[1513, 731], [1499, 742], [1488, 746]], [[1533, 732], [1538, 752], [1540, 771]],
                   [[1547, 776], [1562, 788], [1574, 786]], [[1544, 778], [1552, 795], [1560, 808]]] }
     ];
-    let xray = 0;   // Halloween: some lightning flashes show the divers as skeletons for an instant
+    let filmReadyAt = -1;   // when the X-ray film was first available, so it fades in rather than popping
 
     // The X-ray film: the divers cut from the Halloween painting with soft edges and turned into a
     // cool, high-contrast negative, so dark wetsuits glow and the water behind them goes dark.
@@ -2897,31 +2896,17 @@
         return c;
     }
 
-    // Halloween: an eerie glow behind both masks, and the X-ray when the lightning flickers
+    // Halloween: the divers become X-ray skeletons, fading in with the painting, with a red glow in their eyes
     function drawGhostDivers(t, e) {
         if (!inView(1380, 1620)) return;
         ctx.save();
-        DIVER_EYES.forEach(([x, y, far], i) => {
-            const pulse = (0.6 + 0.4 * noise(t * 0.7 + i * 9)) * (1 - Math.min(1, xray * 1.6));   // hidden while the X-ray shows
-            [[0, 0, 1], [far * 2.3, -0.3, 0.45]].forEach(([dx, dy, s]) => {
-                const ex = x + dx, ey = y + dy;
-                const halo = ctx.createRadialGradient(ex, ey, 0, ex, ey, 5);
-                halo.addColorStop(0, `rgba(255,70,40,${(0.45 * e * pulse * s).toFixed(3)})`);
-                halo.addColorStop(1, 'rgba(255,70,40,0)');
-                ctx.fillStyle = halo;
-                ctx.fillRect(ex - 5, ey - 5, 10, 10);
-                ctx.globalAlpha = e * pulse * s;
-                ctx.fillStyle = 'rgb(255,150,110)';
-                ctx.beginPath(); ctx.arc(ex, ey, 0.75, 0, 6.283); ctx.fill();
-                ctx.globalAlpha = 1;
-            });
-        });
-        if (xray > 0) {
-            const a = e * Math.min(1, xray * 1.6) * (Math.random() < 0.75 ? 1 : 0.4);
+        {
+            const a = e;
             const film = xrayFilm();
             // the divers as an X-ray negative of the painting itself...
             if (film) {
-                ctx.globalAlpha = a;
+                if (filmReadyAt < 0) filmReadyAt = t;
+                ctx.globalAlpha = a * Math.min(1, (t - filmReadyAt) / 1.2);
                 ctx.drawImage(film, XRAY_BOX[0], XRAY_BOX[1], XRAY_BOX[2] - XRAY_BOX[0], XRAY_BOX[3] - XRAY_BOX[1]);
             }
             // ...with their bones showing faintly through
@@ -2988,25 +2973,42 @@
             });
             ctx.restore();
         }
+        DIVER_EYES.forEach(([x, y, far], i) => {
+            const pulse = 0.6 + 0.4 * noise(t * 0.7 + i * 9);
+            [[0, 0, 1], [far * 2.3, -0.3, 0.45]].forEach(([dx, dy, s]) => {
+                const ex = x - far * 0.6 + dx, ey = y - 0.2 + dy;   // in the skull's eye socket
+                const halo = ctx.createRadialGradient(ex, ey, 0, ex, ey, 5);
+                halo.addColorStop(0, `rgba(255,70,40,${(0.45 * e * pulse * s).toFixed(3)})`);
+                halo.addColorStop(1, 'rgba(255,70,40,0)');
+                ctx.fillStyle = halo;
+                ctx.fillRect(ex - 5, ey - 5, 10, 10);
+                ctx.globalAlpha = e * pulse * s;
+                ctx.fillStyle = 'rgb(255,150,110)';
+                ctx.beginPath(); ctx.arc(ex, ey, 0.75, 0, 6.283); ctx.fill();
+                ctx.globalAlpha = 1;
+            });
+        });
         ctx.restore();
     }
 
     // Christmas: a small Santa hat on each diver, tinted by the water, its tip drifting in the current
     function drawSantaHat(h, t, e) {
-        const { w, H, dir } = h, hw = w / 2, f = -dir;   // f: the side the face is on
+        const { w, H, dir } = h, hw = w / 2, f = -dir, bend = h.bend || 0, lean = h.lean || 0;   // lean: the crown swept back   // f: the side the face is on; bend: the band follows the head's curve
         const sway = Math.sin(t * 0.8 + h.x * 0.1) * 0.12 + Math.sin(t * 1.9 + h.x) * 0.04;
         ctx.save();
         ctx.translate(h.x, h.y);
         ctx.rotate(h.a);
         ctx.globalAlpha = e;
         if (!LITE) ctx.filter = `blur(${(0.35 * k).toFixed(2)}px)`;
-        const tipX = -f * (hw + w * 0.2), tipY = H * (0.02 + sway);   // the tip droops down behind the head
+        const tipX = -f * (hw + w * (0.2 + lean * 0.25)), tipY = H * (0.02 + lean * 0.08 + sway);   // the tip droops down behind the head
         // the body: up from the brow to the crown, then flopping back to the tip
         const body = new Path2D();
         body.moveTo(f * hw, 0);
-        body.quadraticCurveTo(f * hw * 0.8, -H * 1.0, -f * hw * 0.2, -H * 1.02);
-        body.quadraticCurveTo(-f * (hw + w * 0.32), -H * 0.95, tipX, tipY);
+        const crownX = -f * (hw * 0.2 + lean * w * 0.3);
+        body.quadraticCurveTo(f * hw * (0.8 - lean * 0.5), -H * (1.0 - lean * 0.15), crownX, -H * (1.02 - lean * 0.12));
+        body.quadraticCurveTo(-f * (hw + w * (0.32 + lean * 0.12)), -H * (0.95 - lean * 0.3), tipX, tipY);
         body.quadraticCurveTo(-f * hw * 0.9, -H * 0.42, -f * hw, 0);
+        body.quadraticCurveTo(0, -bend * 2, f * hw, 0);   // the brim follows the band's curve
         body.closePath();
         const g = ctx.createLinearGradient(f * hw, -H, -f * hw, 0);
         g.addColorStop(0, 'rgb(158,44,80)');     // red, muted and cooled by the water
@@ -3031,9 +3033,10 @@
         ctx.fillStyle = band;
         ctx.beginPath();
         ctx.moveTo(-hw - 1, -bh * 0.5);
-        for (let i = 0; i <= 6; i++) ctx.lineTo(-hw - 1 + (w + 2) * i / 6, -bh * 0.5 - (i % 2) * 0.5);
+        const arc = i => -bend * Math.sin(Math.PI * i / 6);
+        for (let i = 0; i <= 6; i++) ctx.lineTo(-hw - 1 + (w + 2) * i / 6, arc(i) - bh * 0.5 - (i % 2) * 0.5);
         ctx.lineTo(hw + 1, bh * 0.55);
-        for (let i = 6; i >= 0; i--) ctx.lineTo(-hw - 1 + (w + 2) * i / 6, bh * 0.55 + (i % 2) * 0.5);
+        for (let i = 6; i >= 0; i--) ctx.lineTo(-hw - 1 + (w + 2) * i / 6, arc(i) + bh * 0.55 + (i % 2) * 0.5);
         ctx.closePath();
         ctx.fill();
         const pr = w * 0.13;
