@@ -2363,7 +2363,7 @@
     const bats = [];
     let nextBat = 0;
     // A witch on a broomstick: a small silhouette that crosses in front of the moon now and then
-    const witch = { active: false, next: 3 };
+    const witch = { active: false, next: 0 };   // every Halloween effect starts the moment it is switched on
 
     // Sky lanterns drifting slowly up from the huts and the bay
     // Lights dancing far off over the water and hills, each in its own wandering loop
@@ -2384,8 +2384,8 @@
     // Low ground fog creeping across the terrace and the floor of the room
     const GROUND_FOG = Array.from({ length: 22 }, (_, i) => ({ x: hash(i * 2.2) * IMG_W, y: 560 + hash(i * 3.9) * 360, r: 120 + hash(i * 5.5) * 140, sp: 2 + hash(i * 7.1) * 4 }));
     // A swarm of bats that gathers and wheels around now and then
-    const swarm = { active: false, next: 4, born: 0, cx: 0, cy: 0, bats: [] };
-    let flash = 0, nextFlash = 6;
+    const swarm = { active: false, next: 0, born: 0, cx: 0, cy: 0, bats: [] };
+    let flash = 0, nextFlash = 0;
     // A skull on the bar top above the aquarium
     const SKULL = [1188, 549, 6];
     // Faint cobwebs strung between the columns and frames: anchor A, anchor B, sag
@@ -2421,7 +2421,7 @@
         const before = chaos;
         chaos = chaosOn ? Math.min(1, chaos + dt / 2) : Math.max(0, chaos - dt / 2);   // 2-second fade, like the painting
         if (chaos !== before) drawLaptop();   // the laptop screen and climber overlays fade with it
-        if (!chaosOn) { if (chaos === 0) { bats.length = 0; witch.active = false; witch.next = 3; swarm.active = false; swarm.next = 4; nextFlash = 6; } return; }
+        if (!chaosOn) { if (chaos === 0) { bats.length = 0; witch.active = false; witch.next = 0; swarm.active = false; swarm.next = 0; nextFlash = 0; } return; }
         // a swarm forms, wheels around for a while, then scatters
         const sw = swarm;
         if (!sw.active && t - spookSince >= sw.next) {
@@ -2692,9 +2692,9 @@
     // several depths, the fairy lights twinkling, snowballs splatting on the glass now and
     // then, and Santa's sleigh and reindeer crossing the sky.
     const XMAS_LIGHTS = [[875,4],[966,5],[913,6],[1141,8],[904,9],[856,12],[1136,13],[985,14],[981,20],[969,24],[928,26],[975,32],[994,33],[1145,33],[1162,37],[988,41],[993,45],[1021,45],[1159,45],[1009,46],[980,48],[1001,51],[1160,55],[1177,57],[1015,58],[1024,58],[1044,59],[1183,59],[1009,63],[1034,63],[1027,69],[1187,69],[1053,70],[1170,71],[1033,75],[1178,76],[1046,80],[1192,81],[1202,82],[1653,84],[30,88],[44,88],[1184,89],[1646,90],[1200,92],[1664,92],[13,94],[56,94],[1638,96],[20,97],[35,98],[1588,99],[8,101],[1239,102],[55,103],[1200,103],[61,106],[1254,106],[4,108],[1566,108],[1597,108],[1644,108],[50,110],[1237,110],[21,111],[1277,111],[1308,111],[41,112],[1258,112],[1231,113],[1318,113],[1331,113],[1362,115],[1579,115],[1347,117],[1312,118],[1341,118],[1566,118],[4,120],[16,120],[1243,120],[1406,120],[1526,120],[1382,121],[1549,122],[1308,123],[1400,123],[1359,124],[1419,124],[1559,124],[1372,125],[1515,125],[1499,126],[1529,126],[8,127],[1440,127],[1426,129],[1386,130],[1472,130],[1488,131],[1507,131],[68,132],[8,133],[71,140],[1486,140],[1475,141],[68,146],[4,148],[10,148],[58,148],[73,155],[6,158],[60,159],[16,161],[2,163],[67,165],[25,169],[55,169],[18,170],[68,171],[1594,175],[12,177],[63,178],[28,180],[5,181],[1590,181],[21,185],[1597,185],[1669,185],[67,187],[1642,188],[1602,189],[18,192],[1594,192],[1659,192],[1651,193],[30,194],[1586,194],[59,195],[1636,195],[5,196],[1601,197],[1620,197],[1600,203],[23,204],[1591,205],[51,206],[1600,210],[1590,212],[1608,214],[1581,217],[1595,219],[50,276],[31,278],[59,285],[72,294],[25,303],[41,305],[58,310],[30,311]];
-    const sleigh = { active: false, next: 4 };
+    const sleigh = { active: false, next: 0 };   // every Christmas effect starts the moment it is switched on
     const splats = [];
-    let nextSplat = 3, xmasSince = 0;
+    let nextSplat = 0, xmasSince = 0;
     const FLAKE_LAYERS = [
         { n: LITE ? 380 : 1000, r: 0.9, speed: 18, a: 0.75, y0: 0, y1: 560 },   // far
         { n: LITE ? 140 : 340, r: 1.5, speed: 30, a: 0.85, y0: 0, y1: 560 },     // middle
@@ -2706,7 +2706,7 @@
         if (xmasOn && xmas === 0) xmasSince = t;
         xmas = xmasOn ? Math.min(1, xmas + dt / 2) : Math.max(0, xmas - dt / 2);
         if (xmas !== before) drawLaptop();
-        if (!xmasOn) { if (xmas === 0) { splats.length = 0; sleigh.active = false; sleigh.next = 4; } return; }
+        if (!xmasOn) { if (xmas === 0) { splats.length = 0; sleigh.active = false; sleigh.next = 0; nextSplat = 0; } return; }
         if (!sleigh.active && t - xmasSince >= sleigh.next) Object.assign(sleigh, { active: true, born: t, dur: 14, ltr: Math.random() < 0.5, y: 70 + Math.random() * 90 });
         if (sleigh.active && t - sleigh.born > sleigh.dur) { sleigh.active = false; sleigh.next = t - xmasSince + 18 + Math.random() * 16; }
         if (t - xmasSince >= nextSplat && splats.length < 4) {
@@ -2892,86 +2892,92 @@
             d[i + 3] = mask[i + 3] * (1 - water);
         }
         g.putImageData(im, 0, 0);
+        g.save();
+        g.scale(S, S);
+        g.translate(-x0, -y0);
+        paintBones(g, S);
+        g.restore();
         xrayCanvas = c;
         return c;
     }
 
     // Halloween: the divers become X-ray skeletons, fading in with the painting, with a red glow in their eyes
+    // The skeletons, painted once onto the X-ray film (c is scaled to picture pixels; S is its scale)
+    function paintBones(c, S) {
+        c.save();
+        c.globalCompositeOperation = 'screen';
+        c.globalAlpha = 0.9;
+        c.filter = `blur(${(0.45 * S).toFixed(2)}px)`;
+        c.shadowColor = 'rgba(170,230,255,0.8)';
+        c.shadowBlur = 3 * S;
+        c.lineCap = c.lineJoin = 'round';
+        const bone = 'rgba(232,248,255,0.9)';
+        const line = pts => { c.beginPath(); pts.forEach(([x, y], j) => (j ? c.lineTo(x, y) : c.moveTo(x, y))); c.stroke(); };
+        const knobs = (pts, r) => pts.forEach(([x, y]) => { c.beginPath(); c.arc(x, y, r, 0, 6.283); c.fill(); });
+        DIVER_BONES.forEach((B, bi) => {
+            const f = bi === 0 ? 1 : -1;   // which way the face points
+            const w = B.w;
+            c.strokeStyle = c.fillStyle = bone;
+            // limbs: slim shafts with rounded joints
+            c.lineWidth = w * 0.8;
+            B.limbs.forEach(L => { line(L); knobs(L.slice(1, -1), w * 0.75); });
+            line(B.shoulders);
+            // spine: a chain of small vertebrae
+            const S = B.spine;
+            for (let s = 0; s < S.length - 1; s++) {
+                const [x0, y0] = S[s], [x1, y1] = S[s + 1], n = Math.max(2, Math.round(Math.hypot(x1 - x0, y1 - y0) / (w * 2.4)));
+                for (let v = 0; v < n; v++) { const u = v / n; c.beginPath(); c.arc(x0 + (x1 - x0) * u, y0 + (y1 - y0) * u, w * 0.62, 0, 6.283); c.fill(); }
+            }
+            // ribs: seen from the side, curving forward and down from the spine
+            c.lineWidth = w * 0.42;
+            for (let r = 0; r < 6; r++) {
+                const u = 0.1 + r * 0.14, [p0, p1] = [S[1], S[2]];
+                const px = p0[0] + (p1[0] - p0[0]) * u * 1.6, py = p0[1] + (p1[1] - p0[1]) * u * 1.6;
+                const len = w * (7.5 - r * 0.5);
+                c.beginPath(); c.moveTo(px, py); c.quadraticCurveTo(px + f * len * 0.6, py - w * 1.2, px + f * len, py + w * 1.8); c.stroke();
+            }
+            // pelvis
+            const [qx, qy, qrx, qry] = B.pelvis;
+            c.lineWidth = w * 0.7;
+            c.beginPath(); c.ellipse(qx, qy, qrx, qry, -0.4, 0.2, 5.9); c.stroke();
+            // skull in profile: brighter at the rim like bone on film, with the eye socket,
+            // the nose and a row of teeth on the jaw
+            const [sx, sy, rx, ry] = B.skull;
+            const sg = c.createRadialGradient(sx, sy, 0, sx, sy, Math.max(rx, ry));
+            sg.addColorStop(0, 'rgba(200,232,248,0.04)');
+            sg.addColorStop(0.7, 'rgba(225,246,255,0.3)');
+            sg.addColorStop(0.9, 'rgba(240,252,255,0.85)');
+            sg.addColorStop(1, 'rgba(240,252,255,0.2)');
+            c.fillStyle = sg;
+            c.beginPath(); c.ellipse(sx, sy, rx, ry, f * 0.15, 0, 6.283); c.fill();
+            c.lineWidth = w * 0.7;
+            c.strokeStyle = bone;
+            c.beginPath(); c.moveTo(B.jaw[0][0], B.jaw[0][1]); c.quadraticCurveTo(B.jaw[1][0], B.jaw[1][1] + 1, B.jaw[2][0], B.jaw[2][1]); c.stroke();
+            c.lineWidth = 0.4;
+            for (let q = 0; q < 5; q++) { const tx = sx + f * (rx * 0.25 + q * 1.1), ty = sy + ry * 0.62; c.beginPath(); c.moveTo(tx, ty); c.lineTo(tx, ty + 1.6); c.stroke(); }
+            c.save();
+            c.globalCompositeOperation = 'source-over';
+            c.shadowBlur = 0;
+            c.fillStyle = 'rgba(10,26,44,0.75)';
+            const [ex, ey] = DIVER_EYES[bi];
+            c.fillStyle = 'rgba(8,20,36,0.85)';
+            c.beginPath(); c.ellipse(ex - f * 0.6, ey - 0.2, 2.7, 3.1, f * 0.2, 0, 6.283); c.fill();           // eye socket
+            c.beginPath(); c.moveTo(ex + f * 1.2, ey + 3); c.lineTo(ex + f * 2.6, ey + 5.6); c.lineTo(ex + f * 0.6, ey + 5.4); c.closePath(); c.fill();   // nose
+            c.restore();
+        });
+        c.restore();
+    }
+
     function drawGhostDivers(t, e) {
         if (!inView(1380, 1620)) return;
         ctx.save();
-        {
-            const a = e;
-            const film = xrayFilm();
-            // the divers as an X-ray negative of the painting itself...
-            if (film) {
-                if (filmReadyAt < 0) filmReadyAt = t;
-                ctx.globalAlpha = a * Math.min(1, (t - filmReadyAt) / 1.2);
-                ctx.drawImage(film, XRAY_BOX[0], XRAY_BOX[1], XRAY_BOX[2] - XRAY_BOX[0], XRAY_BOX[3] - XRAY_BOX[1]);
-            }
-            // ...with their bones showing faintly through
-            ctx.save();
-            ctx.globalCompositeOperation = 'screen';
-            ctx.globalAlpha = a * 0.9;
-            if (!LITE) ctx.filter = `blur(${(0.45 * k).toFixed(2)}px)`;
-            ctx.shadowColor = 'rgba(170,230,255,0.8)';
-            ctx.shadowBlur = 3 * k;
-            ctx.lineCap = ctx.lineJoin = 'round';
-            const bone = 'rgba(232,248,255,0.9)';
-            const line = pts => { ctx.beginPath(); pts.forEach(([x, y], j) => (j ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.stroke(); };
-            const knobs = (pts, r) => pts.forEach(([x, y]) => { ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fill(); });
-            DIVER_BONES.forEach((B, bi) => {
-                const f = bi === 0 ? 1 : -1;   // which way the face points
-                const w = B.w;
-                ctx.strokeStyle = ctx.fillStyle = bone;
-                // limbs: slim shafts with rounded joints
-                ctx.lineWidth = w * 0.8;
-                B.limbs.forEach(L => { line(L); knobs(L.slice(1, -1), w * 0.75); });
-                line(B.shoulders);
-                // spine: a chain of small vertebrae
-                const S = B.spine;
-                for (let s = 0; s < S.length - 1; s++) {
-                    const [x0, y0] = S[s], [x1, y1] = S[s + 1], n = Math.max(2, Math.round(Math.hypot(x1 - x0, y1 - y0) / (w * 2.4)));
-                    for (let v = 0; v < n; v++) { const u = v / n; ctx.beginPath(); ctx.arc(x0 + (x1 - x0) * u, y0 + (y1 - y0) * u, w * 0.62, 0, 6.283); ctx.fill(); }
-                }
-                // ribs: seen from the side, curving forward and down from the spine
-                ctx.lineWidth = w * 0.42;
-                for (let r = 0; r < 6; r++) {
-                    const u = 0.1 + r * 0.14, [p0, p1] = [S[1], S[2]];
-                    const px = p0[0] + (p1[0] - p0[0]) * u * 1.6, py = p0[1] + (p1[1] - p0[1]) * u * 1.6;
-                    const len = w * (7.5 - r * 0.5);
-                    ctx.beginPath(); ctx.moveTo(px, py); ctx.quadraticCurveTo(px + f * len * 0.6, py - w * 1.2, px + f * len, py + w * 1.8); ctx.stroke();
-                }
-                // pelvis
-                const [qx, qy, qrx, qry] = B.pelvis;
-                ctx.lineWidth = w * 0.7;
-                ctx.beginPath(); ctx.ellipse(qx, qy, qrx, qry, -0.4, 0.2, 5.9); ctx.stroke();
-                // skull in profile: brighter at the rim like bone on film, with the eye socket,
-                // the nose and a row of teeth on the jaw
-                const [sx, sy, rx, ry] = B.skull;
-                const sg = ctx.createRadialGradient(sx, sy, 0, sx, sy, Math.max(rx, ry));
-                sg.addColorStop(0, 'rgba(200,232,248,0.04)');
-                sg.addColorStop(0.7, 'rgba(225,246,255,0.3)');
-                sg.addColorStop(0.9, 'rgba(240,252,255,0.85)');
-                sg.addColorStop(1, 'rgba(240,252,255,0.2)');
-                ctx.fillStyle = sg;
-                ctx.beginPath(); ctx.ellipse(sx, sy, rx, ry, f * 0.15, 0, 6.283); ctx.fill();
-                ctx.lineWidth = w * 0.7;
-                ctx.strokeStyle = bone;
-                ctx.beginPath(); ctx.moveTo(B.jaw[0][0], B.jaw[0][1]); ctx.quadraticCurveTo(B.jaw[1][0], B.jaw[1][1] + 1, B.jaw[2][0], B.jaw[2][1]); ctx.stroke();
-                ctx.lineWidth = 0.4;
-                for (let q = 0; q < 5; q++) { const tx = sx + f * (rx * 0.25 + q * 1.1), ty = sy + ry * 0.62; ctx.beginPath(); ctx.moveTo(tx, ty); ctx.lineTo(tx, ty + 1.6); ctx.stroke(); }
-                ctx.save();
-                ctx.globalCompositeOperation = 'source-over';
-                ctx.shadowBlur = 0;
-                ctx.fillStyle = 'rgba(10,26,44,0.75)';
-                const [ex, ey] = DIVER_EYES[bi];
-                ctx.fillStyle = 'rgba(8,20,36,0.85)';
-                ctx.beginPath(); ctx.ellipse(ex - f * 0.6, ey - 0.2, 2.7, 3.1, f * 0.2, 0, 6.283); ctx.fill();           // eye socket
-                ctx.beginPath(); ctx.moveTo(ex + f * 1.2, ey + 3); ctx.lineTo(ex + f * 2.6, ey + 5.6); ctx.lineTo(ex + f * 0.6, ey + 5.4); ctx.closePath(); ctx.fill();   // nose
-                ctx.restore();
-            });
-            ctx.restore();
+        // the divers as an X-ray negative of the painting, skeletons and all (prepared once)
+        const film = xrayFilm();
+        if (film) {
+            if (filmReadyAt < 0) filmReadyAt = t;
+            ctx.globalAlpha = e * Math.min(1, (t - filmReadyAt) / 1.2);
+            ctx.drawImage(film, XRAY_BOX[0], XRAY_BOX[1], XRAY_BOX[2] - XRAY_BOX[0], XRAY_BOX[3] - XRAY_BOX[1]);
+            ctx.globalAlpha = 1;
         }
         DIVER_EYES.forEach(([x, y, far], i) => {
             const pulse = 0.6 + 0.4 * noise(t * 0.7 + i * 9);
@@ -2992,14 +2998,11 @@
     }
 
     // Christmas: a small Santa hat on each diver, tinted by the water, its tip drifting in the current
-    function drawSantaHat(h, t, e) {
+    function paintSantaHat(ctx, h, S) {
         const { w, H, dir } = h, hw = w / 2, f = -dir, bend = h.bend || 0, lean = h.lean || 0;   // lean: the crown swept back   // f: the side the face is on; bend: the band follows the head's curve
-        const sway = Math.sin(t * 0.8 + h.x * 0.1) * 0.12 + Math.sin(t * 1.9 + h.x) * 0.04;
+        const sway = 0;
         ctx.save();
-        ctx.translate(h.x, h.y);
-        ctx.rotate(h.a);
-        ctx.globalAlpha = e;
-        if (!LITE) ctx.filter = `blur(${(0.35 * k).toFixed(2)}px)`;
+        ctx.filter = `blur(${(0.35 * S).toFixed(2)}px)`;
         const tipX = -f * (hw + w * (0.2 + lean * 0.25)), tipY = H * (0.02 + lean * 0.08 + sway);   // the tip droops down behind the head
         // the body: up from the brow to the crown, then flopping back to the tip
         const body = new Path2D();
@@ -3045,6 +3048,33 @@
         pom.addColorStop(1, 'rgb(140,180,204)');
         ctx.fillStyle = pom;
         ctx.beginPath(); ctx.arc(tipX, tipY, pr, 0, 6.283); ctx.fill();
+        ctx.restore();
+    }
+
+    // Each hat is painted once into its own small image; every frame it is simply placed on the
+    // diver's head, rocking very slightly as if in the current
+    const hatSprites = new Map();
+    function hatSprite(h) {
+        if (hatSprites.has(h)) return hatSprites.get(h);
+        const S = 4, left = h.w * 1.25, top = h.H * 1.45, W = h.w * 2.5, H = h.H * 2.5;
+        const c = document.createElement('canvas');
+        c.width = Math.ceil(W * S); c.height = Math.ceil(H * S);
+        const g = c.getContext('2d');
+        g.scale(S, S);
+        g.translate(left, top);
+        paintSantaHat(g, h, S);
+        const s = { c, left, top, W, H };
+        hatSprites.set(h, s);
+        return s;
+    }
+    function drawSantaHat(h, t, e) {
+        const s = hatSprite(h);
+        const rock = Math.sin(t * 0.8 + h.x * 0.1) * 0.035 + Math.sin(t * 1.9 + h.x) * 0.012;
+        ctx.save();
+        ctx.translate(h.x, h.y);
+        ctx.rotate(h.a + rock);
+        ctx.globalAlpha = e;
+        ctx.drawImage(s.c, -s.left, -s.top, s.W, s.H);
         ctx.restore();
     }
 
@@ -3094,7 +3124,6 @@
         const SKIN = 'rgb(86,108,92)', SKIN_FAR = 'rgb(60,82,78)', EDGE = 'rgba(186,196,158,0.55)';
         ctx.save();
         ctx.clip(fishClip, 'evenodd');
-        if (!LITE) ctx.filter = `blur(${(0.3 * k).toFixed(2)}px)`;
         ctx.globalAlpha = 0.95 * e * fade;
         ctx.translate(turtle.x, turtle.y);
         ctx.scale(dir, 1);
