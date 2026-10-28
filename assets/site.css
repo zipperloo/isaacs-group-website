@@ -7,6 +7,7 @@
     --navy: #132038;
     --ivory: #e2d8c9;
     --ink: #2a1e18;                 /* deep brown lettering on the bright daytime pictures */
+    --bronze: #533924;              /* the deep bronze of the pillars: the wordmark and tagline by day */
     --halo: rgba(10, 8, 6, 0.55);   /* soft glow behind thin type on busy parts of the picture */
     --gutter: clamp(16px, 5.5vw, 96px);
     --gutter-right: clamp(16px, 2.2vw, 48px);

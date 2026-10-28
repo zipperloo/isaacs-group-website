@@ -18,7 +18,7 @@
         // Hold the entrance until the background is ready (scene.js removes this)
         document.documentElement.classList.add('loading');
     </script>
-    <link rel="stylesheet" href="assets/site.css?v=104">
+    <link rel="stylesheet" href="assets/site.css?v=105">
     <style>
         /* Home only; the shared layout, menu and contact form are in assets/site.css */
         body { background: #0d0f1a; color: var(--ivory); font-family: 'Jost', 'Segoe UI', sans-serif; font-weight: 300; }
@@ -49,10 +49,10 @@
         /* Ivory lettering at night; by day a deep near-black brown with a faint pale halo */
         .tagline { font-family: 'Source Sans 3', sans-serif; font-weight: 200; text-shadow: 0 0 14px var(--halo), 0 0 4px var(--halo); }
         .sound, .eq i { transition: color 2s ease, background-color 2s ease, text-shadow 2s ease; }
-        /* by day the ivory wordmark is tinted a warm dark brown (about #5a3e2a) */
-        .daytime .logo img { filter: sepia(1) brightness(0.26) saturate(2.75) hue-rotate(-40deg) drop-shadow(0 0 6px rgba(255, 250, 240, 0.35)); }
+        /* by day the ivory wordmark is tinted the deep bronze of the pillars (var(--bronze), #533924) */
+        .daytime .logo img { filter: sepia(1) brightness(0.24) saturate(2.75) hue-rotate(-36deg) drop-shadow(0 0 6px rgba(255, 250, 240, 0.35)); }
         .daytime .tagline, .daytime .sound { color: var(--ink); text-shadow: 0 0 5px rgba(255, 248, 236, 0.85), 0 0 16px rgba(255, 248, 236, 0.65), 0 0 30px rgba(255, 248, 236, 0.4); }
-        .daytime .tagline { font-weight: 300; }
+        .daytime .tagline { color: var(--bronze); font-weight: 300; }
         .daytime .eq i { background: var(--ink); box-shadow: none; }
         /* the tagline sits over the dark rug: by day it gets a soft, feathered cream glow behind it */
         .tagline::before {
