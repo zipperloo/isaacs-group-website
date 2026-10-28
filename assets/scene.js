@@ -48,6 +48,14 @@
     // waiting for the effects to fade in
     const screenCanvas = document.getElementById('screen');
     const sctx = screenCanvas.getContext('2d');
+    // The static layer (climbers, switches, desk buttons, laptop screen) only covers the box they
+    // sit in, rather than the whole picture: x, y, w, h in picture pixels
+    const STATIC_BOX = [455, 280, 645, 390];
+    Object.assign(screenCanvas.style, {
+        left: (100 * STATIC_BOX[0] / IMG_W) + '%', top: (100 * STATIC_BOX[1] / IMG_H) + '%',
+        width: (100 * STATIC_BOX[2] / IMG_W) + '%', height: (100 * STATIC_BOX[3] / IMG_H) + '%'
+    });
+    let sk = 0;   // static-layer pixels per picture pixel
     const ui = document.getElementById('ui');
     const ctx = canvas.getContext('2d');
     const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -302,13 +310,17 @@
             transform: `translate3d(${(-overflowX * pan.focal).toFixed(2)}px, ${(-overflowY * pan.focalY).toFixed(2)}px, 0)`
         });
 
-        const newK = Math.min(LITE ? 1.3 : 2, Math.max(1, (w * (devicePixelRatio || 1)) / IMG_W));
-        if (Math.abs(newK - k) > 0.05) {
+        // The effects are soft glows and small details, so their layer is drawn at a modest
+        // resolution; the static layer (switches, laptop) is small, so it stays sharp
+        const newK = Math.min(LITE ? 1.1 : 1.25, Math.max(1, (w * (devicePixelRatio || 1)) / IMG_W));
+        const newSK = Math.min(2, Math.max(1, (w * (devicePixelRatio || 1)) / IMG_W));
+        if (Math.abs(newK - k) > 0.05 || Math.abs(newSK - sk) > 0.05) {
             k = newK;
+            sk = newSK;
             canvas.width = Math.round(IMG_W * k);
             canvas.height = Math.round(IMG_H * k);
-            screenCanvas.width = canvas.width;
-            screenCanvas.height = canvas.height;
+            screenCanvas.width = Math.round(STATIC_BOX[2] * sk);
+            screenCanvas.height = Math.round(STATIC_BOX[3] * sk);
             buildDistortRegions();
             drawLaptop();
         }
@@ -361,11 +373,12 @@
         w.clearRect(0, 0, r.work.width, r.work.height);
         layers.forEach(([src, alpha]) => {
             w.globalAlpha = alpha;
-            for (let y = r.by; y < r.by + r.bh; y++) {
+            const step = r.freq < 1 ? 2 : 1;   // long, gentle waves are drawn in 2-pixel strips (half the work, same look)
+            for (let y = r.by; y < r.by + r.bh; y += step) {
                 const depth = (y - r.by) / r.bh;
                 const amp = r.amp[0] + (r.amp[1] - r.amp[0]) * depth;
                 const dx = amp * (0.6 * Math.sin(y * r.freq + t * r.speed) + 0.4 * Math.sin(y * r.freq * 0.37 - t * r.speed * 0.66 + 1.7));
-                w.drawImage(src, r.bx, y, r.bw, 1, dx * k, (y - r.by) * k, r.bw * k, k);
+                w.drawImage(src, r.bx, y, r.bw, step, dx * k, (y - r.by) * k, r.bw * k, step * k);
             }
         });
         w.globalAlpha = 1;
@@ -1319,7 +1332,7 @@
         sctx.setTransform(1, 0, 0, 1, 0, 0);
         sctx.clearRect(0, 0, screenCanvas.width, screenCanvas.height);
         sctx.globalAlpha = 1;   // the laptop fade below must not carry over to the buttons
-        sctx.setTransform(k, 0, 0, k, 0, 0);
+        sctx.setTransform(sk, 0, 0, sk, -STATIC_BOX[0] * sk, -STATIC_BOX[1] * sk);
         drawClimbers();
         drawSwitch();
         drawRedButton();
@@ -2505,7 +2518,9 @@
 
         // A shark gliding slowly through the back of the tank, behind the divers
         if (inView(1250, IMG_W)) {
-            shark.x += shark.dir * 0.35;
+            const sdt = Math.min(0.1, t - (shark.t || t));   // swims by time, whatever the redraw rate
+            shark.t = t;
+            shark.x += shark.dir * 21 * sdt;
             if (shark.x > 1720) shark.dir = -1;
             if (shark.x < 1200) shark.dir = 1;
             const sx = shark.x, sy = 650 + Math.sin(t * 0.3) * 8, sw = 46;
@@ -3475,7 +3490,7 @@
 
         // The picture itself moves every frame (so swipes stay smooth); on phones the effects
         // are updated and redrawn 30 times a second, plenty for slow ambient motion
-        if (LITE && now - lastDraw < 30) { requestAnimationFrame(frame); return; }
+        if (now - lastDraw < 30) { requestAnimationFrame(frame); return; }
         lastDraw = now;
         const dt = Math.min(0.05, Math.max(0, (now - last) / 1000));
         last = now;

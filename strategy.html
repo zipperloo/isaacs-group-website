@@ -20,8 +20,9 @@
     <style>
         /* Strategy only; the shared layout, menu and contact form are in assets/site.css */
         body { background: #f3e2c8; font-family: 'Source Sans 3', sans-serif; }
-        .stage #scene-night { opacity: 0; transition: opacity 2s ease; }
-        .stage #scene-night.on { opacity: 1; }
+        /* once faded out, the night painting is fully hidden so the browser can release it */
+        .stage #scene-night { opacity: 0; visibility: hidden; transition: opacity 2s ease, visibility 0s 2s; }
+        .stage #scene-night.on { opacity: 1; visibility: visible; transition: opacity 2s ease; }
 
         /* Deep brown lettering by day; ivory with a soft dark halo by night */
         .logo img { filter: brightness(0.16) sepia(0.6) drop-shadow(0 0 6px rgba(255, 250, 240, 0.4)); }
@@ -200,7 +201,7 @@
     </button>
 
     <div class="curtain" aria-hidden="true"></div>
-    <script src="assets/strategy.js?v=103"></script>
+    <script src="assets/strategy.js?v=109"></script>
     <script src="assets/site.js?v=103"></script>
 </body>
 </html>

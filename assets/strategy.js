@@ -91,7 +91,7 @@
         pan.base = vw <= 768 ? 0.62 : Math.min(1, Math.max(0.5, (switchX - vw + 60) / Math.max(1, overflowX)));
         if (!pan.touched) pan.focal = pan.base;
         Object.assign(stage.style, { width: w + 'px', height: h + 'px', left: '0px', top: '0px', right: 'auto', bottom: 'auto' });
-        const nk = Math.min(LITE ? 1.3 : 2, Math.max(1, (w * (devicePixelRatio || 1)) / IMG_W));
+        const nk = Math.min(LITE ? 1.1 : 1.25, Math.max(1, (w * (devicePixelRatio || 1)) / IMG_W));
         if (Math.abs(nk - k) > 0.05) {
             k = nk;
             canvas.width = Math.round(IMG_W * k);
@@ -158,11 +158,12 @@
         const layers = night <= 0 || !nReady ? [[img, 1]] : night >= 1 ? [[nightImg, 1]] : [[img, 1], [nightImg, night]];
         layers.forEach(([src, alpha]) => {
             w.globalAlpha = alpha;
-            for (let y = r.by; y < r.by + r.bh; y++) {
+            const step = r.freq < 1 ? 2 : 1;   // long, gentle waves are drawn in 2-pixel strips (half the work, same look)
+            for (let y = r.by; y < r.by + r.bh; y += step) {
                 const depth = (y - r.by) / r.bh;
                 const amp = r.amp[0] + (r.amp[1] - r.amp[0]) * depth;
                 const dx = amp * (0.6 * Math.sin(y * r.freq + t * r.speed) + 0.4 * Math.sin(y * r.freq * 0.37 - t * r.speed * 0.66 + 1.7));
-                w.drawImage(src, r.bx, y, r.bw, 1, dx * k, (y - r.by) * k, r.bw * k, k);
+                w.drawImage(src, r.bx, y, r.bw, step, dx * k, (y - r.by) * k, r.bw * k, step * k);
             }
         });
         w.globalAlpha = 1;
@@ -468,7 +469,7 @@
         updatePan(t);
         stage.style.transform = `translate3d(${(-overflowX * pan.focal - current.x * 6).toFixed(2)}px, ${(-overflowY * pan.focalY - current.y * 4).toFixed(2)}px, 0)`;
         placeBreaker();   // every frame, so it never lags behind the picture
-        if (LITE && now - lastDraw < 30) { requestAnimationFrame(frame); return; }
+        if (now - lastDraw < 30) { requestAnimationFrame(frame); return; }
         lastDraw = now;
         const dt = Math.min(0.05, Math.max(0, (now - last) / 1000));
         last = now;

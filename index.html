@@ -29,8 +29,9 @@
         .stage img { object-position: 44% 50%; }
         .stage canvas { opacity: 0; }
         .stage #screen { opacity: 1; }
-        #scene-day, #scene-hw, #scene-xmas { opacity: 0; transition: opacity 2s ease; }
-        #scene-day.on, #scene-hw.on, #scene-xmas.on { opacity: 1; }
+        /* once faded out, a painting is fully hidden so the browser can release it from graphics memory */
+        #scene-day, #scene-hw, #scene-xmas { opacity: 0; visibility: hidden; transition: opacity 2s ease, visibility 0s 2s; }
+        #scene-day.on, #scene-hw.on, #scene-xmas.on { opacity: 1; visibility: visible; transition: opacity 2s ease; }
         .ui { will-change: transform; }
 
         /* Soft shading so the type stays legible on any part of the picture (lighter by day) */
@@ -180,7 +181,7 @@
 
     <div class="curtain" aria-hidden="true"></div>
 
-    <script src="assets/scene.js?v=108"></script>
+    <script src="assets/scene.js?v=109"></script>
     <script src="assets/sound.js?v=103"></script>
     <script src="assets/site.js?v=103"></script>
 </body>
