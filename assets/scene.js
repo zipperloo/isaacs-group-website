@@ -456,26 +456,46 @@
             ctx.fill();
         });
 
-        // Bubbles: a faint rim, a hint of fill and a small highlight
+        // Bubbles: a faint rim, a hint of fill and a small highlight. At Halloween they turn a
+        // ghostly green; at Christmas they become tiny snowflakes as they rise.
+        const ge = chaos * chaos * (3 - 2 * chaos), se = xmas * xmas * (3 - 2 * xmas);
+        const mix = (a, b) => a.map((v, i) => Math.round(v + (b[i] - v) * ge)).join(',');
+        const rim = `rgb(${mix([225, 245, 255], [170, 255, 185])})`, fill = `rgb(${mix([210, 240, 255], [150, 255, 170])})`;
         ctx.lineWidth = 0.45;
         bubbles.forEach(b => {
             if (b.delay > 0) return;
             const x = b.x + b.drift + Math.sin(t * b.wf + b.wp) * b.wob;
             const fade = Math.min(1, (b.y - TANK_SURFACE) / 18);
-            ctx.beginPath();
-            ctx.arc(x, b.y, b.r, 0, 6.283);
-            ctx.globalAlpha = 0.5 * fade;
-            ctx.strokeStyle = 'rgb(225,245,255)';
-            ctx.stroke();
-            ctx.globalAlpha = 0.08 * fade;
-            ctx.fillStyle = 'rgb(210,240,255)';
-            ctx.fill();
-            ctx.globalAlpha = 0.65 * fade;
-            ctx.fillStyle = '#fff';
-            ctx.beginPath();
-            ctx.arc(x - b.r * 0.35, b.y - b.r * 0.35, b.r * 0.28, 0, 6.283);
-            ctx.fill();
+            const bf = fade * (1 - se);
+            if (bf > 0) {
+                ctx.beginPath();
+                ctx.arc(x, b.y, b.r, 0, 6.283);
+                ctx.globalAlpha = (0.5 + 0.2 * ge) * bf;
+                ctx.strokeStyle = rim;
+                ctx.stroke();
+                ctx.globalAlpha = (0.08 + 0.1 * ge) * bf;
+                ctx.fillStyle = fill;
+                ctx.fill();
+                ctx.globalAlpha = 0.65 * bf;
+                ctx.fillStyle = '#fff';
+                ctx.beginPath();
+                ctx.arc(x - b.r * 0.35, b.y - b.r * 0.35, b.r * 0.28, 0, 6.283);
+                ctx.fill();
+            }
+            if (se > 0) {
+                const r = Math.max(1.1, b.r * 1.4), spin = t * 0.6 + b.wp;
+                ctx.globalAlpha = 0.85 * fade * se;
+                ctx.strokeStyle = 'rgb(240,250,255)';
+                ctx.beginPath();
+                for (let j = 0; j < 3; j++) {
+                    const a = spin + j * Math.PI / 3, cx = Math.cos(a) * r, cy = Math.sin(a) * r;
+                    ctx.moveTo(x - cx, b.y - cy);
+                    ctx.lineTo(x + cx, b.y + cy);
+                }
+                ctx.stroke();
+            }
         });
+        ctx.globalAlpha = 1;
 
         ctx.restore();
     }
@@ -2401,7 +2421,7 @@
         const before = chaos;
         chaos = chaosOn ? Math.min(1, chaos + dt / 2) : Math.max(0, chaos - dt / 2);   // 2-second fade, like the painting
         if (chaos !== before) drawLaptop();   // the laptop screen and climber overlays fade with it
-        if (!chaosOn) { if (chaos === 0) { bats.length = 0; witch.active = false; witch.next = 3; swarm.active = false; swarm.next = 4; nextFlash = 6; } return; }
+        if (!chaosOn) { xray = 0; if (chaos === 0) { bats.length = 0; witch.active = false; witch.next = 3; swarm.active = false; swarm.next = 4; nextFlash = 6; } return; }
         // a swarm forms, wheels around for a while, then scatters
         const sw = swarm;
         if (!sw.active && t - spookSince >= sw.next) {
@@ -2411,8 +2431,9 @@
                 bats: Array.from({ length: LITE ? 45 : 90 }, () => ({ a: Math.random() * 6.283, r: 20 + Math.random() * 90, w: (0.6 + Math.random() * 1.2) * (Math.random() < 0.5 ? 1 : -1), h: 0.35 + Math.random() * 0.4, ph: Math.random() * 6, s: 1.5 + Math.random() * 1.2 })) });
         }
         if (sw.active && t - sw.born > sw.life) { sw.active = false; sw.next = t - spookSince + 10 + Math.random() * 10; }
-        if (t - spookSince >= nextFlash) { flash = 1; nextFlash = t - spookSince + 9 + Math.random() * 14; }
+        if (t - spookSince >= nextFlash) { flash = 1; if (Math.random() < 0.65) xray = 1; nextFlash = t - spookSince + 9 + Math.random() * 14; }
         flash = Math.max(0, flash - dt * 2.2);
+        xray = Math.max(0, xray - dt * 2.4);
         if (!witch.active && t - spookSince >= witch.next) Object.assign(witch, { active: true, born: t, dur: 9 });
         if (witch.active && t - witch.born > witch.dur) { witch.active = false; witch.next = t - spookSince + 14 + Math.random() * 14; }
         if (t >= nextBat && bats.length < 70) {
@@ -2514,6 +2535,8 @@
             ctx.fill();
             ctx.restore();
         }
+
+        drawGhostDivers(t, e);
 
         ctx.save();
         ctx.clip(OUTSIDE);
@@ -2700,6 +2723,9 @@
         const e = xmas * xmas * (3 - 2 * xmas);
         ctx.save();
 
+        // Santa hats on the two divers
+        if (inView(1420, 1560)) DIVER_HATS.forEach(h => drawSantaHat(h, t, e));
+
         // Fairy lights twinkling on the tree, the garlands and the huts
         ctx.globalCompositeOperation = 'lighter';
         XMAS_LIGHTS.forEach(([x, y], i) => {
@@ -2803,6 +2829,342 @@
             ctx.globalAlpha = 0.4 * a;
             ctx.fillRect(sp.x - 0.6, y, 1.2, Math.pow(f, 1.2) * 26);
         });
+        ctx.restore();
+    }
+
+    /* ---------- the two divers' own moments ---------- */
+
+    // Measured from the painting (the divers sit in the same place in every version of it).
+    // The man faces right, the girl faces left; they hold hands between them.
+    const DIVER_EYES = [[1459, 690, -1], [1515, 716, 1]];   // x, y, which way the far eye sits
+    // Santa hats: band centre, band width, body height, tilt, and which way the tip trails
+    const DIVER_HATS = [
+        { x: 1456, y: 680, w: 31, H: 19, a: 0.05, dir: -1 },
+        { x: 1520, y: 705, w: 26, H: 15, a: -0.13, dir: 1 }
+    ];
+    // Bones for the X-ray: skull (x, y, rx, ry), jaw, spine, shoulders, pelvis and limbs, in picture pixels
+    const DIVER_BONES = [
+        { skull: [1454, 684, 9, 10.5], jaw: [[1448, 692], [1457, 699], [1463, 695]], spine: [[1446, 698], [1437, 712], [1428, 735], [1419, 766]],
+          shoulders: [[1428, 708], [1447, 709]], pelvis: [1419, 767, 7, 4], w: 1.6,
+          limbs: [[[1446, 710], [1462, 735], [1477, 744], [1483, 747]], [[1428, 711], [1419, 744], [1424, 756], [1431, 763]],
+                  [[1418, 767], [1398, 784], [1404, 806]], [[1421, 768], [1412, 790], [1418, 810]]] },
+        { skull: [1520, 712, 8, 9], jaw: [[1512, 717], [1514, 723], [1521, 723]], spine: [[1525, 722], [1527, 735], [1535, 755], [1546, 773]],
+          shoulders: [[1513, 731], [1533, 732]], pelvis: [1546, 775, 6, 3.5], w: 1.3,
+          limbs: [[[1513, 731], [1499, 742], [1488, 746]], [[1533, 732], [1538, 752], [1540, 771]],
+                  [[1547, 776], [1562, 788], [1574, 786]], [[1544, 778], [1552, 795], [1560, 808]]] }
+    ];
+    let xray = 0;   // Halloween: some lightning flashes show the divers as skeletons for an instant
+
+    // The X-ray film: the divers cut from the Halloween painting with soft edges and turned into a
+    // cool, high-contrast negative, so dark wetsuits glow and the water behind them goes dark.
+    // Built once, the first time it is needed.
+    const XRAY_BOX = [1350, 645, 1620, 840];
+    let xrayCanvas = null;
+    function xrayFilm() {
+        if (xrayCanvas) return xrayCanvas;
+        if (!hwImg.complete || !hwImg.naturalWidth) return null;
+        const S = 2, [x0, y0, x1, y1] = XRAY_BOX, W = (x1 - x0) * S, H = (y1 - y0) * S;
+        const c = document.createElement('canvas');
+        c.width = W; c.height = H;
+        const g = c.getContext('2d');
+        // a feathered mask of the two divers (the shadow of a shape drawn off-canvas)
+        g.save();
+        g.shadowColor = '#fff';
+        g.shadowBlur = 7 * S;
+        g.shadowOffsetX = 10000;
+        g.translate(-10000, 0);
+        g.scale(S, S);
+        g.translate(-x0, -y0);
+        g.fillStyle = '#fff';
+        DIVER_SHAPES.forEach(poly => g.fill(pathFrom(poly)));
+        g.restore();
+        const mask = g.getImageData(0, 0, W, H).data;
+        g.clearRect(0, 0, W, H);
+        const sx = hwImg.naturalWidth / IMG_W;
+        g.drawImage(hwImg, x0 * sx, y0 * sx, (x1 - x0) * sx, (y1 - y0) * sx, 0, 0, W, H);
+        const im = g.getImageData(0, 0, W, H), d = im.data;
+        for (let i = 0; i < d.length; i += 4) {
+            const L = 0.3 * d[i] + 0.55 * d[i + 1] + 0.15 * d[i + 2];
+            let v = (255 - L - 55) * 1.6;
+            v = Math.max(0, Math.min(255, v));
+            // the bright open water around them drops out, so only the divers turn to film
+            const water = Math.max(0, Math.min(1, (d[i + 2] - d[i] - 110) / 60)) * Math.max(0, Math.min(1, (L - 95) / 40));
+            d[i] = v * 0.58; d[i + 1] = v * 0.72; d[i + 2] = Math.min(255, v * 0.84 + 16);   // kept below white, so the bones read brighter
+            d[i + 3] = mask[i + 3] * (1 - water);
+        }
+        g.putImageData(im, 0, 0);
+        xrayCanvas = c;
+        return c;
+    }
+
+    // Halloween: an eerie glow behind both masks, and the X-ray when the lightning flickers
+    function drawGhostDivers(t, e) {
+        if (!inView(1380, 1620)) return;
+        ctx.save();
+        DIVER_EYES.forEach(([x, y, far], i) => {
+            const pulse = (0.6 + 0.4 * noise(t * 0.7 + i * 9)) * (1 - Math.min(1, xray * 1.6));   // hidden while the X-ray shows
+            [[0, 0, 1], [far * 2.3, -0.3, 0.45]].forEach(([dx, dy, s]) => {
+                const ex = x + dx, ey = y + dy;
+                const halo = ctx.createRadialGradient(ex, ey, 0, ex, ey, 5);
+                halo.addColorStop(0, `rgba(255,70,40,${(0.45 * e * pulse * s).toFixed(3)})`);
+                halo.addColorStop(1, 'rgba(255,70,40,0)');
+                ctx.fillStyle = halo;
+                ctx.fillRect(ex - 5, ey - 5, 10, 10);
+                ctx.globalAlpha = e * pulse * s;
+                ctx.fillStyle = 'rgb(255,150,110)';
+                ctx.beginPath(); ctx.arc(ex, ey, 0.75, 0, 6.283); ctx.fill();
+                ctx.globalAlpha = 1;
+            });
+        });
+        if (xray > 0) {
+            const a = e * Math.min(1, xray * 1.6) * (Math.random() < 0.75 ? 1 : 0.4);
+            const film = xrayFilm();
+            // the divers as an X-ray negative of the painting itself...
+            if (film) {
+                ctx.globalAlpha = a;
+                ctx.drawImage(film, XRAY_BOX[0], XRAY_BOX[1], XRAY_BOX[2] - XRAY_BOX[0], XRAY_BOX[3] - XRAY_BOX[1]);
+            }
+            // ...with their bones showing faintly through
+            ctx.save();
+            ctx.globalCompositeOperation = 'screen';
+            ctx.globalAlpha = a * 0.9;
+            if (!LITE) ctx.filter = `blur(${(0.45 * k).toFixed(2)}px)`;
+            ctx.shadowColor = 'rgba(170,230,255,0.8)';
+            ctx.shadowBlur = 3 * k;
+            ctx.lineCap = ctx.lineJoin = 'round';
+            const bone = 'rgba(232,248,255,0.9)';
+            const line = pts => { ctx.beginPath(); pts.forEach(([x, y], j) => (j ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.stroke(); };
+            const knobs = (pts, r) => pts.forEach(([x, y]) => { ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fill(); });
+            DIVER_BONES.forEach((B, bi) => {
+                const f = bi === 0 ? 1 : -1;   // which way the face points
+                const w = B.w;
+                ctx.strokeStyle = ctx.fillStyle = bone;
+                // limbs: slim shafts with rounded joints
+                ctx.lineWidth = w * 0.8;
+                B.limbs.forEach(L => { line(L); knobs(L.slice(1, -1), w * 0.75); });
+                line(B.shoulders);
+                // spine: a chain of small vertebrae
+                const S = B.spine;
+                for (let s = 0; s < S.length - 1; s++) {
+                    const [x0, y0] = S[s], [x1, y1] = S[s + 1], n = Math.max(2, Math.round(Math.hypot(x1 - x0, y1 - y0) / (w * 2.4)));
+                    for (let v = 0; v < n; v++) { const u = v / n; ctx.beginPath(); ctx.arc(x0 + (x1 - x0) * u, y0 + (y1 - y0) * u, w * 0.62, 0, 6.283); ctx.fill(); }
+                }
+                // ribs: seen from the side, curving forward and down from the spine
+                ctx.lineWidth = w * 0.42;
+                for (let r = 0; r < 6; r++) {
+                    const u = 0.1 + r * 0.14, [p0, p1] = [S[1], S[2]];
+                    const px = p0[0] + (p1[0] - p0[0]) * u * 1.6, py = p0[1] + (p1[1] - p0[1]) * u * 1.6;
+                    const len = w * (7.5 - r * 0.5);
+                    ctx.beginPath(); ctx.moveTo(px, py); ctx.quadraticCurveTo(px + f * len * 0.6, py - w * 1.2, px + f * len, py + w * 1.8); ctx.stroke();
+                }
+                // pelvis
+                const [qx, qy, qrx, qry] = B.pelvis;
+                ctx.lineWidth = w * 0.7;
+                ctx.beginPath(); ctx.ellipse(qx, qy, qrx, qry, -0.4, 0.2, 5.9); ctx.stroke();
+                // skull in profile: brighter at the rim like bone on film, with the eye socket,
+                // the nose and a row of teeth on the jaw
+                const [sx, sy, rx, ry] = B.skull;
+                const sg = ctx.createRadialGradient(sx, sy, 0, sx, sy, Math.max(rx, ry));
+                sg.addColorStop(0, 'rgba(200,232,248,0.04)');
+                sg.addColorStop(0.7, 'rgba(225,246,255,0.3)');
+                sg.addColorStop(0.9, 'rgba(240,252,255,0.85)');
+                sg.addColorStop(1, 'rgba(240,252,255,0.2)');
+                ctx.fillStyle = sg;
+                ctx.beginPath(); ctx.ellipse(sx, sy, rx, ry, f * 0.15, 0, 6.283); ctx.fill();
+                ctx.lineWidth = w * 0.7;
+                ctx.strokeStyle = bone;
+                ctx.beginPath(); ctx.moveTo(B.jaw[0][0], B.jaw[0][1]); ctx.quadraticCurveTo(B.jaw[1][0], B.jaw[1][1] + 1, B.jaw[2][0], B.jaw[2][1]); ctx.stroke();
+                ctx.lineWidth = 0.4;
+                for (let q = 0; q < 5; q++) { const tx = sx + f * (rx * 0.25 + q * 1.1), ty = sy + ry * 0.62; ctx.beginPath(); ctx.moveTo(tx, ty); ctx.lineTo(tx, ty + 1.6); ctx.stroke(); }
+                ctx.save();
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = 'rgba(10,26,44,0.75)';
+                const [ex, ey] = DIVER_EYES[bi];
+                ctx.fillStyle = 'rgba(8,20,36,0.85)';
+                ctx.beginPath(); ctx.ellipse(ex - f * 0.6, ey - 0.2, 2.7, 3.1, f * 0.2, 0, 6.283); ctx.fill();           // eye socket
+                ctx.beginPath(); ctx.moveTo(ex + f * 1.2, ey + 3); ctx.lineTo(ex + f * 2.6, ey + 5.6); ctx.lineTo(ex + f * 0.6, ey + 5.4); ctx.closePath(); ctx.fill();   // nose
+                ctx.restore();
+            });
+            ctx.restore();
+        }
+        ctx.restore();
+    }
+
+    // Christmas: a small Santa hat on each diver, tinted by the water, its tip drifting in the current
+    function drawSantaHat(h, t, e) {
+        const { w, H, dir } = h, hw = w / 2, f = -dir;   // f: the side the face is on
+        const sway = Math.sin(t * 0.8 + h.x * 0.1) * 0.12 + Math.sin(t * 1.9 + h.x) * 0.04;
+        ctx.save();
+        ctx.translate(h.x, h.y);
+        ctx.rotate(h.a);
+        ctx.globalAlpha = e;
+        if (!LITE) ctx.filter = `blur(${(0.35 * k).toFixed(2)}px)`;
+        const tipX = -f * (hw + w * 0.2), tipY = H * (0.02 + sway);   // the tip droops down behind the head
+        // the body: up from the brow to the crown, then flopping back to the tip
+        const body = new Path2D();
+        body.moveTo(f * hw, 0);
+        body.quadraticCurveTo(f * hw * 0.8, -H * 1.0, -f * hw * 0.2, -H * 1.02);
+        body.quadraticCurveTo(-f * (hw + w * 0.32), -H * 0.95, tipX, tipY);
+        body.quadraticCurveTo(-f * hw * 0.9, -H * 0.42, -f * hw, 0);
+        body.closePath();
+        const g = ctx.createLinearGradient(f * hw, -H, -f * hw, 0);
+        g.addColorStop(0, 'rgb(158,44,80)');     // red, muted and cooled by the water
+        g.addColorStop(0.55, 'rgb(122,30,70)');
+        g.addColorStop(1, 'rgb(72,18,56)');
+        ctx.fillStyle = g;
+        ctx.fill(body);
+        // a soft highlight where the surface light catches the crown
+        ctx.save();
+        ctx.clip(body);
+        const hl = ctx.createRadialGradient(0, -H * 0.85, 0, 0, -H * 0.85, w * 0.45);
+        hl.addColorStop(0, 'rgba(150,215,255,0.3)');   // blue light from the surface
+        hl.addColorStop(1, 'rgba(150,215,255,0)');
+        ctx.fillStyle = hl;
+        ctx.fillRect(-w, -H * 1.5, w * 2, H * 1.5);
+        ctx.restore();
+        // the furry band and the pom-pom, faintly blue from the water
+        const bh = Math.max(3, H * 0.24);
+        const band = ctx.createLinearGradient(0, -bh * 0.6, 0, bh * 0.6);
+        band.addColorStop(0, 'rgb(214,234,244)');
+        band.addColorStop(1, 'rgb(150,188,210)');
+        ctx.fillStyle = band;
+        ctx.beginPath();
+        ctx.moveTo(-hw - 1, -bh * 0.5);
+        for (let i = 0; i <= 6; i++) ctx.lineTo(-hw - 1 + (w + 2) * i / 6, -bh * 0.5 - (i % 2) * 0.5);
+        ctx.lineTo(hw + 1, bh * 0.55);
+        for (let i = 6; i >= 0; i--) ctx.lineTo(-hw - 1 + (w + 2) * i / 6, bh * 0.55 + (i % 2) * 0.5);
+        ctx.closePath();
+        ctx.fill();
+        const pr = w * 0.13;
+        const pom = ctx.createRadialGradient(tipX - pr * 0.3, tipY - pr * 0.3, 0, tipX, tipY, pr);
+        pom.addColorStop(0, 'rgb(222,240,248)');
+        pom.addColorStop(1, 'rgb(140,180,204)');
+        ctx.fillStyle = pom;
+        ctx.beginPath(); ctx.arc(tipX, tipY, pr, 0, 6.283); ctx.fill();
+        ctx.restore();
+    }
+
+    // Daytime: now and then a sea turtle swims up to the girl, circles her and drifts away.
+    // It swims behind the divers, like the fish, so she hides it as it passes.
+    const turtle = { active: false, next: 6, born: 0, x: 1700, y: 716, heading: Math.PI, flip: -1 };
+    const TURTLE_RING = { cx: 1527, cy: 722, rx: 56, ry: 16 };
+    function turtleAt(age) {
+        const R = TURTLE_RING, smooth = u => u * u * (3 - 2 * u);
+        if (age < 7) {   // in from the right-hand edge of the tank
+            const u = smooth(age / 7);
+            return [1700 + (R.cx + R.rx - 1700) * u, 712 + (R.cy - 712) * u, 1];
+        }
+        if (age < 19) {  // once and a bit around her, going over the top first
+            const th = -2.4 * Math.PI * smooth((age - 7) / 12);
+            return [R.cx + R.rx * Math.cos(th), R.cy + R.ry * Math.sin(th), Math.sin(th) < 0 ? 0.86 : 1];
+        }
+        const u = smooth(Math.min(1, (age - 19) / 9));   // then away, up and out to the right
+        const sx = R.cx + R.rx * Math.cos(-0.4 * Math.PI), sy = R.cy + R.ry * Math.sin(-0.4 * Math.PI);
+        return [sx + (1710 - sx) * u, sy + (650 - sy) * u, 0.86 + 0.14 * u];
+    }
+    function updateTurtle(t, dt) {
+        if (day === 0) { turtle.active = false; turtle.next = t + 6; return; }   // first visit 6 s after the lights come up
+        if (!turtle.active && day === 1 && t >= turtle.next) Object.assign(turtle, { active: true, born: t });
+        if (!turtle.active) return;
+        const age = t - turtle.born;
+        if (age > 28) { turtle.active = false; turtle.next = t + 35 + Math.random() * 25; return; }
+        const [x, y, s] = turtleAt(age);
+        const vx = x - turtle.x, vy = y - turtle.y;
+        if (Math.hypot(vx, vy) > 0.02) {
+            const want = Math.atan2(vy, vx);
+            let d = want - turtle.heading;
+            d = Math.atan2(Math.sin(d), Math.cos(d));
+            turtle.heading += d * Math.min(1, dt * 2.5);   // turns gently rather than snapping
+        }
+        Object.assign(turtle, { x, y, s });
+    }
+    function drawTurtle(t) {
+        if (!turtle.active || !day) return;
+        const e = day * day * (3 - 2 * day);
+        const age = t - turtle.born;
+        const fade = Math.min(1, age / 1.5, (28 - age) / 1.5);
+        const L = 34 * turtle.s;   // shell length in picture pixels
+        const dir = Math.cos(turtle.heading) >= 0 ? 1 : -1;
+        const tilt = Math.max(-0.45, Math.min(0.45, Math.atan2(Math.sin(turtle.heading), Math.abs(Math.cos(turtle.heading)))));
+        const stroke = Math.sin(t * 1.6);   // slow, rowing flipper strokes
+        const SKIN = 'rgb(86,108,92)', SKIN_FAR = 'rgb(60,82,78)', EDGE = 'rgba(186,196,158,0.55)';
+        ctx.save();
+        ctx.clip(fishClip, 'evenodd');
+        if (!LITE) ctx.filter = `blur(${(0.3 * k).toFixed(2)}px)`;
+        ctx.globalAlpha = 0.95 * e * fade;
+        ctx.translate(turtle.x, turtle.y);
+        ctx.scale(dir, 1);
+        ctx.rotate(tilt);
+        // a long, wing-like flipper with a pale leading edge
+        const flipper = (rx, ry, ang, len, col, edge) => {
+            ctx.save();
+            ctx.translate(rx, ry);
+            ctx.rotate(ang);
+            const f = new Path2D();
+            f.moveTo(0, -len * 0.1);
+            f.bezierCurveTo(-len * 0.35, -len * 0.16, -len * 0.75, -len * 0.06, -len, len * 0.1);
+            f.bezierCurveTo(-len * 0.7, len * 0.14, -len * 0.3, len * 0.2, 0, len * 0.12);
+            f.closePath();
+            ctx.fillStyle = col;
+            ctx.fill(f);
+            if (edge) {
+                ctx.strokeStyle = edge;
+                ctx.lineWidth = 0.6;
+                ctx.beginPath(); ctx.moveTo(0, -len * 0.1); ctx.bezierCurveTo(-len * 0.35, -len * 0.16, -len * 0.75, -len * 0.06, -len, len * 0.1); ctx.stroke();
+            }
+            ctx.restore();
+        };
+        // far flippers first, darker, behind the shell
+        flipper(L * 0.2, L * 0.02, 0.45 - stroke * 0.55, L * 0.72, SKIN_FAR);
+        flipper(-L * 0.38, L * 0.05, 0.3 + stroke * 0.2, L * 0.3, SKIN_FAR);
+        // neck and head, with a darker beak and a small eye
+        ctx.fillStyle = SKIN;
+        ctx.beginPath(); ctx.moveTo(L * 0.36, -L * 0.1); ctx.quadraticCurveTo(L * 0.5, -L * 0.13, L * 0.56, -L * 0.08); ctx.lineTo(L * 0.56, L * 0.06); ctx.quadraticCurveTo(L * 0.46, L * 0.08, L * 0.36, L * 0.06); ctx.closePath(); ctx.fill();
+        const hg = ctx.createLinearGradient(0, -L * 0.14, 0, L * 0.1);
+        hg.addColorStop(0, 'rgb(134,150,122)');
+        hg.addColorStop(1, 'rgb(92,116,100)');
+        ctx.fillStyle = hg;
+        ctx.beginPath(); ctx.ellipse(L * 0.64, -L * 0.03, L * 0.15, L * 0.105, -0.12, 0, 6.283); ctx.fill();
+        ctx.fillStyle = 'rgb(62,78,66)';
+        ctx.beginPath(); ctx.ellipse(L * 0.76, -L * 0.01, L * 0.045, L * 0.04, 0, 0, 6.283); ctx.fill();
+        ctx.fillStyle = 'rgb(20,30,28)';
+        ctx.beginPath(); ctx.arc(L * 0.68, -L * 0.06, Math.max(0.5, L * 0.022), 0, 6.283); ctx.fill();
+        // the shell: a low dome over a flatter underside
+        const shell = new Path2D();
+        shell.moveTo(-L * 0.5, L * 0.04);
+        shell.bezierCurveTo(-L * 0.44, -L * 0.32, L * 0.3, -L * 0.36, L * 0.46, 0);
+        shell.quadraticCurveTo(L * 0.05, L * 0.15, -L * 0.5, L * 0.04);
+        const sg = ctx.createLinearGradient(0, -L * 0.32, 0, L * 0.12);
+        sg.addColorStop(0, 'rgb(142,140,96)');
+        sg.addColorStop(0.5, 'rgb(98,102,72)');
+        sg.addColorStop(1, 'rgb(60,72,58)');
+        ctx.fillStyle = sg;
+        ctx.fill(shell);
+        // scutes: a row of large plates along the top and smaller ones round the rim
+        ctx.save();
+        ctx.clip(shell);
+        ctx.strokeStyle = 'rgba(52,54,36,0.6)';
+        ctx.lineWidth = 0.55;
+        [[-0.26, -0.18], [-0.02, -0.22], [0.22, -0.17]].forEach(([u, v]) => {
+            ctx.beginPath(); ctx.ellipse(L * u, L * v, L * 0.13, L * 0.09, 0, 0, 6.283); ctx.stroke();
+        });
+        ctx.beginPath(); ctx.moveTo(-L * 0.48, -L * 0.04); ctx.quadraticCurveTo(0, -L * 0.1, L * 0.44, -L * 0.03); ctx.stroke();
+        for (let s = 0; s < 7; s++) { const u = -0.42 + s * 0.13; ctx.beginPath(); ctx.moveTo(L * u, -L * 0.06); ctx.lineTo(L * (u - 0.02), L * 0.06); ctx.stroke(); }
+        // light from the surface catching the top of the shell
+        const hl = ctx.createRadialGradient(-L * 0.05, -L * 0.3, 0, -L * 0.05, -L * 0.3, L * 0.4);
+        hl.addColorStop(0, 'rgba(200,235,240,0.35)');
+        hl.addColorStop(1, 'rgba(200,235,240,0)');
+        ctx.fillStyle = hl;
+        ctx.fillRect(-L, -L, L * 2, L);
+        ctx.restore();
+        // the pale edge of the underside
+        ctx.strokeStyle = EDGE;
+        ctx.lineWidth = 0.8;
+        ctx.beginPath(); ctx.moveTo(-L * 0.46, L * 0.05); ctx.quadraticCurveTo(L * 0.05, L * 0.15, L * 0.44, L * 0.01); ctx.stroke();
+        // near flippers on top: the long front one rowing, the small back one steering
+        flipper(L * 0.16, L * 0.08, 0.35 + stroke * 0.6, L * 0.78, SKIN, EDGE);
+        flipper(-L * 0.4, L * 0.09, 0.45 - stroke * 0.2, L * 0.32, SKIN, EDGE);
         ctx.restore();
     }
 
@@ -3105,6 +3467,7 @@
         updateWeather(t, dt);
         updateXmas(t, dt);
         updateDay(dt);
+        updateTurtle(t, dt);
 
         // Work out which part of the picture is on screen
         const m = 40;
@@ -3116,7 +3479,7 @@
         regions.forEach(r => drawDistort(r, t));
         if (inView(1015, 1210)) drawHutPatches(t);
         if (inView(1380, 1520)) drawBoat(t);
-        if (inView(1250, IMG_W)) { drawFish(t); drawAquarium(t); }
+        if (inView(1250, IMG_W)) { drawFish(t); drawTurtle(t); drawAquarium(t); }
         if (inView(1240, 1300)) drawMonkeys(t);
         if (inView(140, 230)) drawOryx(t);
         if (inView(430, 490)) drawSteam(t);
