@@ -26,7 +26,7 @@
     function loadDay() {
         if (!dayImg.getAttribute('src')) {
             dayImg.addEventListener('load', applyImages);
-            dayImg.src = 'assets/background-day.jpg?v=110';
+            dayImg.src = 'assets/background-day.jpg?v=111';
         }
     }
     // Which painting is showing: night by default, day when the light switch is on, and a scene
