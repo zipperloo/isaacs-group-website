@@ -49,7 +49,8 @@
         /* Ivory lettering at night; by day a deep near-black brown with a faint pale halo */
         .tagline { font-family: 'Source Sans 3', sans-serif; font-weight: 200; text-shadow: 0 0 14px var(--halo), 0 0 4px var(--halo); }
         .sound, .eq i { transition: color 2s ease, background-color 2s ease, text-shadow 2s ease; }
-        .daytime .logo img { filter: brightness(0.16) sepia(0.6) drop-shadow(0 0 6px rgba(255, 250, 240, 0.35)); }
+        /* by day the ivory wordmark is tinted a warm dark brown (about #5a3e2a) */
+        .daytime .logo img { filter: sepia(1) brightness(0.26) saturate(2.75) hue-rotate(-40deg) drop-shadow(0 0 6px rgba(255, 250, 240, 0.35)); }
         .daytime .tagline, .daytime .sound { color: var(--ink); text-shadow: 0 0 5px rgba(255, 248, 236, 0.85), 0 0 16px rgba(255, 248, 236, 0.65), 0 0 30px rgba(255, 248, 236, 0.4); }
         .daytime .tagline { font-weight: 300; }
         .daytime .eq i { background: var(--ink); box-shadow: none; }
